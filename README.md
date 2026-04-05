@@ -5,7 +5,7 @@ Modding geometrydash.com to add more features
 
 
 ## Extra Stuff We Added:
-  * All gamemodes up to wave
+  * More gamemodes (Wave, Ball)
   * portals and objects, orbs and pads
   * All main levels
   * Custom icons (can only be edited programatically)
