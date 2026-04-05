@@ -352,13 +352,14 @@ function L(_0x56b804, _0x310a42, _0x71aad, _0x4272eb) {
   }
 }
 class O {
-  constructor(_0x237587, _0x2693e7, _0x3e6e3c, _0x4adabc, _0x36363d) {
-    this.type = _0x237587;
-    this.x = _0x2693e7;
-    this.y = _0x3e6e3c;
-    this.w = _0x4adabc;
-    this.h = _0x36363d;
+  constructor(objType, xPos, yPos, width, height, rotation = 0) {
+    this.type = objType;
+    this.x = xPos;
+    this.y = yPos;
+    this.w = width;
+    this.h = height;
     this.activated = false;
+    this.rotationDegrees = rotation;
   }
 }
 function F(_0x549766) {
@@ -1166,7 +1167,7 @@ class us {
         if (_0x24471f.type === solidType && _0x24471f.gridW > 0 && _0x24471f.gridH > 0) {
           let _0x10e5ae = _0x24471f.gridW * a;
           let _0x11e08d = _0x24471f.gridH * a;
-          let _0x4628ff = new O(solidType, _0x173c58, _0x7ab528, _0x10e5ae, _0x11e08d);
+          let _0x4628ff = new O(solidType, _0x173c58, _0x7ab528, _0x10e5ae, _0x11e08d, _0x1b937f.rot || 0);
           this.objects.push(_0x4628ff);
           this._addCollisionToSection(_0x4628ff);
         } else if (_0x24471f.type === hazardType) {
@@ -1180,13 +1181,11 @@ class us {
             _0x2a123d = _0x24471f.gridH * 24;
           }
           if (_0x3f8c4f > 0 && _0x2a123d > 0) {
-            let _0x3c84ad = new O(hazardType, _0x173c58, _0x7ab528, _0x3f8c4f, _0x2a123d);
+            let _0x3c84ad = new O(hazardType, _0x173c58, _0x7ab528, _0x3f8c4f, _0x2a123d, _0x1b937f.rot || 0);
             this.objects.push(_0x3c84ad);
             this._addCollisionToSection(_0x3c84ad);
           }
         } else if (_0x24471f.type === portalType) {
-            console.log(_0x24471f)
-            console.log(_0x1b937f)
 
           let _0xad0974 = 90;
           let _0x2c2226 = _0x24471f.gridH * a;
@@ -1216,7 +1215,7 @@ class us {
             console.warn("unknown portal sub-type: id=" + _0x1b937f.id + " sub=" + _0x24471f.sub);
           }
           if (_0x25452a) {
-            let _0x4bd7bc = new O(_0x25452a, _0x173c58, _0x7ab528, _0xad0974, _0x2c2226);
+            let _0x4bd7bc = new O(_0x25452a, _0x173c58, _0x7ab528, _0xad0974, _0x2c2226, _0x1b937f.rot || 0);
             _0x4bd7bc.portalY = _0x7ab528;
             this.objects.push(_0x4bd7bc);
             this._addCollisionToSection(_0x4bd7bc);
@@ -1227,7 +1226,7 @@ class us {
         } else if (_0x24471f.type === padType) {
           let padW = _0x24471f.gridW * a;
           let padH = Math.max(_0x24471f.gridH * a, 30);
-          let padObj = new O(jumpPadType, _0x173c58, _0x7ab528, padW, padH);
+          let padObj = new O(jumpPadType, _0x173c58, _0x7ab528, padW, padH, _0x1b937f.rot || 0);
           padObj.padId = _0x1b937f.id;
           this.objects.push(padObj);
           this._addCollisionToSection(padObj);
@@ -1235,7 +1234,7 @@ class us {
         } else if (_0x24471f.type === ringType) {
           let orbW = _0x24471f.gridW * a * 0.8;
           let orbH = _0x24471f.gridH * a * 0.8;
-          let orbObj = new O(jumpRingType, _0x173c58, _0x7ab528, orbW, orbH);
+          let orbObj = new O(jumpRingType, _0x173c58, _0x7ab528, orbW, orbH, _0x1b937f.rot || 0);
           orbObj.orbId = _0x1b937f.id;
           orbObj.orbRotation = _0x1b937f.rot || 0;
           orbObj._dashHoldTicks = 0;
@@ -2604,6 +2603,7 @@ class ps {
     this._explosionPieces = null;
   }
   _playPortalShine(_0x49e81f) {
+    console.log(_0x49e81f)
     const _0x4ed8ff = this._scene;
     const _0xf31b0d = _0x49e81f.x;
     const _0x3824c0 = b(_0x49e81f.portalY);
@@ -2617,6 +2617,7 @@ class ps {
       const _0x34645e = _0x4ed8ff.add.image(_0xf31b0d, _0x3824c0, _0x4bfe30.atlas, _0x4bfe30.frame);
       _0x34645e.setBlendMode(S);
       _0x34645e.setAlpha(0);
+      _0x34645e.angle = _0x49e81f.rotationDegrees;
       _0x5d636a[_0x34fd8c].add(_0x34645e);
       _0x4ed8ff.tweens.add({
         targets: _0x34645e,
@@ -2892,71 +2893,82 @@ class ps {
     let _0x30410f = false;
     let _boostedThisStep = false;
     const _0x198534 = this._gameLayer.getNearbySectionObjects(_0x3c691e);
-    for (let _0x1b13b8 of _0x198534) {
-      let _0xf3791a = _0x1b13b8.x - _0x1b13b8.w / 2;
-      let _0x17dbc8 = _0x1b13b8.x + _0x1b13b8.w / 2;
-      let _0x2d2fa7 = _0x1b13b8.y - _0x1b13b8.h / 2;
-      let _0x8a8d9a = _0x1b13b8.y + _0x1b13b8.h / 2;
-      if (!(_0x3c691e + 30 <= _0xf3791a) && !(_0x3c691e - 30 >= _0x17dbc8) && !(_0x8e0d28 + _0x6bfa06 <= _0x2d2fa7) && !(_0x8e0d28 - _0x6bfa06 >= _0x8a8d9a)) {
-        const _colType = _0x1b13b8.type;
+    for (let gameObj of _0x198534) {
+      let left = gameObj.x - gameObj.w / 2;
+      let right = gameObj.x + gameObj.w / 2;
+      let top = gameObj.y - gameObj.h / 2;
+      let buttom = gameObj.y + gameObj.h / 2;
+      const rad = gameObj.rotationDegrees * Math.PI / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+      const halfW = gameObj.w / 2;
+      const halfH = gameObj.h / 2;
+      const rotatedHalfWidth  = Math.abs(halfW * cos) + Math.abs(halfH * sin);
+      const rotatedHalfHeight = Math.abs(halfW * sin) + Math.abs(halfH * cos);
+      let rotatedLeft = gameObj.x - rotatedHalfWidth;
+      let rotatedRight = gameObj.x + rotatedHalfWidth;
+      let rotatedTop = gameObj.y - rotatedHalfHeight;
+      let rotatedBottom = gameObj.y + rotatedHalfHeight;
+      if (!(_0x3c691e + 30 <= rotatedLeft) && !(_0x3c691e - 30 >= rotatedRight) && !(_0x8e0d28 + _0x6bfa06 <= rotatedTop) && !(_0x8e0d28 - _0x6bfa06 >= rotatedBottom)) {
+        const _colType = gameObj.type;
         if (_colType === "portal_fly") {
-          if (!_0x1b13b8.activated) {
-            _0x1b13b8.activated = true;
-            this._playPortalShine(_0x1b13b8);
+          if (!gameObj.activated) {
+            gameObj.activated = true;
+            this._playPortalShine(gameObj);
             this.exitBallMode();
             this.exitWaveMode();
-            this.enterShipMode(_0x1b13b8);
+            this.enterShipMode(gameObj);
           }
         } else if (_colType === portalWaveType) {
-          if (!_0x1b13b8.activated) {
-            _0x1b13b8.activated = true;
-            this._playPortalShine(_0x1b13b8);
-            this.enterWaveMode(_0x1b13b8);
+          if (!gameObj.activated) {
+            gameObj.activated = true;
+            this._playPortalShine(gameObj);
+            this.enterWaveMode(gameObj);
           }
         } else if (_colType === "portal_cube") {
-          if (!_0x1b13b8.activated) {
-            _0x1b13b8.activated = true;
-            this._playPortalShine(_0x1b13b8);
+          if (!gameObj.activated) {
+            gameObj.activated = true;
+            this._playPortalShine(gameObj);
             this.exitShipMode();
             this.exitBallMode();
             this.exitWaveMode();
           }
         } else if (_colType === "portal_ball") {
-          if (!_0x1b13b8.activated) {
-            _0x1b13b8.activated = true;
-            this._playPortalShine(_0x1b13b8);
+          if (!gameObj.activated) {
+            gameObj.activated = true;
+            this._playPortalShine(gameObj);
             this.exitShipMode();
             this.exitWaveMode();
-            this.enterBallMode(_0x1b13b8);
+            this.enterBallMode(gameObj);
           }
         } else if (_colType === "portal_gravity_down") {
-          if (!_0x1b13b8.activated) {
-            _0x1b13b8.activated = true;
-            this._playPortalShine(_0x1b13b8);
+          if (!gameObj.activated) {
+            gameObj.activated = true;
+            this._playPortalShine(gameObj);
             this.flipGravity(false, this.p.isBall ? 0.5: 0.5);
           }
         } else if (_colType === "portal_gravity_up") {
-          if (!_0x1b13b8.activated) {
-            _0x1b13b8.activated = true;
-            this._playPortalShine(_0x1b13b8);
+          if (!gameObj.activated) {
+            gameObj.activated = true;
+            this._playPortalShine(gameObj);
             this.flipGravity(true, this.p.isBall ? 0.5: 0.5);
           }
         } else if (_colType === "portal_mirror_on") {
-          if (!_0x1b13b8.activated) {
-            _0x1b13b8.activated = true;
-            this._playPortalShine(_0x1b13b8);
+          if (!gameObj.activated) {
+            gameObj.activated = true;
+            this._playPortalShine(gameObj);
             this.p.mirrored = true;
           }
         } else if (_colType === "portal_mirror_off") {
-          if (!_0x1b13b8.activated) {
-            _0x1b13b8.activated = true;
-            this._playPortalShine(_0x1b13b8);
+          if (!gameObj.activated) {
+            gameObj.activated = true;
+            this._playPortalShine(gameObj);
             this.p.mirrored = false;
           }
         } else if (_colType === jumpPadType) {
-          if (!_0x1b13b8.activated) {
-            _0x1b13b8.activated = true;
-            const _padId = _0x1b13b8.padId;
+          if (!gameObj.activated) {
+            gameObj.activated = true;
+            const _padId = gameObj.padId;
             const _grav = p;
             const _fm = this.flipMod();
             let _padVel = 0;
@@ -3008,22 +3020,22 @@ class ps {
             }
           }
         } else if (_colType === jumpRingType) {
-          const _orbId = _0x1b13b8.orbId;
+          const _orbId = gameObj.orbId;
           const _isDash = (_orbId === 1704 || _orbId === 1751);
           const _needsClick = _isDash ? this.p.upKeyDown : this.p.upKeyPressed;
-          if (!_0x1b13b8.activated && _needsClick) {
+          if (!gameObj.activated && _needsClick) {
             if (_isDash) {
-              _0x1b13b8._dashHoldTicks = (_0x1b13b8._dashHoldTicks || 0) + 1;
-              if (_orbId === 1704 && _0x1b13b8._dashHoldTicks < 2) {
-              } else if (_orbId === 1751 && _0x1b13b8._dashHoldTicks < 2) {
-                _0x1b13b8.activated = true;
+              gameObj._dashHoldTicks = (gameObj._dashHoldTicks || 0) + 1;
+              if (_orbId === 1704 && gameObj._dashHoldTicks < 2) {
+              } else if (_orbId === 1751 && gameObj._dashHoldTicks < 2) {
+                gameObj.activated = true;
                 this.p.yVelocity *= 0.5;
                 this.flipGravity(!this.p.gravityFlipped);
                 this.p.upKeyPressed = false;
                 _boostedThisStep = true;
               } else {
-                _0x1b13b8.activated = true;
-                const _dashAngleDeg = _0x1b13b8.orbRotation || 0;
+                gameObj.activated = true;
+                const _dashAngleDeg = gameObj.orbRotation || 0;
                 let _clampedAngle = _dashAngleDeg;
                 if (_clampedAngle > 270) { _clampedAngle -= 360; }
                 if (_clampedAngle >= 90 && _clampedAngle <= 270) { _clampedAngle = 180 - _clampedAngle; }
@@ -3040,7 +3052,7 @@ class ps {
                 _boostedThisStep = true;
               }
             } else {
-              _0x1b13b8.activated = true;
+              gameObj.activated = true;
               const _grav = p;
               const _fm = this.flipMod();
               const _cubeJump = 22.360064;
@@ -3092,7 +3104,7 @@ class ps {
               }
             }
           } else if (_isDash && !this.p.upKeyDown) {
-            _0x1b13b8._dashHoldTicks = 0;
+            gameObj._dashHoldTicks = 0;
           }
         } else if (_colType === hazardType) {
           this.killPlayer();
@@ -3103,53 +3115,53 @@ class ps {
           let _0x3e7199 = _0x8e0d28 + _0x6bfa06 - _0x11ee2f;
           let _0x135a9d = _0x37040a + _0x6bfa06 - _0x11ee2f;
           const _0x55559d = 9;
-          const _0x3c1654 = _0x3c691e + _0x55559d > _0xf3791a && _0x3c691e - _0x55559d < _0x17dbc8 && _0x8e0d28 + _0x55559d > _0x2d2fa7 && _0x8e0d28 - _0x55559d < _0x8a8d9a;
-          const _0xLandBot = (this.p.yVelocity <= 0 || this.p.onGround) && (_0x146a97 >= _0x8a8d9a || _0x869e42 >= _0x8a8d9a);
-          const _0xLandTop = (this.p.yVelocity >= 0 || this.p.onGround) && (_0x3e7199 <= _0x2d2fa7 || _0x135a9d <= _0x2d2fa7);
+          const _0x3c1654 = _0x3c691e + _0x55559d > left && _0x3c691e - _0x55559d < right && _0x8e0d28 + _0x55559d > top && _0x8e0d28 - _0x55559d < buttom;
+          const _0xLandBot = (this.p.yVelocity <= 0 || this.p.onGround) && (_0x146a97 >= buttom || _0x869e42 >= buttom);
+          const _0xLandTop = (this.p.yVelocity >= 0 || this.p.onGround) && (_0x3e7199 <= top || _0x135a9d <= top);
           const _0x2841ea = this.p.gravityFlipped ? _0xLandTop : _0xLandBot;
           if (_0x3c1654 && !_0x2841ea) {
             this.killPlayer();
             return;
           }
-          if (_0x3c691e + 30 - 5 > _0xf3791a && _0x3c691e - 30 + 5 < _0x17dbc8) {
-            if (!this.p.gravityFlipped && (_0x146a97 >= _0x8a8d9a || _0x869e42 >= _0x8a8d9a) && (this.p.yVelocity <= 0 || this.p.onGround)) {
-              this.p.y = _0x8a8d9a + _0x6bfa06;
+          if (_0x3c691e + 30 - 5 > left && _0x3c691e - 30 + 5 < right) {
+            if (!this.p.gravityFlipped && (_0x146a97 >= buttom || _0x869e42 >= buttom) && (this.p.yVelocity <= 0 || this.p.onGround)) {
+              this.p.y = buttom + _0x6bfa06;
               this.hitGround();
               _0x30410f = true;
-              this.p.collideBottom = _0x8a8d9a;
+              this.p.collideBottom = buttom;
               if (!this.p.isFlying) {
-                this._checkSnapJump(_0x1b13b8);
+                this._checkSnapJump(gameObj);
               }
               continue;
             }
-            if (this.p.gravityFlipped && !this.p.isFlying && (_0x3e7199 <= _0x2d2fa7 || _0x135a9d <= _0x2d2fa7) && (this.p.yVelocity >= 0 || this.p.onGround)) {
-              this.p.y = _0x2d2fa7 - _0x6bfa06;
+            if (this.p.gravityFlipped && !this.p.isFlying && (_0x3e7199 <= top || _0x135a9d <= top) && (this.p.yVelocity >= 0 || this.p.onGround)) {
+              this.p.y = top - _0x6bfa06;
               this.hitGround();
               _0x30410f = true;
               this.p.onCeiling = true;
-              this.p.collideTop = _0x2d2fa7;
+              this.p.collideTop = top;
               if (!this.p.isFlying) {
-                this._checkSnapJump(_0x1b13b8);
+                this._checkSnapJump(gameObj);
               }
               continue;
             }
-            if ((_0x3e7199 <= _0x2d2fa7 || _0x135a9d <= _0x2d2fa7) && (this.p.yVelocity >= 0 || this.p.onGround) && this.p.isFlying) {
-              this.p.y = _0x2d2fa7 - _0x6bfa06;
+            if ((_0x3e7199 <= top || _0x135a9d <= top) && (this.p.yVelocity >= 0 || this.p.onGround) && this.p.isFlying) {
+              this.p.y = top - _0x6bfa06;
               this.hitGround();
               this.p.onCeiling = true;
-              this.p.collideTop = _0x2d2fa7;
+              this.p.collideTop = top;
               continue;
             }
-            if (!this.p.gravityFlipped && (_0x3e7199 <= _0x2d2fa7 || _0x135a9d <= _0x2d2fa7) && this.p.yVelocity >= 0) {
+            if (!this.p.gravityFlipped && (_0x3e7199 <= top || _0x135a9d <= top) && this.p.yVelocity >= 0) {
               this.p.yVelocity = 0;
-              this.p.y = _0x2d2fa7 - _0x6bfa06;
-              this.p.collideTop = _0x2d2fa7;
+              this.p.y = top - _0x6bfa06;
+              this.p.collideTop = top;
               continue;
             }
-            if (this.p.gravityFlipped && !this.p.isFlying && (_0x146a97 >= _0x8a8d9a || _0x869e42 >= _0x8a8d9a) && this.p.yVelocity <= 0) {
+            if (this.p.gravityFlipped && !this.p.isFlying && (_0x146a97 >= buttom || _0x869e42 >= buttom) && this.p.yVelocity <= 0) {
               this.p.yVelocity = 0;
-              this.p.y = _0x8a8d9a + _0x6bfa06;
-              this.p.collideBottom = _0x8a8d9a;
+              this.p.y = buttom + _0x6bfa06;
+              this.p.collideBottom = buttom;
               continue;
             }
           }
