@@ -9,10 +9,10 @@ window.currentShip = "ship_44";
 window.currentBall = "player_ball_23"
 window.currentWave = "dart_01"
 window.currentlevel = [
-	"three_step",
-	"Three Step",
-	"level_137409445",
-	"RobTop"
+	"stereo_madness",
+	"Stereo Madness",
+	"level_1",
+	"Forever Bound"
 ];
 
 // -------------------------------
