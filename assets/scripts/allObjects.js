@@ -73225,7 +73225,7 @@ return {
     gridW: 0,
     gridH: 0,
     blend: "additive",
-    tint: window.m
+    tint: window.secondaryColor
   },
   49: {
     type: "deco",
@@ -73233,7 +73233,7 @@ return {
     gridW: 0,
     gridH: 0,
     blend: "additive",
-    tint: window.m
+    tint: window.secondaryColor
   },
   129: {
     type: "deco",
@@ -73283,7 +73283,7 @@ return {
     gridW: 0,
     gridH: 0,
     blend: "additive",
-    tint: window.m
+    tint: window.secondaryColor
   },
   54: {
     type: "deco",
@@ -73364,7 +73364,7 @@ return {
     gridW: 0,
     gridH: 0,
     blend: "additive",
-    tint: window.v
+    tint: window.mainColor
   },
   123: {
     type: "deco",
@@ -73388,7 +73388,7 @@ return {
       frame: "rod_ball_01_001.png",
       localDy: -62,
       blend: "additive",
-      tint: window.v,
+      tint: window.mainColor,
       z: 1,
       audioScale: true
     }]
@@ -73403,7 +73403,7 @@ return {
       frame: "rod_ball_01_001.png",
       localDy: -46.5,
       blend: "additive",
-      tint: window.v,
+      tint: window.mainColor,
       z: 1,
       audioScale: true
     }]
@@ -73418,7 +73418,7 @@ return {
       frame: "rod_ball_01_001.png",
       localDy: -32.5,
       blend: "additive",
-      tint: window.v,
+      tint: window.mainColor,
       z: 1,
       audioScale: true
     }]
@@ -73489,7 +73489,7 @@ return {
     gridW: 0,
     gridH: 0,
     blend: "additive",
-    tint: window.v
+    tint: window.mainColor
   },
   19: {
     type: "deco",
@@ -73497,7 +73497,7 @@ return {
     gridW: 0,
     gridH: 0,
     blend: "additive",
-    tint: window.v
+    tint: window.mainColor
   },
   20: {
     type: "deco",
@@ -73505,7 +73505,7 @@ return {
     gridW: 0,
     gridH: 0,
     blend: "additive",
-    tint: window.v
+    tint: window.mainColor
   },
   21: {
     type: "deco",
@@ -73513,7 +73513,7 @@ return {
     gridW: 0,
     gridH: 0,
     blend: "additive",
-    tint: window.v
+    tint: window.mainColor
   },
   135: {
     type: "deco",
@@ -73773,7 +73773,7 @@ return {
           {
               "frame": "d_cogwheel_02_001.png",
               "localDy": 0.0,
-              "tint": window.v,
+              "tint": window.mainColor,
               "z": -1
           }
       ],
@@ -74483,7 +74483,7 @@ return {
                 "frame": "d_cogwheel_03_001.png",
                 "localDy": 0.0,
                 blend: "additive",
-                "tint": window.v,
+                "tint": window.mainColor,
                 "z": -1
             }
         ],
@@ -74638,7 +74638,7 @@ return {
         "spritesheet": "GJ_GameSheet-uhd",
         "type": "deco",
         "blend": "additive",
-        "tint": window.v,
+        "tint": window.mainColor,
         "z": 9
     },
     228: {

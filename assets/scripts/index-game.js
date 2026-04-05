@@ -1,18 +1,20 @@
-if (window.v == null) {
-  window.v = parseInt("fb2651", 16);
+// editable config stuff
+
+if (window.mainColor == null) {
+  window.mainColor = parseInt("fb2651", 16);
 }
-if (window.m == null) {
-  window.m = parseInt("ffffff", 16);
+if (window.secondaryColor == null) {
+  window.secondaryColor = parseInt("ffffff", 16);
 }
 window.currentPlayer = "player_42";
 window.currentShip = "ship_44";
 window.currentBall = "player_ball_23"
 window.currentWave = "dart_01"
 window.currentlevel = [
-	"stereo_madness",
-	"Stereo Madness",
-	"level_1",
-	"Forever Bound"
+	"stereo_madness", // internal level name
+	"Stereo Madness", // proper level name
+	"level_1",        // level id in assets/levels
+	"Forever Bound"   // person who made the song
 ];
 
 // -------------------------------
@@ -1274,7 +1276,7 @@ class us {
     this._endPortalShine = _0x41fbdb.add.image(_0x3b56d4 - 58, _0x1c3aea, "GJ_WebSheet", "gradientBar.png");
     const _0x3e25a9 = ((_0x400605 = _0x41fbdb.textures.getFrame("GJ_WebSheet", "gradientBar.png")) == null ? undefined : _0x400605.height) || 64;
     this._endPortalShine.setBlendMode(S);
-    this._endPortalShine.setTint(v);
+    this._endPortalShine.setTint(window.mainColor);
     this._endPortalShine.setScale(1, 960 / _0x3e25a9);
     this.additiveContainer.add(this._endPortalShine);
     const _0x58cedb = _0x3b56d4 - 30;
@@ -1302,7 +1304,7 @@ class us {
         start: 1,
         end: 0
       },
-      tint: v,
+      tint: window.mainColor,
       blendMode: Phaser.BlendModes.ADD,
       frequency: 10,
       maxParticles: 100,
@@ -1740,31 +1742,31 @@ class ps {
     this._playerOverlayLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentPlayer}_2_001.png`, 8, true);
     this._playerExtraLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentPlayer}_extra_001.png`, 12, true);
     if (this._playerGlowLayer) {
-      this._playerGlowLayer.sprite.setTint(m);
+      this._playerGlowLayer.sprite.setTint(window.secondaryColor);
       this._playerGlowLayer.sprite._glowEnabled = false;
     }
     if (this._playerSpriteLayer) {
-      this._playerSpriteLayer.sprite.setTint(v);
+      this._playerSpriteLayer.sprite.setTint(window.mainColor);
     } else {
-      let _0x3aecd9 = _0x1872a7.add.rectangle(_0xf42f36, _0x28689a, g, g, v);
+      let _0x3aecd9 = _0x1872a7.add.rectangle(_0xf42f36, _0x28689a, g, g, window.mainColor);
       _0x3aecd9.setDepth(10);
       this._playerSpriteLayer = {
         sprite: _0x3aecd9
       };
     }
     if (this._playerOverlayLayer) {
-      this._playerOverlayLayer.sprite.setTint(m);
+      this._playerOverlayLayer.sprite.setTint(window.secondaryColor);
     }
     this._shipGlowLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentShip}_glow_001.png`, 9, false);
     this._shipSpriteLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentShip}_001.png`, 10, false);
     this._shipOverlayLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentShip}_2_001.png`, 8, false);
     this._shipExtraLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentShip}_extra_001.png`, 12, false);
     if (this._shipGlowLayer) {
-      this._shipGlowLayer.sprite.setTint(m);
+      this._shipGlowLayer.sprite.setTint(window.secondaryColor);
       this._shipGlowLayer.sprite._glowEnabled = false;
     }
     if (this._shipSpriteLayer) {
-      this._shipSpriteLayer.sprite.setTint(v);
+      this._shipSpriteLayer.sprite.setTint(window.mainColor);
     } else {
       let _0x100643 = _0x1872a7.add.polygon(_0xf42f36, _0x28689a, [{
         x: -72,
@@ -1778,43 +1780,43 @@ class ps {
       }, {
         x: -40,
         y: 0
-      }], v);
+      }], window.mainColor);
       _0x100643.setDepth(10).setVisible(false);
       this._shipSpriteLayer = {
         sprite: _0x100643
       };
     }
     if (this._shipOverlayLayer) {
-      this._shipOverlayLayer.sprite.setTint(m);
+      this._shipOverlayLayer.sprite.setTint(window.secondaryColor);
     }
     this._ballGlowLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentBall}_glow_001.png`, 9, false);
     this._ballSpriteLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentBall}_001.png`, 10, false);
     this._ballOverlayLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentBall}_2_001.png`, 8, false);
     if (this._ballGlowLayer) {
-      this._ballGlowLayer.sprite.setTint(m);
+      this._ballGlowLayer.sprite.setTint(window.secondaryColor);
       this._ballGlowLayer.sprite._glowEnabled = false;
     }
     if (this._ballSpriteLayer) {
-      this._ballSpriteLayer.sprite.setTint(v);
+      this._ballSpriteLayer.sprite.setTint(window.mainColor);
     }
     if (this._ballOverlayLayer) {
-      this._ballOverlayLayer.sprite.setTint(m);
+      this._ballOverlayLayer.sprite.setTint(window.secondaryColor);
     }
     this._waveGlowLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, "player_dart_00_glow_001.png", 9, false);
     this._waveOverlayLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, "player_dart_00_2_001.png", 8, false);
     this._waveExtraLayer = null;
     this._waveSpriteLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, "player_dart_00_001.png", 10, false);
     if (this._waveGlowLayer) {
-      this._waveGlowLayer.sprite.setTint(m);
+      this._waveGlowLayer.sprite.setTint(window.secondaryColor);
       this._waveGlowLayer.sprite._glowEnabled = false;
       this._waveGlowLayer.sprite.setScale(0.42);
     }
     if (this._waveSpriteLayer) {
-      this._waveSpriteLayer.sprite.setTint(v);
+      this._waveSpriteLayer.sprite.setTint(window.mainColor);
       this._waveSpriteLayer.sprite.setScale(0.42);
     }
     if (this._waveOverlayLayer) {
-      this._waveOverlayLayer.sprite.setTint(m);
+      this._waveOverlayLayer.sprite.setTint(window.secondaryColor);
       this._waveOverlayLayer.sprite.setScale(0.42);
     }
     this.playerSprite = this._playerSpriteLayer.sprite;
@@ -1851,7 +1853,7 @@ class ps {
         start: 1,
         end: 0
       },
-      tint: v
+      tint: window.mainColor
     });
     this._particleEmitter.stop();
     this._particleEmitter.setDepth(9);
@@ -1983,7 +1985,7 @@ class ps {
         start: 1,
         end: 0
       },
-      tint: v,
+      tint: window.mainColor,
       emitting: false
     };
     this._landEmitter1 = _0x538533.add.particles(0, 0, "GJ_WebSheet", {
@@ -1997,7 +1999,7 @@ class ps {
     this._aboveContainer.add(this._landEmitter1);
     this._aboveContainer.add(this._landEmitter2);
     this._landIdx = false;
-    this._streak = new cs(this._scene, "streak_01", 0.231, 10, 8, 100, m, 0.7);
+    this._streak = new cs(this._scene, "streak_01", 0.231, 10, 8, 100, window.secondaryColor, 0.7);
     this._streak.addToContainer(this._gameLayer.container, 8);
   }
   _updateParticles(_0xc43238, _0x52b718, _0x5af874) {
@@ -2371,7 +2373,7 @@ class ps {
       quantity: 100,
       stopAfter: 100,
       blendMode: S,
-      tint: v,
+      tint: window.mainColor,
       x: {
         min: -20,
         max: 20
@@ -2394,7 +2396,7 @@ class ps {
         const _0x39f32 = 18 + _0x4683eb.t * 144;
         const _0xc8c1 = 1 - _0x4683eb.t;
         _0x438d80.clear();
-        _0x438d80.fillStyle(v, _0xc8c1);
+        _0x438d80.fillStyle(window.mainColor, _0xc8c1);
         _0x438d80.fillCircle(_0x3f0446, _0x53ac5b, _0x39f32);
       },
       onComplete: () => _0x438d80.destroy()
@@ -2500,7 +2502,7 @@ class ps {
             quantity: 1,
             emitting: true,
             blendMode: S,
-            tint: v,
+            tint: window.mainColor,
             emitCallback: _0x2f7fc7 => {
               _0x2f7fc7.x = _0x5e5fa8.x + (Math.random() * 2 - 1) * 3 * 2;
               _0x2f7fc7.y = _0x5e5fa8.y + (Math.random() * 2 - 1) * 3 * 2;
@@ -3700,7 +3702,7 @@ class xs extends Phaser.Scene {
       },
       frequency: 60,
       blendMode: S,
-      tint: v,
+      tint: window.mainColor,
       emitting: false,
       emitCallback: _0x3c2a3e => {
         _0x3c2a3e.x = this._glitterCenterX + (Math.random() * 2 - 1) * (r / 1.8);
@@ -4922,9 +4924,9 @@ class xs extends Phaser.Scene {
     const _0x356782 = this._level.endXPos - this._cameraX;
     const _0x2d967b = b(this._endPortalGameY) + this._cameraY;
     for (let _0x481f7c = 0; _0x481f7c < 5; _0x481f7c++) {
-      this.time.delayedCall(_0x481f7c * 50, () => _s(this, _0x356782, _0x2d967b, 10, r, 500, false, true, v));
+      this.time.delayedCall(_0x481f7c * 50, () => _s(this, _0x356782, _0x2d967b, 10, r, 500, false, true, window.mainColor));
     }
-    _s(this, _0x356782, _0x2d967b, 10, 1000, 500, true, false, v);
+    _s(this, _0x356782, _0x2d967b, 10, 1000, 500, true, false, window.mainColor);
     this._showCompleteEffect();
   }
   _showCompleteEffect() {
@@ -5009,7 +5011,7 @@ class xs extends Phaser.Scene {
           });
         }
       });
-    })(this, this._level.endXPos - this._cameraX + 60, b(this._endPortalGameY) + this._cameraY, v);
+    })(this, this._level.endXPos - this._cameraX + 60, b(this._endPortalGameY) + this._cameraY, window.mainColor);
     this.cameras.main.shake(1950, 0.004);
     this.time.delayedCall(1950, () => this._showCompleteText());
   }
@@ -5036,7 +5038,7 @@ class xs extends Phaser.Scene {
         });
       }
     });
-    const _0x2884ff = [v, 16777215];
+    const _0x2884ff = [window.mainColor, 16777215];
     for (let _0x5f16c8 = 0; _0x5f16c8 < 2; _0x5f16c8++) {
       this.add.particles(_0x56628c, 250, "GJ_WebSheet", {
         frame: "square.png",
@@ -5072,14 +5074,14 @@ class xs extends Phaser.Scene {
     }
     const _0x2eadf2 = this._level.endXPos - this._cameraX;
     const _0x380b24 = b(this._endPortalGameY) + this._cameraY;
-    _s(this, _0x2eadf2, _0x380b24, 10, r, 800, true, false, v);
-    _s(this, _0x56628c, 250, 10, 1000, 800, true, false, v);
+    _s(this, _0x2eadf2, _0x380b24, 10, r, 800, true, false, window.mainColor);
+    _s(this, _0x56628c, 250, 10, 1000, 800, true, false, window.mainColor);
     for (let _0x579e05 = 0; _0x579e05 < 5; _0x579e05++) {
-      this.time.delayedCall(_0x579e05 * 50, () => _s(this, _0x2eadf2, _0x380b24, 10, r, 500, false, true, v));
+      this.time.delayedCall(_0x579e05 * 50, () => _s(this, _0x2eadf2, _0x380b24, 10, r, 500, false, true, window.mainColor));
     }
     for (let _0x429722 = 0; _0x429722 < 10; _0x429722++) {
       const _0xbf7dd0 = _0x429722 * 150 + (Math.random() * 160 - 80);
-      this.time.delayedCall(Math.max(0, _0xbf7dd0), () => ws(this, v, m));
+      this.time.delayedCall(Math.max(0, _0xbf7dd0), () => ws(this, window.mainColor, window.secondaryColor));
     }
     this.time.delayedCall(1500, () => this._showEndLayer());
   }
