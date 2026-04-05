@@ -73130,7 +73130,7 @@ return {
   },
   70: {
     type: "solid",
-    frame: "block008_topcolor_15_001.png",
+    frame: "lightsquare_01_02_001.png",
     gridW: 1,
     gridH: 1,
     glow: true,
@@ -73489,7 +73489,7 @@ return {
     gridW: 0,
     gridH: 0,
     blend: "additive",
-    tint: 65280
+    tint: window.v
   },
   19: {
     type: "deco",
@@ -73497,7 +73497,7 @@ return {
     gridW: 0,
     gridH: 0,
     blend: "additive",
-    tint: 65280
+    tint: window.v
   },
   20: {
     type: "deco",
@@ -73505,7 +73505,7 @@ return {
     gridW: 0,
     gridH: 0,
     blend: "additive",
-    tint: 65280
+    tint: window.v
   },
   21: {
     type: "deco",
@@ -73513,7 +73513,7 @@ return {
     gridW: 0,
     gridH: 0,
     blend: "additive",
-    tint: 65280
+    tint: window.v
   },
   135: {
     type: "deco",
@@ -73773,7 +73773,7 @@ return {
           {
               "frame": "d_cogwheel_02_001.png",
               "localDy": 0.0,
-              "tint": 65280,
+              "tint": window.v,
               "z": -1
           }
       ],
@@ -74400,7 +74400,7 @@ return {
             }
         ],
         "default_base_color_channel": 1004,
-        "frame": "block008_topcolor_15_001.png",
+        "frame": "lightsquare_01_02_001.png",
         "glow_frame": "block008_topcolor_15_glow_001.png",
         "gridH": 1.0,
         "gridW": 1.0,
@@ -74482,7 +74482,8 @@ return {
             {
                 "frame": "d_cogwheel_03_001.png",
                 "localDy": 0.0,
-                "tint": 65280,
+                blend: "additive",
+                "tint": window.v,
                 "z": -1
             }
         ],
@@ -74636,6 +74637,8 @@ return {
         "gridW": 4.150000095367432,
         "spritesheet": "GJ_GameSheet-uhd",
         "type": "deco",
+        "blend": "additive",
+        "tint": window.v,
         "z": 9
     },
     228: {
