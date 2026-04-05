@@ -3899,41 +3899,17 @@ class xs extends Phaser.Scene {
     this._rightBtn.setRotation(Math.PI);
     window.scene = this.scene;
     window.rightbuttoncallback = function() {
-      let names = [
-        "Stereo Madness", "Back on Track", "Polargeist", "Dry Out", "Base After Base", "Cant Let Go", "Jumper", "Time Machine",
-        "Cycles", "xStep", "Clutterfunk", "Theory of Everything", "Electroman Adventures", "Clubstep", "Electrodynamix", "Hexagon Force",
-        "Blast Processing", "Theory of Everything 2", "Geometrical Dominator", "Deadlocked", "Fingerdash"
-      ]
-      let index = Number(window.currentlevel[2].split("_")[1]) - 1
-      index++
-      if (index >= names.length) index = 98
-      window.currentlevel = [
-        index != 98 ? names[index].toLowerCase().replace(/ /g, "_") : "every_end",
-        index != 98 ? names[index] : "Every End",
-        `level_${index+1}`,
-        index != 98 ? "RobTop" : "MindCap & More"
-      ]
+      let index = window.allLevels.findIndex(l => l[2] === window.currentlevel[2]);
+      index++;
+      if (index >= window.allLevels.length || index < 0) index = 0;
+      window.currentlevel = [...window.allLevels[index]];
       window.scene.restart();
     };
     window.leftbuttoncallback = function() {
-      let names = [
-        "Stereo Madness", "Back on Track", "Polargeist", "Dry Out", "Base After Base", "Cant Let Go", "Jumper", "Time Machine",
-        "Cycles", "xStep", "Clutterfunk", "Theory of Everything", "Electroman Adventures", "Clubstep", "Electrodynamix", "Hexagon Force",
-        "Blast Processing", "Theory of Everything 2", "Geometrical Dominator", "Deadlocked", "Fingerdash"
-      ]
-      let index = Number(window.currentlevel[2].split("_")[1]) - 1
-      if (index === 98) {
-        index = names.length - 1
-      } else {
-        index--
-        if (index < 0) index = 0
-      }
-      window.currentlevel = [
-        names[index].toLowerCase().replace(/ /g, "_"),
-        names[index],
-        `level_${index + 1}`,
-        "RobTop"
-      ]
+      let index = window.allLevels.findIndex(l => l[2] === window.currentlevel[2]);
+      index--;
+      if (index >= window.allLevels.length || index < 0) index = window.allLevels.length-1;
+      window.currentlevel = [...window.allLevels[index]];
       window.scene.restart();
     };
     this._makeBouncyButton(this._leftBtn, 1, () => {window.leftbuttoncallback()}, () => this._menuActive);
