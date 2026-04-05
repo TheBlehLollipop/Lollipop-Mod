@@ -2125,12 +2125,13 @@ class ps {
     this._aboveContainer.y = cameraY;
 if (this.p.isFlying) {
       const _0x3904f8 = 10;
+      const playerOffset = this.p.gravityFlipped ? -30 : 10; 
       const _0x285611 = Math.cos(_0x2907d3);
       const _0x501bf9 = Math.sin(_0x2907d3);
       const _0x1b1d28 = -_0x3904f8 * _0x501bf9;
-      const _0x185f91 = _0x3904f8 * _0x285611;
-      const _0x562424 = _0x3904f8 * _0x501bf9;
-      const _0x3011c9 = -_0x3904f8 * _0x285611;
+      const _0x185f91 = _0x3904f8 * _0x285611; 
+      const _0x562424 = playerOffset * _0x501bf9;
+      const _0x3011c9 = -playerOffset * _0x285611;
       for (const _0x5dc75c of this._shipLayers) {
         if (_0x5dc75c) {
           _0x5dc75c.sprite.x = _0x7f0705 + _0x1b1d28;
