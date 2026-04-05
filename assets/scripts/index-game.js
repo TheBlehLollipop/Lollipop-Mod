@@ -17,6 +17,7 @@ window.currentlevel = [
 	"Forever Bound"   // person who made the song
 ];
 window.showHitboxes = false;
+window.noClip = false; // experimental
 
 // -------------------------------
 
@@ -2111,17 +2112,17 @@ class ps {
       this._waveGlowLayer.sprite.setVisible(_0x2d078b && this._waveGlowLayer.sprite._glowEnabled);
     }
   }
-  syncSprites(_0x30c325, _0x3f0607, _0x3afedf, _0xbf2e45) {
+  syncSprites(cameraX, cameraY, _0x3afedf, mirrorOffset) {
     if (this._endAnimating) {
       return;
     }
-    const _0x7f0705 = _0xbf2e45 !== undefined ? _0xbf2e45 : h;
-    const _0x1a433c = b(this.p.y) + _0x3f0607;
+    const _0x7f0705 = mirrorOffset !== undefined ? mirrorOffset : h;
+    const _0x1a433c = b(this.p.y) + cameraY;
     const _0x2907d3 = this._rotation;
-    this._lastCameraX = _0x30c325;
-    this._lastCameraY = _0x3f0607;
-    this._aboveContainer.x = -_0x30c325;
-    this._aboveContainer.y = _0x3f0607;
+    this._lastCameraX = cameraX;
+    this._lastCameraY = cameraY;
+    this._aboveContainer.x = -cameraX;
+    this._aboveContainer.y = cameraY;
     if (this.p.isFlying) {
       const _0x3904f8 = 10;
       const _0x285611 = Math.cos(_0x2907d3);
@@ -2164,9 +2165,9 @@ class ps {
       this._waveSpriteLayer.sprite.x += 1.5 * _0x3f036a;
       this._waveSpriteLayer.sprite.y -= 1;
     }
-    this._updateParticles(_0x30c325, _0x3f0607, _0x3afedf);
+    this._updateParticles(cameraX, cameraY, _0x3afedf);
     if (window.showHitboxes) {
-      this.drawHitboxes(this._hitboxGraphics, _0x30c325, _0x3f0607);
+      this.drawHitboxes(this._hitboxGraphics, cameraX, cameraY);
     }
   }
   enterShipMode(_0xeb37c6 = null) {
@@ -2695,15 +2696,18 @@ class ps {
     }
   }
   flipGravity(flipped, _0x11bbde = 0.5) {
-    console.log("flipGravity called: flipped=" + flipped + " current=" + this.p.gravityFlipped);
-    if (this.p.gravityFlipped === flipped) {
-      return;
+    if (this.flipCooldown == null || this.flipCooldown < Date.now()) {
+      this.flipCooldown = Date.now() + 100;
+      console.log("flipGravity called: flipped=" + flipped + " current=" + this.p.gravityFlipped);
+      if (this.p.gravityFlipped === flipped) {
+        return;
+      }
+      this.p.gravityFlipped = flipped;
+      this.p.yVelocity *= _0x11bbde;
+      this.p.onGround = false;
+      this.p.canJump = false;
+      this.p.isJumping = false;
     }
-    this.p.gravityFlipped = flipped;
-    this.p.yVelocity *= _0x11bbde;
-    this.p.onGround = false;
-    this.p.canJump = false;
-    this.p.isJumping = false;
   }
   runRotateAction() {
 
@@ -3114,7 +3118,9 @@ class ps {
             gameObj._dashHoldTicks = 0;
           }
         } else if (_colType === hazardType) {
-          this.killPlayer();
+          if (!window.noClip){
+            this.killPlayer();
+          }
           return;
         } else if (_colType === solidType) {
           let _0x146a97 = _0x8e0d28 - _0x6bfa06 + _0x11ee2f;
@@ -3127,7 +3133,9 @@ class ps {
           const _0xLandTop = (this.p.yVelocity >= 0 || this.p.onGround) && (_0x3e7199 <= top || _0x135a9d <= top);
           const _0x2841ea = this.p.gravityFlipped ? _0xLandTop : _0xLandBot;
           if (_0x3c1654 && !_0x2841ea) {
-            this.killPlayer();
+            if (!window.noClip){
+              this.killPlayer();
+            }
             return;
           }
           if (_0x3c691e + 30 - 5 > left && _0x3c691e - 30 + 5 < right) {
@@ -3177,7 +3185,9 @@ class ps {
     }
     if (this.p.collideTop !== 0 && this.p.collideBottom !== 0) {
       if (Math.abs(this.p.collideTop - this.p.collideBottom) < 48) {
-        this.killPlayer();
+        if (!window.noClip) {
+          this.killPlayer();
+        }
         return;
       }
     }
