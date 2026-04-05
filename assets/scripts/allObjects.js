@@ -73223,13 +73223,17 @@ return {
     type: "deco",
     frame: "d_cloud_01_001.png",
     gridW: 0,
-    gridH: 0
+    gridH: 0,
+    blend: "additive",
+    tint: window.m
   },
   49: {
     type: "deco",
     frame: "d_cloud_02_001.png",
     gridW: 0,
     gridH: 0,
+    blend: "additive",
+    tint: window.m
   },
   129: {
     type: "deco",
@@ -73277,7 +73281,9 @@ return {
     type: "deco",
     frame: "d_ball_04_001.png",
     gridW: 0,
-    gridH: 0
+    gridH: 0,
+    blend: "additive",
+    tint: window.m
   },
   54: {
     type: "deco",
@@ -73358,7 +73364,7 @@ return {
     gridW: 0,
     gridH: 0,
     blend: "additive",
-    tint: 65280
+    tint: window.v
   },
   123: {
     type: "deco",
@@ -73382,7 +73388,7 @@ return {
       frame: "rod_ball_01_001.png",
       localDy: -62,
       blend: "additive",
-      tint: 65280,
+      tint: window.v,
       z: 1,
       audioScale: true
     }]
@@ -73397,7 +73403,7 @@ return {
       frame: "rod_ball_01_001.png",
       localDy: -46.5,
       blend: "additive",
-      tint: 65280,
+      tint: window.v,
       z: 1,
       audioScale: true
     }]
@@ -73412,7 +73418,7 @@ return {
       frame: "rod_ball_01_001.png",
       localDy: -32.5,
       blend: "additive",
-      tint: 65280,
+      tint: window.v,
       z: 1,
       audioScale: true
     }]

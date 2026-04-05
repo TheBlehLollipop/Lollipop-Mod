@@ -2897,7 +2897,7 @@ class ps {
       let left = gameObj.x - gameObj.w / 2;
       let right = gameObj.x + gameObj.w / 2;
       let top = gameObj.y - gameObj.h / 2;
-      let buttom = gameObj.y + gameObj.h / 2;
+      let bottom = gameObj.y + gameObj.h / 2;
       const rad = gameObj.rotationDegrees * Math.PI / 180;
       const cos = Math.cos(rad);
       const sin = Math.sin(rad);
@@ -3115,8 +3115,8 @@ class ps {
           let _0x3e7199 = _0x8e0d28 + _0x6bfa06 - _0x11ee2f;
           let _0x135a9d = _0x37040a + _0x6bfa06 - _0x11ee2f;
           const _0x55559d = 9;
-          const _0x3c1654 = _0x3c691e + _0x55559d > left && _0x3c691e - _0x55559d < right && _0x8e0d28 + _0x55559d > top && _0x8e0d28 - _0x55559d < buttom;
-          const _0xLandBot = (this.p.yVelocity <= 0 || this.p.onGround) && (_0x146a97 >= buttom || _0x869e42 >= buttom);
+          const _0x3c1654 = _0x3c691e + _0x55559d > left && _0x3c691e - _0x55559d < right && _0x8e0d28 + _0x55559d > top && _0x8e0d28 - _0x55559d < bottom;
+          const _0xLandBot = (this.p.yVelocity <= 0 || this.p.onGround) && (_0x146a97 >= bottom || _0x869e42 >= bottom);
           const _0xLandTop = (this.p.yVelocity >= 0 || this.p.onGround) && (_0x3e7199 <= top || _0x135a9d <= top);
           const _0x2841ea = this.p.gravityFlipped ? _0xLandTop : _0xLandBot;
           if (_0x3c1654 && !_0x2841ea) {
@@ -3124,11 +3124,11 @@ class ps {
             return;
           }
           if (_0x3c691e + 30 - 5 > left && _0x3c691e - 30 + 5 < right) {
-            if (!this.p.gravityFlipped && (_0x146a97 >= buttom || _0x869e42 >= buttom) && (this.p.yVelocity <= 0 || this.p.onGround)) {
-              this.p.y = buttom + _0x6bfa06;
+            if (!this.p.gravityFlipped && (_0x146a97 >= bottom || _0x869e42 >= bottom) && (this.p.yVelocity <= 0 || this.p.onGround)) {
+              this.p.y = bottom + _0x6bfa06;
               this.hitGround();
               _0x30410f = true;
-              this.p.collideBottom = buttom;
+              this.p.collideBottom = bottom;
               if (!this.p.isFlying) {
                 this._checkSnapJump(gameObj);
               }
@@ -3158,10 +3158,10 @@ class ps {
               this.p.collideTop = top;
               continue;
             }
-            if (this.p.gravityFlipped && !this.p.isFlying && (_0x146a97 >= buttom || _0x869e42 >= buttom) && this.p.yVelocity <= 0) {
+            if (this.p.gravityFlipped && !this.p.isFlying && (_0x146a97 >= bottom || _0x869e42 >= bottom) && this.p.yVelocity <= 0) {
               this.p.yVelocity = 0;
-              this.p.y = buttom + _0x6bfa06;
-              this.p.collideBottom = buttom;
+              this.p.y = bottom + _0x6bfa06;
+              this.p.collideBottom = bottom;
               continue;
             }
           }
