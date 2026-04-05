@@ -74917,6 +74917,288 @@ return {
         "type": "deco",
         "z": -7
     },
+    161: {
+        "can_color": true,
+        "children": [
+            {
+                "frame": "square_g_05_001.png",
+                "localDy": 0.0,
+                "tint": 65280,
+                "z": -1
+            }
+        ],
+        "default_base_color_channel": 1004,
+        "frame": "block008_topcolor_15_001.png",
+        "glow_frame": "block008_topcolor_15_glow_001.png",
+        "gridH": 1.0,
+        "gridW": 1.0,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "solid",
+        "z": 2
+    },
+    321: {
+        "can_color": true,
+        "children": [
+            {
+                "frame": "triangle_g_02_001.png",
+                "localDy": 0.0,
+                "tint": 65280,
+                "z": -1
+            }
+        ],
+        "default_base_color_channel": 1004,
+        "frame": "blockOutline_14_001.png",
+        "glow_frame": "blockOutline_14_glow_001.png",
+        "gridH": 1.0,
+        "gridW": 1.0,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "deco",
+        "z": 2
+    },
+    366: {
+        "black": true,
+        "can_color": true,
+        "children": [
+            {
+                "frame": "pit_04_slope_01_001.png",
+                "localDy": 0.0,
+                "tint": 0,
+                "z": -1
+            }
+        ],
+        "color_channel": "black",
+        "default_base_color_channel": 1004,
+        "frame": "pit_04_slope_01_001.png",
+        "glow_frame": "pit_04_slope_01_glow_001.png",
+        "gridH": 1.0,
+        "gridW": 1.0,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "deco",
+        "z": 1
+    },
+    448: {
+        "can_color": true,
+        "default_base_color_channel": 1007,
+        "frame": "d_pit06wave_01_001.png",
+        "glow_frame": "d_pit06wave_01_glow_001.png",
+        "gridH": 0.8166666626930237,
+        "gridW": 1.0,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "deco",
+        "z": 9
+    },
+    286: {
+        "can_color": false,
+        "default_base_color_channel": 0,
+        "frame": "portal_11_front_001.png",
+        "glow_frame": "portal_11_front_glow_001.png",
+        "gridH": 3.0333333015441895,
+        "gridW": 1.3666666746139526,
+        "spritesheet": "GJ_GameSheet02-uhd",
+        "type": "trigger",
+        "z": 10
+    },
+     299: {
+        "can_color": true,
+        "children": [
+            {
+                "frame": "triangle_c_02_001.png",
+                "localDy": 0.0,
+                "tint": 65280,
+                "z": -1
+            }
+        ],
+        "default_base_color_channel": 1004,
+        "frame": "blockOutline_14_001.png",
+        "glow_frame": "blockOutline_14_glow_001.png",
+        "gridH": 1.0,
+        "gridW": 1.0,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "deco",
+        "z": 2
+    },
+    498: {
+        "can_color": true,
+        "default_base_color_channel": 1,
+        "frame": "d_03_chain_01_001.png",
+        "glow_frame": "d_03_chain_01_glow_001.png",
+        "gridH": 0.699999988079071,
+        "gridW": 0.3333333432674408,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "deco",
+        "z": 9
+    },
+    499: {
+        "can_color": true,
+        "default_base_color_channel": 1,
+        "frame": "d_03_chain_02_001.png",
+        "glow_frame": "d_03_chain_02_glow_001.png",
+        "gridH": 0.4166666567325592,
+        "gridW": 0.7833333611488342,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "deco",
+        "z": 9
+    },
+     680: {
+        "can_color": true,
+        "children": [
+            {
+                "frame": "lightBlade_03_color_001.png",
+                "localDy": 0.0,
+                "tint": 52224,
+                "z": -100
+            },
+            {
+                "frame": "lightBlade_03_001.png",
+                "localDy": 0.0,
+                "tint": 65280,
+                "z": -1
+            }
+        ],
+        "default_base_color_channel": 1004,
+        "default_detail_color_channel": 1,
+        "frame": "lightBlade_03_001.png",
+        "glow_frame": "lightBlade_03_glow_001.png",
+        "gridH": 1.2000000476837158,
+        "gridW": 1.2000000476837158,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "hazard"
+    },
+    681: {
+        "can_color": true,
+        "default_base_color_channel": 1004,
+        "frame": "triangle_a_02_001.png",
+        "glow_frame": "triangle_a_02_glow_001.png",
+        "gridH": 1.0,
+        "gridW": 1.0,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "deco",
+        "z": -7
+    },
+    682: {
+        "can_color": true,
+        "default_base_color_channel": 1004,
+        "frame": "triangle_a_04_001.png",
+        "glow_frame": "triangle_a_04_glow_001.png",
+        "gridH": 1.0,
+        "gridW": 2.0,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "deco",
+        "z": -7
+    },
+    683: {
+        "can_color": true,
+        "default_base_color_channel": 1004,
+        "frame": "triangle_c_02_001.png",
+        "glow_frame": "triangle_c_02_glow_001.png",
+        "gridH": 1.0,
+        "gridW": 1.0,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "deco",
+        "z": -7
+    },
+    684: {
+        "can_color": true,
+        "default_base_color_channel": 1004,
+        "frame": "triangle_c_04_001.png",
+        "glow_frame": "triangle_c_04_glow_001.png",
+        "gridH": 1.0,
+        "gridW": 2.0,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "deco",
+        "z": -7
+    },
+    685: {
+        "can_color": true,
+        "default_base_color_channel": 1004,
+        "frame": "triangle_d_02_001.png",
+        "glow_frame": "triangle_d_02_glow_001.png",
+        "gridH": 0.8500000238418579,
+        "gridW": 0.8500000238418579,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "deco",
+        "z": -7
+    },
+    686: {
+        "can_color": true,
+        "default_base_color_channel": 1004,
+        "frame": "triangle_d_04_001.png",
+        "glow_frame": "triangle_d_04_glow_001.png",
+        "gridH": 0.9333333373069763,
+        "gridW": 1.850000023841858,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "deco",
+        "z": -7
+    },
+    687: {
+        "black": true,
+        "can_color": true,
+        "color_channel": "black",
+        "default_base_color_channel": 1004,
+        "frame": "lighttriangle_01_02_color_001.png",
+        "glow_frame": "lighttriangle_01_02_color_glow_001.png",
+        "gridH": 1.0,
+        "gridW": 1.0,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "deco",
+        "z": 10
+    },
+    688: {
+        "black": true,
+        "can_color": true,
+        "color_channel": "black",
+        "default_base_color_channel": 1004,
+        "frame": "lighttriangle_01_04_color_001.png",
+        "glow_frame": "lighttriangle_01_04_color_glow_001.png",
+        "gridH": 1.0,
+        "gridW": 2.0,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "deco",
+        "z": 10
+    },
+    689: {
+        "can_color": true,
+        "default_base_color_channel": 1004,
+        "frame": "triangle_f_02_001.png",
+        "glow_frame": "triangle_f_02_glow_001.png",
+        "gridH": 1.0,
+        "gridW": 1.0,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "deco",
+        "z": -7
+    },
+    287: {
+        "can_color": false,
+        "default_base_color_channel": 0,
+        "frame": "portal_12_front_001.png",
+        "glow_frame": "portal_12_front_glow_001.png",
+        "gridH": 3.0333333015441895,
+        "gridW": 1.3666666746139526,
+        "spritesheet": "GJ_GameSheet02-uhd",
+        "type": "trigger",
+        "z": 10
+    },
+    117: {
+        "type": "solid",
+        "frame": "square_f_02_001.png",
+        "gridW": 1,
+        "gridH": 1,
+        "spritesheet": "GJ_GameSheet-uhd"
+    },
+    118: {
+        "type": "solid",
+        "frame": "square_f_03_001.png",
+        "gridW": 1,
+        "gridH": 1,
+        "spritesheet": "GJ_GameSheet-uhd"
+    },
+    120: {
+        "type": "deco",
+        "frame": "square_f_05_001.png",
+        "gridW": 0,
+        "gridH": 0,
+        "spritesheet": "GJ_GameSheet-uhd"
+    },
   1329: {
     type: "deco",
     frame: "secretCoin_2_01_001.png",
