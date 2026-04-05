@@ -73079,6 +73079,18 @@ return {
     gridW: 1,
     gridH: 1
   },
+  1330: {
+    type: "ring",
+    frame: "dropRing_01_001.png",
+    gridW: 1,
+    gridH: 1
+  },
+  1704: {
+    type: "ring",
+    frame: "dashRing_01_001.png",
+    gridW: 1,
+    gridH: 1
+  },
   62: {
     type: "solid",
     frame: "square_b_01_001.png",
