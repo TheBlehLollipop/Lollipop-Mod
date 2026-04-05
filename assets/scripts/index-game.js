@@ -21,6 +21,14 @@ window.noClip = false; // experimental
 
 // -------------------------------
 
+function hexToHexadecimal(str) {
+  return parseInt(str, 16);
+}
+
+function hexadecimalToHex(num) {
+  return num.toString(16).padStart(6, '0');
+}
+
 function t(_0x5ebeba) {
   if (_0x5ebeba && _0x5ebeba.__esModule && Object.prototype.hasOwnProperty.call(_0x5ebeba, "default")) {
     return _0x5ebeba.default;
@@ -838,6 +846,7 @@ class us {
     } else {
       this.flyCameraTarget = null;
       this._flyCeilingY = null;
+      this._flyFloorY = null;
       this._flyVisualOnly = false;
       if (this._flyGroundActive) {
         this._groundAnimFrom = this._groundTargetValue;
@@ -845,6 +854,7 @@ class us {
         this._groundAnimTime = 0;
         this._groundAnimDuration = 0.5;
         this._groundAnimating = true;
+        this._flyGroundActive = false;
       } else {
         this._groundAnimating = false;
         this._groundTargetValue = 0;
@@ -3169,15 +3179,21 @@ if (this.p.isFlying) {
               continue;
             }
             if (!this.p.gravityFlipped && (_0x3e7199 <= top || _0x135a9d <= top) && this.p.yVelocity >= 0) {
-              this.p.yVelocity = 0;
-              this.p.y = top - _0x6bfa06;
-              this.p.collideTop = top;
+              if (_0x3c1654) {
+                if (!window.noClip) {
+                  this.killPlayer();
+                }
+                return;
+              }
               continue;
             }
             if (this.p.gravityFlipped && !this.p.isFlying && (_0x146a97 >= bottom || _0x869e42 >= bottom) && this.p.yVelocity <= 0) {
-              this.p.yVelocity = 0;
-              this.p.y = bottom + _0x6bfa06;
-              this.p.collideBottom = bottom;
+              if (_0x3c1654) {
+                if (!window.noClip) {
+                  this.killPlayer();
+                }
+                return;
+              }
               continue;
             }
           }
@@ -3224,20 +3240,17 @@ if (this.p.isFlying) {
       }
     }
   }
-  drawHitboxes(_0x691b2a, _0x52bd8a, _0x5aece4) {
-    _0x691b2a.clear();
-    if (/*!this._showHitboxes*/false) {
-      return;
-    }
+  drawHitboxes(graphics, camX, camY) {
+    graphics.clear();
     const _0x5dd446 = 30;
     const _0xce3c85 = 30;
-    const _0x2cf1c7 = _0x52bd8a + h;
+    const _0x2cf1c7 = camX + h;
     const _0x5e3ebe = this.p.y;
     const _0x51832d = this.p.isFlying || this.p.isWave ? 12 : 20;
     const _0x286071 = this._gameLayer.getNearbySectionObjects(_0x2cf1c7);
     for (let _0x42ccb8 of _0x286071) {
-      let _0x52deab = _0x42ccb8.x - _0x52bd8a;
-      let _0x3e179d = b(_0x42ccb8.y) + _0x5aece4;
+      let _0x52deab = _0x42ccb8.x - camX;
+      let _0x3e179d = b(_0x42ccb8.y) + camY;
       let _0x17cd1a = 65280;
       if (_0x42ccb8.type === hazardType) {
         _0x17cd1a = 16729156;
@@ -3252,24 +3265,47 @@ if (this.p.isFlying) {
       } else if (_0x42ccb8.type === jumpRingType) {
         _0x17cd1a = 16711935;
       }
-      _0x691b2a.lineStyle(2, _0x17cd1a, 0.7);
-      _0x691b2a.strokeRect(_0x52deab - _0x42ccb8.w / 2, _0x3e179d - _0x42ccb8.h / 2, _0x42ccb8.w, _0x42ccb8.h);
+      let rot = Phaser.Math.DegToRad(_0x42ccb8.rotationDegrees);
+      let cos = Math.cos(rot);
+      let sin = Math.sin(rot);
+      let _0x5a = -_0x42ccb8.w / 2;
+      let _0x2b = -_0x42ccb8.h / 2;
+      let _0x1c =  _0x42ccb8.w / 2;
+      let _0x3d =  _0x42ccb8.h / 2;
+      let _0xpts = [
+        { x: _0x5a, y: _0x2b },
+        { x: _0x1c, y: _0x2b },
+        { x: _0x1c, y: _0x3d },
+        { x: _0x5a, y: _0x3d }
+      ];
+      let _0xrot = _0xpts.map(p => ({
+        x: _0x52deab + p.x * cos - p.y * sin,
+        y: _0x3e179d + p.x * sin + p.y * cos
+      }));
+      graphics.lineStyle(2, _0x17cd1a, 0.7);
+      graphics.beginPath();
+      graphics.moveTo(_0xrot[0].x, _0xrot[0].y);
+      graphics.lineTo(_0xrot[1].x, _0xrot[1].y);
+      graphics.lineTo(_0xrot[2].x, _0xrot[2].y);
+      graphics.lineTo(_0xrot[3].x, _0xrot[3].y);
+      graphics.closePath();
+      graphics.strokePath();
     }
     const _0x7a132d = h;
-    const _0x1e788a = b(_0x5e3ebe) + _0x5aece4;
-    _0x691b2a.lineStyle(2, 65535, 0.8);
-    _0x691b2a.strokeRect(_0x7a132d - _0x5dd446, _0x1e788a - _0xce3c85, g, g);
-    _0x691b2a.lineStyle(2, 16776960, 0.8);
-    _0x691b2a.strokeRect(_0x7a132d - _0x5dd446 + 5, _0x1e788a - _0xce3c85, 50, g);
-    _0x691b2a.lineStyle(2, 16711680, 0.8);
-    _0x691b2a.strokeRect(_0x7a132d - _0x5dd446, _0x1e788a - _0xce3c85 + 5, g, 50);
-    let _0x1eec42 = b(_0x5e3ebe - _0xce3c85 + _0x51832d) + _0x5aece4;
-    let _0xf6f69b = b(_0x5e3ebe + _0xce3c85 - _0x51832d) + _0x5aece4;
-    _0x691b2a.lineStyle(2, 16746496, 0.9);
-    _0x691b2a.lineBetween(_0x7a132d - _0x5dd446 - 8, _0x1eec42, _0x7a132d + _0x5dd446 + 8, _0x1eec42);
-    _0x691b2a.lineBetween(_0x7a132d - _0x5dd446 - 8, _0xf6f69b, _0x7a132d + _0x5dd446 + 8, _0xf6f69b);
-    _0x691b2a.lineStyle(2, 16777215, 1);
-    _0x691b2a.strokeRect(_0x7a132d - 9, _0x1e788a - 9, 36, 18);
+    const _0x1e788a = b(_0x5e3ebe) + camY;
+    graphics.lineStyle(2, hexToHexadecimal("00ffff"), 0.8);
+    graphics.strokeRect(_0x7a132d - _0x5dd446, _0x1e788a - _0xce3c85, g, g);
+    graphics.lineStyle(2, hexToHexadecimal("ffff00"), 0.8);
+    graphics.strokeRect(_0x7a132d - _0x5dd446 + 5, _0x1e788a - _0xce3c85, 50, g);
+    graphics.lineStyle(2, hexToHexadecimal("ff0000"), 0.8);
+    graphics.strokeRect(_0x7a132d - _0x5dd446, _0x1e788a - _0xce3c85 + 5, g, 50);
+    let _0x1eec42 = b(_0x5e3ebe - _0xce3c85 + _0x51832d) + camY;
+    let _0xf6f69b = b(_0x5e3ebe + _0xce3c85 - _0x51832d) + camY;
+    graphics.lineStyle(2, hexToHexadecimal("ff8800"), 0.9);
+    graphics.lineBetween(_0x7a132d - _0x5dd446 - 8, _0x1eec42, _0x7a132d + _0x5dd446 + 8, _0x1eec42);
+    graphics.lineBetween(_0x7a132d - _0x5dd446 - 8, _0xf6f69b, _0x7a132d + _0x5dd446 + 8, _0xf6f69b);
+    graphics.lineStyle(2, hexToHexadecimal("ffffff"), 1);
+    graphics.strokeRect(_0x7a132d - 9, _0x1e788a - 9, 36, 18);
   }
   setShowHitboxes(_0x2133d2) {
     this._showHitboxes = /*_0x2133d2*/ true;
