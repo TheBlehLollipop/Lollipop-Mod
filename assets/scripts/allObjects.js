@@ -73083,37 +73083,37 @@ return {
     type: "solid",
     frame: "square_b_01_001.png",
     gridW: 1,
-    gridH: 1
+    gridH: 0.5
   },
   63: {
     type: "solid",
     frame: "square_b_02_001.png",
     gridW: 1,
-    gridH: 1
+    gridH: 0.5
   },
   64: {
     type: "solid",
     frame: "square_b_03_001.png",
     gridW: 1,
-    gridH: 1
+    gridH: 0.5
   },
   65: {
     type: "solid",
     frame: "square_b_04_001.png",
     gridW: 1,
-    gridH: 1
+    gridH: 0.5
   },
   66: {
     type: "solid",
     frame: "square_b_05_001.png",
     gridW: 1,
-    gridH: 1
+    gridH: 0.5
   },
   68: {
     type: "solid",
     frame: "square_b_06_001.png",
     gridW: 1,
-    gridH: 1
+    gridH: 0.5
   },
   69: {
     type: "solid",

@@ -16,6 +16,7 @@ window.currentlevel = [
 	"level_1",        // level id in assets/levels
 	"Forever Bound"   // person who made the song
 ];
+window.showHitboxes = false;
 
 // -------------------------------
 
@@ -1227,7 +1228,7 @@ class us {
           }
         } else if (_0x24471f.type === padType) {
           let padW = _0x24471f.gridW * a;
-          let padH = Math.max(_0x24471f.gridH * a, 30);
+          let padH = Math.max(_0x24471f.gridH, 10);
           let padObj = new O(jumpPadType, _0x173c58, _0x7ab528, padW, padH, _0x1b937f.rot || 0);
           padObj.padId = _0x1b937f.id;
           this.objects.push(padObj);
@@ -1730,6 +1731,7 @@ class ps {
     this._lastCameraX = 0;
     this._lastCameraY = 0;
     this._createSprites();
+    this._hitboxGraphics = _0x5b73d2.add.graphics().setScrollFactor(0).setDepth(20);
     this._initParticles(_0x5b73d2);
     _0x5b73d2.events.on("shutdown", () => this._cleanupExplosion());
   }
@@ -2163,6 +2165,9 @@ class ps {
       this._waveSpriteLayer.sprite.y -= 1;
     }
     this._updateParticles(_0x30c325, _0x3f0607, _0x3afedf);
+    if (window.showHitboxes) {
+      this.drawHitboxes(this._hitboxGraphics, _0x30c325, _0x3f0607);
+    }
   }
   enterShipMode(_0xeb37c6 = null) {
     if (this.p.isFlying) {
@@ -3806,6 +3811,7 @@ class xs extends Phaser.Scene {
       this._leftBtn.setVisible(false)
       this._rightBtn.setVisible(false)
       this._percentageLabel.setVisible(true)
+      this._percentageLabel.setDepth(1000)
     }, () => this._menuActive && !this._playBtnPressed);
     this._positionMenuItems();
     this._spaceWasDown = false;
@@ -3814,8 +3820,10 @@ class xs extends Phaser.Scene {
     this._wKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
     this._leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
     this._rightKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
+    this._aKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+    this._dKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
 
-    this._percentageLabel = this.add.bitmapText(r / 2, 15, "bigFont", "0.00%", 30).setOrigin(0.5, 0.5).setVisible(false);
+    this._percentageLabel = this.add.bitmapText(r / 2, 20, "bigFont", "0.00%", 30).setOrigin(0.5, 0.5).setVisible(false);
     this._pauseBtn = this.add.image(r - 30, 30, "GJ_WebSheet", "GJ_pauseBtn_clean_001.png").setScrollFactor(0).setDepth(30).setAlpha(75 / 255).setVisible(false);
     this._pauseBtn.setInteractive();
     this._expandHitArea(this._pauseBtn, 2);
@@ -4643,8 +4651,8 @@ class xs extends Phaser.Scene {
         this._startGame();
         return;
       }
-      if (this._leftKey.isDown || this._rightKey.isDown) {
-        if (this._leftKey.isDown) {
+      if (this._leftKey.isDown || this._rightKey.isDown || this._aKey.isDown || this._dKey.isDown) {
+        if (this._leftKey.isDown || this._aKey.isDown) {
           window.leftbuttoncallback();
         } else {
           window.rightbuttoncallback();
