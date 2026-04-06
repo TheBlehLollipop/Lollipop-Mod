@@ -8,6 +8,7 @@ Modding geometrydash.com to add more features
   * More gamemodes (Wave, Ball)
   * portals and objects, orbs and pads
   * All main levels
+  * loading optimization
   * Custom icons (can only be edited programatically)
   * probably more
 <a href="https://discord.gg/h6xYNUBFnq" target="_blank">
