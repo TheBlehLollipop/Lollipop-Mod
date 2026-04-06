@@ -73733,14 +73733,14 @@ return {
     colorIdx: 1001
   },
   32: {
-    type: "deco",
-    frame: "edit_eGhostEBtn_001.png",
+    type: "trigger",
+    frame: null,
     gridW: 1,
     gridH: 1
   },
   33: {
-    type: "deco",
-    frame: "edit_eGhostDBtn_001.png",
+    type: "trigger",
+    frame: null,
     gridW: 1,
     gridH: 1
   },
