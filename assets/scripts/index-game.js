@@ -2209,7 +2209,8 @@ if (this.p.isFlying) {
         if (_0x2c61a1) {
           _0x2c61a1.sprite.x = _0x7f0705;
           _0x2c61a1.sprite.y = _0x1a433c;
-          _0x2c61a1.sprite.rotation = this.p.mirrored ? -_0x2907d3 : _0x2907d3;
+          const isBallLayer = this._ballLayers.includes(_0x2c61a1);
+          _0x2c61a1.sprite.rotation = isBallLayer ? _0x2907d3 : (this.p.mirrored ? -_0x2907d3 : _0x2907d3);
           _0x2c61a1.sprite.scaleY = this.p.gravityFlipped ? -Math.abs(_0x2c61a1.sprite.scaleY) : Math.abs(_0x2c61a1.sprite.scaleY);
           _0x2c61a1.sprite.scaleX = this.p.mirrored ? -Math.abs(_0x2c61a1.sprite.scaleX) : Math.abs(_0x2c61a1.sprite.scaleX);
         }
@@ -2297,7 +2298,7 @@ if (this.p.isFlying) {
     this.p.canJump = false;
     this.p.isJumping = false;
     this.stopRotation();
-    this._rotation = Math.round(this._rotation / Math.PI) * Math.PI;
+    this._rotation = 0;
     this.setCubeVisible(false);
     this.setWaveVisible(false);
     this.setBallVisible(true);
@@ -2316,7 +2317,7 @@ if (this.p.isFlying) {
     this.p.canJump = false;
     this.p.isJumping = false;
     this.stopRotation();
-    this._rotation = Math.round(this._rotation / Math.PI) * Math.PI;
+    this._rotation = 0;
     this.setBallVisible(false);
     this.setWaveVisible(false);
     this.setCubeVisible(true);
@@ -2376,11 +2377,10 @@ hitGround() {
     this.p.canJump = true;
     this.p.isJumping = false;
     if (this.p.isBall) {
-if (this.p.isBall && _0x4a38a5) {
-  this._rotation = Math.round(this._rotation / Math.PI) * Math.PI;
-} else if (this.p.isWave) {
-  this._rotation = 0;
-}
+      if (_0x4a38a5) {
+        this._rotation = Math.round(this._rotation / Math.PI) * Math.PI;
+      }
+    } else if (this.p.isWave) {
       this._rotation = 0;
     }
     this.stopRotation();
@@ -2812,9 +2812,10 @@ if (this.p.isBall && _0x4a38a5) {
     let _0x17a9a6 = Math.min(_0x5c24f7 * 1, _0x108955 * _0x5c24f7);
     this._rotation = this.slerp2D(this._rotation, _0x183c2a, _0x17a9a6);
   }
-  updateBallRoll(_0x1dd8af) {
+  updateBallRoll(_0x1dd8af, onSurface) {
     const _0x136f29 = this.p.gravityFlipped ? -1 : 1;
-    this._rotation += _0x1dd8af / (g / 2) * _0x136f29;
+    const speedFactor = onSurface ? 0.5 : 0.35;
+    this._rotation += _0x1dd8af / (g / 2) * _0x136f29 * speedFactor;
   }
   updateShipRotation(_0x217ad3) {
     let _0x48f422 = -(this.p.y - this.p.lastY);
@@ -4909,7 +4910,8 @@ class xs extends Phaser.Scene {
       this._playerWorldX += _0x5dfd5a;
 if (!this._state.isFlying && !this._state.isWave) {
   if (this._state.isBall) {
-    this._player.updateBallRoll(_0x5dfd5a);
+    const ballOnSurface = this._state.onGround || this._state.onCeiling;
+    this._player.updateBallRoll(_0x5dfd5a, ballOnSurface);
   } else if (this._state.onGround) {
     this._player.updateGroundRotation(_0x5caeb1);
   } else if (this._player.rotateActionActive) {
