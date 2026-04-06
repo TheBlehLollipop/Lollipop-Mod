@@ -2034,8 +2034,9 @@ class ps {
     }
     const _0x119eb7 = this._scene._playerWorldX;
     const _0x519d38 = b(this.p.y);
-    this._particleEmitter.particleX = _0x119eb7 - 20;
-    this._particleEmitter.particleY = _0x519d38 + (this.p.gravityFlipped ? -26 : 26);
+    const _mirrorMod = this.p.mirrored ? -1 : 1;
+this._particleEmitter.particleX = _0x119eb7 - 20 * _mirrorMod;
+this._particleEmitter.particleY = _0x519d38 + (this.p.gravityFlipped ? -26 : 26);
     const _0x4436ac = this.p.onGround && !this.p.isFlying && !this.p.isWave;
     if (_0x4436ac && !this._particleActive) {
       this._particleEmitter.start();
@@ -2047,7 +2048,7 @@ class ps {
     {
       const _0xe76a85 = Math.cos(this._rotation);
       const _0x26ec65 = Math.sin(this._rotation);
-      const _0x216018 = this.p.isWave ? 0 : -24;
+      const _0x216018 = this.p.isWave ? 0 : -24 * _mirrorMod;
       const _0x2baeac = this.p.isWave ? 16 : 18;
       const _0x75c380 = _0x119eb7 + _0x216018 * _0xe76a85 - _0x2baeac * _0x26ec65;
       const _0x2b31d7 = _0x519d38 + _0x216018 * _0x26ec65 + _0x2baeac * _0xe76a85;
