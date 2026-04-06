@@ -4958,7 +4958,7 @@ if (!this._state.isFlying && !this._state.isWave) {
     this._applyMirrorEffect();
     this._percentageLabel.setText(`${(this._playerWorldX / (this._level.endXPos || 6000) * 100).toFixed(2)}%`)
   }
-  _applyMirrorEffect() {
+_applyMirrorEffect() {
     const isMirrored = this._state.mirrored;
     const containers = [this._level.additiveContainer, this._level.container, this._level.topContainer];
     if (isMirrored) {
@@ -4966,9 +4966,23 @@ if (!this._state.isFlying && !this._state.isWave) {
         c.scaleX = -1;
         c.x = this._cameraX + r;
       }
+      for (const tile of this._level._groundTiles) {
+        tile.x = r - tile.x - this._level._tileW;
+        tile.setFlipX(true);
+      }
+      for (const tile of this._level._ceilingTiles) {
+        tile.x = r - tile.x - this._level._tileW;
+        tile.setFlipX(true);
+      }
     } else {
       for (const c of containers) {
         if (c.scaleX !== 1) c.scaleX = 1;
+      }
+      for (const tile of this._level._groundTiles) {
+        tile.setFlipX(false);
+      }
+      for (const tile of this._level._ceilingTiles) {
+        tile.setFlipX(false);
       }
     }
     this._bg.setFlipX(isMirrored);
