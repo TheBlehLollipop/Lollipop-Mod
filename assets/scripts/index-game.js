@@ -105,7 +105,6 @@ preload() {
       loadingText.setText(value < 1 ? 'Loading...' : 'Ready!');
     });
     this.load.on("loaderror", _0x550fba => {});
-}
     this.load.atlas("GJ_WebSheet", "assets/sheets/GJ_WebSheet.png", "assets/sheets/GJ_WebSheet.json");
     this.load.atlas("GJ_GameSheet", "assets/sheets/GJ_GameSheet.png", "assets/sheets/GJ_GameSheet.json");
     this.load.atlas("GJ_GameSheet02", "assets/sheets/GJ_GameSheet02.png", "assets/sheets/GJ_GameSheet02.json");
