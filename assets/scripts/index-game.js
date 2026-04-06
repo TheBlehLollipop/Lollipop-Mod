@@ -1717,7 +1717,7 @@ class cs {
   }
 }
 function ds(scene, _0x592bc1, _0x4d69dc, _0xfb965c, _0x43d3fd, _0x5bbdf1) {
-  let _0x221d10 = R(_0x415536, _0xfb965c);
+  let _0x221d10 = R(scene, _0xfb965c);
   if (!_0x221d10) {
     return null;
   }
