@@ -2335,7 +2335,7 @@ if (this.p.isFlying) {
     this.setShipVisible(this.p.isFlying);
     this._gameLayer.setFlyMode(false, 0);
   }
-  hitGround() {
+hitGround() {
     const _0x4a38a5 = !this.p.onGround;
     if (!this.p.isFlying && !this.p.isWave) {
       this.p.lastGroundY = this.p.y;
@@ -2345,8 +2345,9 @@ if (this.p.isFlying) {
     this.p.canJump = true;
     this.p.isJumping = false;
     if (this.p.isBall) {
+if (this.p.isBall && _0x4a38a5) {
       this._rotation = Math.round(this._rotation / Math.PI) * Math.PI;
-    } else if (this.p.isWave) {
+    }
       this._rotation = 0;
     }
     this.stopRotation();
