@@ -1,4 +1,4 @@
-// editable config stuff
+// editable config stuff 
 
 if (window.mainColor == null) {
   window.mainColor = parseInt("fb2651", 16);
