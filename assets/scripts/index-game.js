@@ -4852,7 +4852,9 @@ class xs extends Phaser.Scene {
         _as._animIdx = (_as._animIdx + 1) % _as._animFrames.length;
         let _fr = R(_as._animScene, _as._animFrames[_as._animIdx]);
         if (_fr) {
-          _as.setTexture(_fr.atlas, _fr.frame);
+          try {
+            _as.setTexture(_fr.atlas, _fr.frame);
+          } catch(e){}
         }
       }
     }
