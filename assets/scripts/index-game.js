@@ -66,6 +66,7 @@ preload() {
         E = game.renderer.addBlendMode([_0x47cabb.DST_COLOR, _0x47cabb.ONE_MINUS_SRC_ALPHA], _0x47cabb.FUNC_ADD);
       }
     })(this.game);
+
     const W = this.cameras.main.width;
     const H = this.cameras.main.height;
     const cx = W / 2;
@@ -93,19 +94,9 @@ preload() {
       fontSize: '15px', fontFamily: 'Arial', color: '#445588'
     }).setOrigin(0.5, 1);
 
-    this.tweens.add({
-      targets: title,
-      alpha: 0.75,
-      duration: 900,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.InOut'
-    });
-
     this.load.on("progress", (value) => {
       barFill.clear();
       const fillW = Math.max(0, barW * value);
-      // Gradient-style: draw two rects
       barFill.fillStyle(0x0044cc, 1);
       barFill.fillRoundedRect(barX, barY, fillW, barH, 8);
       barFill.fillStyle(0x4488ff, 0.5);
@@ -114,6 +105,7 @@ preload() {
       loadingText.setText(value < 1 ? 'Loading...' : 'Ready!');
     });
     this.load.on("loaderror", _0x550fba => {});
+}
     this.load.atlas("GJ_WebSheet", "assets/sheets/GJ_WebSheet.png", "assets/sheets/GJ_WebSheet.json");
     this.load.atlas("GJ_GameSheet", "assets/sheets/GJ_GameSheet.png", "assets/sheets/GJ_GameSheet.json");
     this.load.atlas("GJ_GameSheet02", "assets/sheets/GJ_GameSheet02.png", "assets/sheets/GJ_GameSheet02.json");
