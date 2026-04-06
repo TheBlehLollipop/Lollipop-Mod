@@ -73763,10 +73763,17 @@ return {
     gridH: 0
   },
   142: {
-    type: "deco",
+    type: "coin",
     frame: "secretCoin_01_001.png",
     gridW: 1,
-    gridH: 1
+    gridH: 1,
+    animFrames: [
+        "secretCoin_01_001.png",
+        "secretCoin_01_002.png",
+        "secretCoin_01_003.png",
+        "secretCoin_01_004.png"
+    ],
+    animInterval: 100
   },
   //new fixes hopefully
    8: {

@@ -513,6 +513,7 @@ function parseLevel(levelString) {
 const solidType = "solid";
 const hazardType = "hazard";
 const decoType = "deco";
+const coinType = "coin";
 const portalType = "portal";
 const padType = "pad";
 const ringType = "ring";
@@ -528,6 +529,8 @@ for (let obj of objsWithGlow) {
     allObjects[obj].glow = true;
   }
 }
+window._animatedSprites = [];
+window._animTimer = 0;
 function getObjectFromId(id) {
   return allObjects[id] || null;
 }
@@ -1055,6 +1058,13 @@ class us {
           _0x554e0e._eeWorldX = _0x173c58;
           _0x554e0e._eeBaseY = _0x1b10a0;
           this._addToSection(_0x554e0e);
+          if (_0x24471f && _0x24471f.animFrames) {
+            _0x554e0e._animFrames = _0x24471f.animFrames;
+            _0x554e0e._animInterval = _0x24471f.animInterval || 100;
+            _0x554e0e._animIdx = 0;
+            _0x554e0e._animScene = _0xd15974;
+            window._animatedSprites.push(_0x554e0e);
+          }
           if (_0x24471f && _0x24471f.type === ringType) {
             _0x554e0e.setScale(0.1);
             _0x554e0e._eeAudioScale = true;
@@ -4835,6 +4845,17 @@ class xs extends Phaser.Scene {
     }
     this._playTime += _0xaf2ffd / 1000;
     this._audio.update(_0xaf2ffd / 1000);
+    window._animTimer += _0xaf2ffd;
+    for (let _as of window._animatedSprites) {
+      if (window._animTimer - (_as._lastAnimSwap || 0) >= _as._animInterval) {
+        _as._lastAnimSwap = window._animTimer;
+        _as._animIdx = (_as._animIdx + 1) % _as._animFrames.length;
+        let _fr = R(_as._animScene, _as._animFrames[_as._animIdx]);
+        if (_fr) {
+          _as.setTexture(_fr.atlas, _fr.frame);
+        }
+      }
+    }
     this._level.updateAudioScale(this._audio.getMeteringValue());
     let _0x30fa5d = this._quantizeDelta(_0xaf2ffd);
     let _0x5efc2d = _0x30fa5d > 0 ? Math.max(1, Math.round(_0x30fa5d * 4)) : 0;
