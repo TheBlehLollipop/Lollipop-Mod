@@ -570,6 +570,7 @@ class us {
     this._colorTriggers = [];
     this._colorTriggerIdx = 0;
     this._audioScaleSprites = [];
+    this._orbSprites = [];
     this._enterEffectTriggers = [];
     this._enterEffectTriggerIdx = 0;
     this._activeEnterEffect = 0;
@@ -997,7 +998,9 @@ class us {
         _0x3a5f29._eeBaseY = _0x5d6f6f;
         this._addToSection(_0x3a5f29);
       }
+      return _0x3a5f29;
     }
+    return null;
   }
   _spawnLevelObjects(_0x35f1ae) {
     const _0xd15974 = this._scene;
@@ -1051,8 +1054,9 @@ class us {
             this._addToSection(_0x517b49);
           }
         }
+        let _0xOrbGlow = null;
         if (_0x24471f.glow) {
-          this._addGlowSprite(_0xd15974, _0x2ddc05, _0x1b10a0, _0x4c7589, _0x1b937f, _0x173c58);
+          _0xOrbGlow = this._addGlowSprite(_0xd15974, _0x2ddc05, _0x1b10a0, _0x4c7589, _0x1b937f, _0x173c58);
         }
         const _0x36f679 = _0x501fde ? {
           ..._0x24471f,
@@ -1065,6 +1069,16 @@ class us {
           _0x554e0e._eeWorldX = _0x173c58;
           _0x554e0e._eeBaseY = _0x1b10a0;
           this._addToSection(_0x554e0e);
+          if (_0x24471f && _0x24471f.type === ringType) {
+            _0x554e0e.setScale(0.1);
+            _0x554e0e._eeAudioScale = true;
+            this._orbSprites.push(_0x554e0e);
+            if (_0xOrbGlow) {
+              _0xOrbGlow.setScale(0.1);
+              _0xOrbGlow._eeAudioScale = true;
+              this._orbSprites.push(_0xOrbGlow);
+            }
+          }
         } else {
           console.warn("No sprite found for object ID " + _0x1b937f.id + " frame=" + _0x4c7589 + " type=" + (_0x24471f ? _0x24471f.type : "null"));
         }
@@ -1229,26 +1243,17 @@ class us {
             console.warn("unknown portal sub-type: id=" + _0x1b937f.id + " sub=" + _0x24471f.sub);
           }
           if (_0x25452a) {
-            if (_0x25452a === "portal_gravity_up" || _0x25452a === "portal_gravity_down") {
-              _0xad0974 = _0xad0974/1.9;
-              let _0x4bd7bc = new O(_0x25452a, _0x173c58, _0x7ab528, _0xad0974, _0x2c2226, _0x1b937f.rot || 0);
-              _0x4bd7bc.portalY = _0x7ab528;
-              this.objects.push(_0x4bd7bc);
-              this._addCollisionToSection(_0x4bd7bc);
-              console.log("portal collision created: type=" + _0x25452a + " id=" + _0x1b937f.id + " x=" + _0x173c58 + " y=" + _0x7ab528 + " w=" + _0xad0974 + " h=" + _0x2c2226);
-            } else {
-              let _0x4bd7bc = new O(_0x25452a, _0x173c58, _0x7ab528, _0xad0974, _0x2c2226, _0x1b937f.rot || 0);
-              _0x4bd7bc.portalY = _0x7ab528;
-              this.objects.push(_0x4bd7bc);
-              this._addCollisionToSection(_0x4bd7bc);
-              console.log("portal collision created: type=" + _0x25452a + " id=" + _0x1b937f.id + " x=" + _0x173c58 + " y=" + _0x7ab528 + " w=" + _0xad0974 + " h=" + _0x2c2226);
-            }
+            let _0x4bd7bc = new O(_0x25452a, _0x173c58, _0x7ab528, _0xad0974, _0x2c2226, _0x1b937f.rot || 0);
+            _0x4bd7bc.portalY = _0x7ab528;
+            this.objects.push(_0x4bd7bc);
+            this._addCollisionToSection(_0x4bd7bc);
+            console.log("portal collision created: type=" + _0x25452a + " id=" + _0x1b937f.id + " x=" + _0x173c58 + " y=" + _0x7ab528 + " w=" + _0xad0974 + " h=" + _0x2c2226);
           } else {
             console.warn("portal ID " + _0x1b937f.id + " has no matching sub-type (sub=" + _0x24471f.sub + ")");
           }
         } else if (_0x24471f.type === padType) {
           let padW = _0x24471f.gridW * a;
-          let padH = Math.max(_0x24471f.gridH, 7);
+          let padH = Math.max(_0x24471f.gridH, 10);
           let padObj = new O(jumpPadType, _0x173c58, _0x7ab528, padW, padH, _0x1b937f.rot || 0);
           padObj.padId = _0x1b937f.id;
           this.objects.push(padObj);
@@ -1609,6 +1614,9 @@ class us {
   updateAudioScale(_0x337bf7) {
     for (let _0x24afdb of this._audioScaleSprites) {
       _0x24afdb.setScale(_0x337bf7);
+    }
+    for (let _0xOrbSpr of this._orbSprites) {
+      _0xOrbSpr.setScale(_0x337bf7);
     }
   }
   resetVisibility() {
@@ -2716,15 +2724,18 @@ if (this.p.isFlying) {
     }
   }
   flipGravity(flipped, _0x11bbde = 0.5) {
-    console.log("flipGravity called: flipped=" + flipped + " current=" + this.p.gravityFlipped);
-    if (this.p.gravityFlipped === flipped) {
-      return;
+    if (this.flipCooldown == null || this.flipCooldown < Date.now()) {
+      this.flipCooldown = Date.now() + 100;
+      console.log("flipGravity called: flipped=" + flipped + " current=" + this.p.gravityFlipped);
+      if (this.p.gravityFlipped === flipped) {
+        return;
+      }
+      this.p.gravityFlipped = flipped;
+      this.p.yVelocity *= _0x11bbde;
+      this.p.onGround = false;
+      this.p.canJump = false;
+      this.p.isJumping = false;
     }
-    this.p.gravityFlipped = flipped;
-    this.p.yVelocity *= _0x11bbde;
-    this.p.onGround = false;
-    this.p.canJump = false;
-    this.p.isJumping = false;
   }
   runRotateAction() {
 
@@ -2945,16 +2956,12 @@ if (this.p.isFlying) {
             this._playPortalShine(gameObj);
             this.exitBallMode();
             this.exitWaveMode();
-            this.exitShipMode();
             this.enterShipMode(gameObj);
           }
         } else if (_colType === portalWaveType) {
           if (!gameObj.activated) {
             gameObj.activated = true;
             this._playPortalShine(gameObj);
-            this.exitBallMode();
-            this.exitShipMode();
-            this.exitWaveMode();
             this.enterWaveMode(gameObj);
           }
         } else if (_colType === "portal_cube") {
@@ -2971,7 +2978,6 @@ if (this.p.isFlying) {
             this._playPortalShine(gameObj);
             this.exitShipMode();
             this.exitWaveMode();
-            this.exitBallMode();
             this.enterBallMode(gameObj);
           }
         } else if (_colType === "portal_gravity_down") {
@@ -3220,13 +3226,12 @@ if (this.p.isFlying) {
       }
     }
     let _0x3020c8 = this._gameLayer.getFloorY();
-    const iscube = !this.p.isFlying && !this.p.isBall && !this.p.isWave;
     if (!_0x30410f && !_boostedThisStep) {
       if (!this.p.gravityFlipped && this.p.y <= _0x3020c8 + 30) {
         this.p.y = _0x3020c8 + 30;
         this.hitGround();
       }
-      if (this.p.gravityFlipped && !this.p.isFlying && !iscube) {
+      if (this.p.gravityFlipped && !this.p.isFlying) {
         let gravCeilY = this._gameLayer.getCeilingY();
         if (gravCeilY === null) {
           gravCeilY = f;
@@ -3239,14 +3244,10 @@ if (this.p.isFlying) {
       }
     }
     let _0x496456 = this._gameLayer.getCeilingY();
-    if (_0x496456 !== null && this.p.y >= _0x496456 - 30 && !iscube) {
+    if (_0x496456 !== null && this.p.y >= _0x496456 - 30) {
       this.p.y = _0x496456 - 30;
       this.hitGround();
       this.p.onCeiling = true;
-    }
-    if (this.p.y > 1890*4) {
-      this.killPlayer();
-      return;
     }
     if (this.p.isFlying || this.p.isWave) {
       const _0x354b7c = this.p.y <= _0x3020c8 + 30;
@@ -4167,7 +4168,7 @@ class xs extends Phaser.Scene {
     const _0x3cdf70a = this.add.bitmapText(xPos, yPos, "goldFont", "Modded by: AntiMatter, breadbb", 40).setOrigin(0.5, 0.5).setScale(0.6);
     this._infoPopup.add(_0x3cdf70a);
     yPos += 30;
-    const _0x3cdf70b = this.add.bitmapText(xPos, yPos, "goldFont", "bog, aloaf, and PinkDev", 40).setOrigin(0.5, 0.5).setScale(0.6);
+    const _0x3cdf70b = this.add.bitmapText(xPos, yPos, "goldFont", "bog, and aloaf", 40).setOrigin(0.5, 0.5).setScale(0.6);
     this._infoPopup.add(_0x3cdf70b);
     yPos += 30;
     const _0x97b2a9 = this.add.text(xPos, 463, "© 2026 RobTop Games. All rights reserved.", {
