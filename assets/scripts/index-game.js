@@ -2875,18 +2875,17 @@ if (this.p.isBall && _0x4a38a5) {
     }
   }
 _updateBallJump(_0x2fe319) {
-    const _0x144266 = p * 0.6;
-    if (this.p.upKeyPressed && this.p.canJump) {
-      const _0x47d739 = this.flipMod();
-      this.p.upKeyPressed = false;
-      this.p.yVelocity = _0x47d739 * 22.360064;
-      this.flipGravity(!this.p.gravityFlipped);
-      this.p.onGround = false;
-      this.p.canJump = false;
-      this.p.yVelocity *= 0.6;
-      this.runRotateAction();
-      return;
-    }
+  const _0x144266 = p * 0.6;
+  if (this.p.upKeyPressed && this.p.canJump) {
+    const _0x47d739 = this.flipMod();
+    this.p.upKeyPressed = false;
+    this.p.yVelocity = _0x47d739 * 22.360064;
+    this.flipGravity(!this.p.gravityFlipped);
+    this.p.onGround = false;
+    this.p.canJump = false;
+    this.p.yVelocity *= 0.6;
+    return;
+  }
  if (this.playerIsFalling()) {
     this.p.canJump = false;
     }
@@ -4877,17 +4876,15 @@ class xs extends Phaser.Scene {
       this._state.y += this._state.yVelocity * _0x5caeb1;
       this._player.checkCollisions(this._playerWorldX - h);
       this._playerWorldX += _0x5dfd5a;
-      if (!this._state.isFlying && !this._state.isWave) {
-        if (this._state.onGround) {
-          if (this._state.isBall) {
-            this._player.updateBallRoll(_0x5dfd5a);
-          } else {
-            this._player.updateGroundRotation(_0x5caeb1);
-          }
-        } else if (this._player.rotateActionActive) {
-          this._player.updateRotateAction(u);
-        }
-      }
+if (!this._state.isFlying && !this._state.isWave) {
+  if (this._state.isBall) {
+    this._player.updateBallRoll(_0x5dfd5a);
+  } else if (this._state.onGround) {
+    this._player.updateGroundRotation(_0x5caeb1);
+  } else if (this._player.rotateActionActive) {
+    this._player.updateRotateAction(u);
+  }
+}
     }
     this._state.lastY = _0x23505e;
     if (!this._endCameraOverride) {
