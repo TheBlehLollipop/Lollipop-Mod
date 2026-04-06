@@ -58,7 +58,7 @@ class A extends Phaser.Scene {
       key: "BootScene"
     });
   }
-  preload() {
+preload() {
     (function (game) {
       if (game.renderer.type === Phaser.WEBGL) {
         let _0x47cabb = game.renderer.gl;
@@ -66,13 +66,63 @@ class A extends Phaser.Scene {
         E = game.renderer.addBlendMode([_0x47cabb.DST_COLOR, _0x47cabb.ONE_MINUS_SRC_ALPHA], _0x47cabb.FUNC_ADD);
       }
     })(this.game);
-    let _0x236029 = this.cameras.main.width;
-    let _0x2a5a43 = this.cameras.main.height;
-    let _0xa68e08 = _0x236029 * 0.6;
-    let _0x1840c0 = this.add.rectangle(_0x236029 / 2, _0x2a5a43 / 2, _0xa68e08, 8, 65280).setOrigin(0.5, 0.5);
-    _0x1840c0.scaleX = 0;
-    this.load.on("progress", _0x374839 => {
-      _0x1840c0.scaleX = _0x374839;
+    const W = this.cameras.main.width;
+    const H = this.cameras.main.height;
+    const cx = W / 2;
+    const cy = H / 2;
+
+    this.add.rectangle(cx, cy, W, H, 0x000000);
+
+    const glow = this.add.graphics();
+    glow.fillStyle(0x0066ff, 0.08);
+    glow.fillCircle(cx, cy - 60, 180);
+
+    const titleStyle = { fontSize: '52px', fontFamily: 'Arial Black, Arial', color: '#ffffff', fontStyle: 'bold' };
+    const title = this.add.text(cx, cy - 100, 'Web Dash', titleStyle).setOrigin(0.5, 0.5);
+    title.setShadow(0, 0, '#4488ff', 18, true, true);
+
+    const subStyle = { fontSize: '16px', fontFamily: 'Arial', color: '#8899cc' };
+    this.add.text(cx, cy - 55, 'A mod of geometrydash.com', subStyle).setOrigin(0.5, 0.5);
+
+    const barW = W * 0.55;
+    const barH = 18;
+    const barX = cx - barW / 2;
+    const barY = cy + 20;
+    const barBg = this.add.graphics();
+    barBg.fillStyle(0x111133, 1);
+    barBg.fillRoundedRect(barX - 2, barY - 2, barW + 4, barH + 4, 10);
+    barBg.fillStyle(0x001133, 1);
+    barBg.fillRoundedRect(barX, barY, barW, barH, 8);
+
+    const barFill = this.add.graphics();
+
+    const pctText = this.add.text(cx, barY + barH + 18, '0%', {
+      fontSize: '14px', fontFamily: 'Arial', color: '#6699ff'
+    }).setOrigin(0.5, 0);
+
+    const loadingText = this.add.text(cx, barY - 24, 'Loading...', {
+      fontSize: '15px', fontFamily: 'Arial', color: '#445588'
+    }).setOrigin(0.5, 1);
+
+    this.tweens.add({
+      targets: title,
+      alpha: 0.75,
+      duration: 900,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.InOut'
+    });
+
+    this.load.on("progress", (value) => {
+      barFill.clear();
+      const fillW = Math.max(0, barW * value);
+      // Gradient-style: draw two rects
+      barFill.fillStyle(0x0044cc, 1);
+      barFill.fillRoundedRect(barX, barY, fillW, barH, 8);
+      barFill.fillStyle(0x4488ff, 0.5);
+      barFill.fillRoundedRect(barX, barY, fillW, barH / 2, { tl: 8, tr: 8, bl: 0, br: 0 });
+      pctText.setText(Math.floor(value * 100) + '%');
+      loadingText.setText(value < 1 ? 'Loading...' : 'Ready!');
     });
     this.load.on("loaderror", _0x550fba => {});
     this.load.atlas("GJ_WebSheet", "assets/sheets/GJ_WebSheet.png", "assets/sheets/GJ_WebSheet.json");
