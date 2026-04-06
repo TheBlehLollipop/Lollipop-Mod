@@ -535,12 +535,12 @@ function getObjectFromId(id) {
   return allObjects[id] || null;
 }
 class us {
-  constructor(_0x46dab3, _0x35fa95) {
-    this._scene = _0x46dab3;
+  constructor(scene, _0x35fa95) {
+    this._scene = scene;
     this._cameraXRef = _0x35fa95;
-    this.additiveContainer = _0x46dab3.add.container(0, 0).setDepth(-1);
-    this.container = _0x46dab3.add.container(0, 0);
-    this.topContainer = _0x46dab3.add.container(0, 0).setDepth(13);
+    this.additiveContainer = scene.add.container(0, 0).setDepth(-1);
+    this.container = scene.add.container(0, 0);
+    this.topContainer = scene.add.container(0, 0).setDepth(13);
     this.objects = [];
     this.endXPos = 0;
     this._groundY = 0;
@@ -1739,8 +1739,8 @@ function ds(scene, _0x592bc1, _0x4d69dc, _0xfb965c, _0x43d3fd, _0x5bbdf1) {
   };
 }
 class ps {
-  constructor(_0x5b73d2, _0x3f50cc, _0x2811e1) {
-    this._scene = _0x5b73d2;
+  constructor(scene, _0x3f50cc, _0x2811e1) {
+    this._scene = scene;
     this.p = _0x3f50cc;
     this._gameLayer = _0x2811e1;
     this._rotation = 0;
@@ -1755,9 +1755,9 @@ class ps {
     this._lastCameraX = 0;
     this._lastCameraY = 0;
     this._createSprites();
-    this._hitboxGraphics = _0x5b73d2.add.graphics().setScrollFactor(0).setDepth(20);
-    this._initParticles(_0x5b73d2);
-    _0x5b73d2.events.on("shutdown", () => this._cleanupExplosion());
+    this._hitboxGraphics = scene.add.graphics().setScrollFactor(0).setDepth(20);
+    this._initParticles(scene);
+    scene.events.on("shutdown", () => this._cleanupExplosion());
   }
   _createSprites() {
     const _0x1872a7 = this._scene;
@@ -3552,8 +3552,8 @@ class ms {
   }
 }
 class ys {
-  constructor(_0x3627e5) {
-    this._scene = _0x3627e5;
+  constructor(scene) {
+    this._scene = scene;
     this._music = null;
     this._userMusicVol = localStorage.getItem("userMusicVol") ?? 1;
     this._meteringEnabled = false;
