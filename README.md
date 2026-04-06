@@ -1,14 +1,15 @@
 # web-dashers
-<img align="left" width="400" height="400" alt="image" src="https://web-dashers.github.io/assets/logo.png" />
+<img align="left" width="350" height="350" alt="image" src="https://web-dashers.github.io/assets/logo.png" />
 
 Modding geometrydash.com to add more features
 
 
 ## Extra Stuff We Added:
   * More gamemodes (Wave, Ball)
-  * portals and objects, orbs and pads
+  * Portals and objects, orbs and pads
   * All main levels
   * Custom icons (can only be edited programatically)
+  * Optimizations
   * probably more
 <a href="https://discord.gg/h6xYNUBFnq" target="_blank">
   <img width="279" height="89" alt="JoinTheDiscord" src="https://github.com/user-attachments/assets/285a9de1-e72a-491a-9dd4-3d31887e73b2" />
