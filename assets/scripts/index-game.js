@@ -73,17 +73,6 @@ preload() {
 
     this.add.rectangle(cx, cy, W, H, 0x000000);
 
-    const glow = this.add.graphics();
-    glow.fillStyle(0x0066ff, 0.08);
-    glow.fillCircle(cx, cy - 60, 180);
-
-    const titleStyle = { fontSize: '52px', fontFamily: 'Arial Black, Arial', color: '#ffffff', fontStyle: 'bold' };
-    const title = this.add.text(cx, cy - 100, 'Web Dash', titleStyle).setOrigin(0.5, 0.5);
-    title.setShadow(0, 0, '#4488ff', 18, true, true);
-
-    const subStyle = { fontSize: '16px', fontFamily: 'Arial', color: '#8899cc' };
-    this.add.text(cx, cy - 55, 'A mod of geometrydash.com', subStyle).setOrigin(0.5, 0.5);
-
     const barW = W * 0.55;
     const barH = 18;
     const barX = cx - barW / 2;
