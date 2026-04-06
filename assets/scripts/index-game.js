@@ -2872,18 +2872,18 @@ if (this.p.isFlying) {
     }
   }
 _updateBallJump(_0x2fe319) {
-  const _0x144266 = p * 0.6;
+    const _0x144266 = p * 0.6;
     if (this.p.upKeyPressed && this.p.canJump) {
-    const _0x47d739 = this.flipMod();
-    this.p.upKeyPressed = false;
-    this.p.yVelocity = _0x47d739 * 22.360064;
-    this.flipGravity(!this.p.gravityFlipped);
-    this.p.onGround = false;
-    this.p.canJump = false;
-    this.p.yVelocity *= 0.6;
-    this.runRotateAction();
-    return;
-  }
+      const _0x47d739 = this.flipMod();
+      this.p.upKeyPressed = false;
+      this.p.yVelocity = _0x47d739 * 22.360064;
+      this.flipGravity(!this.p.gravityFlipped);
+      this.p.onGround = false;
+      this.p.canJump = false;
+      this.p.yVelocity *= 0.6;
+      this.runRotateAction();
+      return;
+    }
  if (this.playerIsFalling()) {
     this.p.canJump = false;
     }
