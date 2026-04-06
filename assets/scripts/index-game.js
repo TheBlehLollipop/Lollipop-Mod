@@ -2346,8 +2346,10 @@ hitGround() {
     this.p.isJumping = false;
     if (this.p.isBall) {
 if (this.p.isBall && _0x4a38a5) {
-      this._rotation = Math.round(this._rotation / Math.PI) * Math.PI;
-    }
+  this._rotation = Math.round(this._rotation / Math.PI) * Math.PI;
+} else if (this.p.isWave) {
+  this._rotation = 0;
+}
       this._rotation = 0;
     }
     this.stopRotation();
