@@ -235,13 +235,13 @@ preload() {
   }
   create() {
     this.cache.text.get(window.currentlevel[2]);
-    const _0x1362a5 = this.cache.text.get("bigFontFnt");
-    if (_0x1362a5) {
-      loadFont(this, "bigFont", _0x1362a5);
+    const bigFontData = this.cache.text.get("bigFontFnt");
+    if (bigFontData) {
+      loadFont(this, "bigFont", bigFontData);
     }
-    const _0x9a7483 = this.cache.text.get("goldFontFnt");
-    if (_0x9a7483) {
-      loadFont(this, "goldFont", _0x9a7483);
+    const goldFontData = this.cache.text.get("goldFontFnt");
+    if (goldFontData) {
+      loadFont(this, "goldFont", goldFontData);
     }
     this.scene.start("GameScene");
   }
@@ -328,7 +328,7 @@ function loadFont(scene, _0x5059cd, _0x3a0583) {
     frame: null
   });
 }
-class M {
+class PlayerState {
   constructor() {
     this.reset();
   }
@@ -379,7 +379,7 @@ function L(scene, _0x310a42, _0x71aad, _0x4272eb) {
     return null;
   }
 }
-class O {
+class Collider {
   constructor(objType, xPos, yPos, width, height, rotation = 0) {
     this.type = objType;
     this.x = xPos;
@@ -390,92 +390,6 @@ class O {
     this.rotationDegrees = rotation;
   }
 }
-function F(_0x549766) {
-  let _0x251608 = _0x549766.length;
-  while (--_0x251608 >= 0) {
-    _0x549766[_0x251608] = 0;
-  }
-}
-const D = 256;
-const k = 286;
-const I = 30;
-const B = 15;
-const N = new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0]);
-const X = new Uint8Array([0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13]);
-const Y = new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 7]);
-const U = new Uint8Array([16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15]);
-const z = new Array(576);
-F(z);
-const G = new Array(60);
-F(G);
-const W = new Array(512);
-F(W);
-const V = new Array(256);
-F(V);
-const H = new Array(29);
-F(H);
-const j = new Array(I);
-function q(_0x307b47, _0x789fa6, _0x3f395e, _0x21c0e4, _0x5b8f62) {
-  this.static_tree = _0x307b47;
-  this.extra_bits = _0x789fa6;
-  this.extra_base = _0x3f395e;
-  this.elems = _0x21c0e4;
-  this.max_length = _0x5b8f62;
-  this.has_stree = _0x307b47 && _0x307b47.length;
-}
-let K;
-let Z;
-let J;
-function Q(_0x4fd045, _0x2b9fbb) {
-  this.dyn_tree = _0x4fd045;
-  this.max_code = 0;
-  this.stat_desc = _0x2b9fbb;
-}
-F(j);
-const $ = _0xb9568e => _0xb9568e < 256 ? W[_0xb9568e] : W[256 + (_0xb9568e >>> 7)];
-const tt = (_0x5c19b7, _0x54daf2) => {
-  _0x5c19b7.pending_buf[_0x5c19b7.pending++] = _0x54daf2 & 255;
-  _0x5c19b7.pending_buf[_0x5c19b7.pending++] = _0x54daf2 >>> 8 & 255;
-};
-const et = (_0x5ead20, _0x3da7df, _0x2234f0) => {
-  if (_0x5ead20.bi_valid > 16 - _0x2234f0) {
-    _0x5ead20.bi_buf |= _0x3da7df << _0x5ead20.bi_valid & 65535;
-    tt(_0x5ead20, _0x5ead20.bi_buf);
-    _0x5ead20.bi_buf = _0x3da7df >> 16 - _0x5ead20.bi_valid;
-    _0x5ead20.bi_valid += _0x2234f0 - 16;
-  } else {
-    _0x5ead20.bi_buf |= _0x3da7df << _0x5ead20.bi_valid & 65535;
-    _0x5ead20.bi_valid += _0x2234f0;
-  }
-};
-const it = (_0x642173, _0x1f3fba, _0x394021) => {
-  et(_0x642173, _0x394021[_0x1f3fba * 2], _0x394021[_0x1f3fba * 2 + 1]);
-};
-const st = (_0x1e4d1b, _0x3ef2a4) => {
-  let _0x306312 = 0;
-  do {
-    _0x306312 |= _0x1e4d1b & 1;
-    _0x1e4d1b >>>= 1;
-    _0x306312 <<= 1;
-  } while (--_0x3ef2a4 > 0);
-  return _0x306312 >>> 1;
-};
-const rt = (_0x399b03, _0x258fad, _0xe57e01) => {
-  const _0x8d102b = new Array(16);
-  let _0x34ed87;
-  let _0x53fb08;
-  let _0x5cbc9e = 0;
-  for (_0x34ed87 = 1; _0x34ed87 <= B; _0x34ed87++) {
-    _0x5cbc9e = _0x5cbc9e + _0xe57e01[_0x34ed87 - 1] << 1;
-    _0x8d102b[_0x34ed87] = _0x5cbc9e;
-  }
-  for (_0x53fb08 = 0; _0x53fb08 <= _0x258fad; _0x53fb08++) {
-    let _0xe7b8e5 = _0x399b03[_0x53fb08 * 2 + 1];
-    if (_0xe7b8e5 !== 0) {
-      _0x399b03[_0x53fb08 * 2] = st(_0x8d102b[_0xe7b8e5]++, _0xe7b8e5);
-    }
-  }
-};
 function parseObject(objectString) {
   let objectParts = objectString.split(",");
   let _0x20f60e = {};
@@ -1221,7 +1135,7 @@ class us {
         if (_0x24471f.type === solidType && _0x24471f.gridW > 0 && _0x24471f.gridH > 0) {
           let _0x10e5ae = _0x24471f.gridW * a;
           let _0x11e08d = _0x24471f.gridH * a;
-          let _0x4628ff = new O(solidType, _0x173c58, _0x7ab528, _0x10e5ae, _0x11e08d, _0x1b937f.rot || 0);
+          let _0x4628ff = new Collider(solidType, _0x173c58, _0x7ab528, _0x10e5ae, _0x11e08d, _0x1b937f.rot || 0);
           this.objects.push(_0x4628ff);
           this._addCollisionToSection(_0x4628ff);
         } else if (_0x24471f.type === hazardType) {
@@ -1235,7 +1149,7 @@ class us {
             _0x2a123d = _0x24471f.gridH * 24;
           }
           if (_0x3f8c4f > 0 && _0x2a123d > 0) {
-            let _0x3c84ad = new O(hazardType, _0x173c58, _0x7ab528, _0x3f8c4f, _0x2a123d, _0x1b937f.rot || 0);
+            let _0x3c84ad = new Collider(hazardType, _0x173c58, _0x7ab528, _0x3f8c4f, _0x2a123d, _0x1b937f.rot || 0);
             this.objects.push(_0x3c84ad);
             this._addCollisionToSection(_0x3c84ad);
           }
@@ -1269,7 +1183,7 @@ class us {
             console.warn("unknown portal sub-type: id=" + _0x1b937f.id + " sub=" + _0x24471f.sub);
           }
           if (_0x25452a) {
-            let _0x4bd7bc = new O(_0x25452a, _0x173c58, _0x7ab528, _0xad0974, _0x2c2226, _0x1b937f.rot || 0);
+            let _0x4bd7bc = new Collider(_0x25452a, _0x173c58, _0x7ab528, _0xad0974, _0x2c2226, _0x1b937f.rot || 0);
             _0x4bd7bc.portalY = _0x7ab528;
             this.objects.push(_0x4bd7bc);
             this._addCollisionToSection(_0x4bd7bc);
@@ -1280,7 +1194,7 @@ class us {
         } else if (_0x24471f.type === padType) {
           let padW = _0x24471f.gridW * a;
           let padH = Math.max(_0x24471f.gridH, 10);
-          let padObj = new O(jumpPadType, _0x173c58, _0x7ab528, padW, padH, _0x1b937f.rot || 0);
+          let padObj = new Collider(jumpPadType, _0x173c58, _0x7ab528, padW, padH, _0x1b937f.rot || 0);
           padObj.padId = _0x1b937f.id;
           this.objects.push(padObj);
           this._addCollisionToSection(padObj);
@@ -1288,7 +1202,7 @@ class us {
         } else if (_0x24471f.type === ringType) {
           let orbW = _0x24471f.gridW * a * 0.8;
           let orbH = _0x24471f.gridH * a * 0.8;
-          let orbObj = new O(jumpRingType, _0x173c58, _0x7ab528, orbW, orbH, _0x1b937f.rot || 0);
+          let orbObj = new Collider(jumpRingType, _0x173c58, _0x7ab528, orbW, orbH, _0x1b937f.rot || 0);
           orbObj.orbId = _0x1b937f.id;
           orbObj.orbRotation = _0x1b937f.rot || 0;
           orbObj._dashHoldTicks = 0;
@@ -3772,7 +3686,7 @@ class xs extends Phaser.Scene {
       },
       _v: -h
     };
-    this._state = new M();
+    this._state = new PlayerState();
     this._level = new us(this, this._cameraXRef);
     this._player = new ps(this, this._state, this._level);
     this._colorManager = new ms();
