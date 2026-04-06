@@ -1229,17 +1229,26 @@ class us {
             console.warn("unknown portal sub-type: id=" + _0x1b937f.id + " sub=" + _0x24471f.sub);
           }
           if (_0x25452a) {
-            let _0x4bd7bc = new O(_0x25452a, _0x173c58, _0x7ab528, _0xad0974, _0x2c2226, _0x1b937f.rot || 0);
-            _0x4bd7bc.portalY = _0x7ab528;
-            this.objects.push(_0x4bd7bc);
-            this._addCollisionToSection(_0x4bd7bc);
-            console.log("portal collision created: type=" + _0x25452a + " id=" + _0x1b937f.id + " x=" + _0x173c58 + " y=" + _0x7ab528 + " w=" + _0xad0974 + " h=" + _0x2c2226);
+            if (_0x25452a === "portal_gravity_up" || _0x25452a === "portal_gravity_down") {
+              _0xad0974 = _0xad0974/1.9;
+              let _0x4bd7bc = new O(_0x25452a, _0x173c58, _0x7ab528, _0xad0974, _0x2c2226, _0x1b937f.rot || 0);
+              _0x4bd7bc.portalY = _0x7ab528;
+              this.objects.push(_0x4bd7bc);
+              this._addCollisionToSection(_0x4bd7bc);
+              console.log("portal collision created: type=" + _0x25452a + " id=" + _0x1b937f.id + " x=" + _0x173c58 + " y=" + _0x7ab528 + " w=" + _0xad0974 + " h=" + _0x2c2226);
+            } else {
+              let _0x4bd7bc = new O(_0x25452a, _0x173c58, _0x7ab528, _0xad0974, _0x2c2226, _0x1b937f.rot || 0);
+              _0x4bd7bc.portalY = _0x7ab528;
+              this.objects.push(_0x4bd7bc);
+              this._addCollisionToSection(_0x4bd7bc);
+              console.log("portal collision created: type=" + _0x25452a + " id=" + _0x1b937f.id + " x=" + _0x173c58 + " y=" + _0x7ab528 + " w=" + _0xad0974 + " h=" + _0x2c2226);
+            }
           } else {
             console.warn("portal ID " + _0x1b937f.id + " has no matching sub-type (sub=" + _0x24471f.sub + ")");
           }
         } else if (_0x24471f.type === padType) {
           let padW = _0x24471f.gridW * a;
-          let padH = Math.max(_0x24471f.gridH, 10);
+          let padH = Math.max(_0x24471f.gridH, 7);
           let padObj = new O(jumpPadType, _0x173c58, _0x7ab528, padW, padH, _0x1b937f.rot || 0);
           padObj.padId = _0x1b937f.id;
           this.objects.push(padObj);
