@@ -59,11 +59,11 @@ class A extends Phaser.Scene {
     });
   }
   preload() {
-    (function (_0x3b96aa) {
-      if (_0x3b96aa.renderer.type === Phaser.WEBGL) {
-        let _0x47cabb = _0x3b96aa.renderer.gl;
-        S = _0x3b96aa.renderer.addBlendMode([_0x47cabb.SRC_ALPHA, _0x47cabb.ONE], _0x47cabb.FUNC_ADD);
-        E = _0x3b96aa.renderer.addBlendMode([_0x47cabb.DST_COLOR, _0x47cabb.ONE_MINUS_SRC_ALPHA], _0x47cabb.FUNC_ADD);
+    (function (game) {
+      if (game.renderer.type === Phaser.WEBGL) {
+        let _0x47cabb = game.renderer.gl;
+        S = game.renderer.addBlendMode([_0x47cabb.SRC_ALPHA, _0x47cabb.ONE], _0x47cabb.FUNC_ADD);
+        E = game.renderer.addBlendMode([_0x47cabb.DST_COLOR, _0x47cabb.ONE_MINUS_SRC_ALPHA], _0x47cabb.FUNC_ADD);
       }
     })(this.game);
     let _0x236029 = this.cameras.main.width;
@@ -207,17 +207,17 @@ class A extends Phaser.Scene {
     this.cache.text.get(window.currentlevel[2]);
     const _0x1362a5 = this.cache.text.get("bigFontFnt");
     if (_0x1362a5) {
-      C(this, "bigFont", _0x1362a5);
+      loadFont(this, "bigFont", _0x1362a5);
     }
     const _0x9a7483 = this.cache.text.get("goldFontFnt");
     if (_0x9a7483) {
-      C(this, "goldFont", _0x9a7483);
+      loadFont(this, "goldFont", _0x9a7483);
     }
     this.scene.start("GameScene");
   }
 }
-function C(_0x4e6e71, _0x5059cd, _0x3a0583) {
-  const _0x4adbf2 = _0x4e6e71.textures.get(_0x5059cd);
+function loadFont(scene, _0x5059cd, _0x3a0583) {
+  const _0x4adbf2 = scene.textures.get(_0x5059cd);
   const _0x39d5fe = _0x4adbf2.source[0];
   const _0x177755 = _0x39d5fe.width;
   const _0x69dcd6 = _0x39d5fe.height;
@@ -292,7 +292,7 @@ function C(_0x4e6e71, _0x5059cd, _0x3a0583) {
       _0x4bb3ff.chars[_0x48e531.second].kerning[_0x48e531.first] = _0x48e531.amount;
     }
   }
-  _0x4e6e71.cache.bitmapFont.add(_0x5059cd, {
+  scene.cache.bitmapFont.add(_0x5059cd, {
     data: _0x4bb3ff,
     texture: _0x5059cd,
     frame: null
@@ -326,10 +326,10 @@ class M {
   }
 }
 const P = ["GJ_WebSheet", "GJ_GameSheet", "GJ_GameSheet02", "GJ_GameSheet03", "GJ_GameSheet04", "GJ_GameSheetEditor", "GJ_GameSheetGlow", "GJ_GameSheetIcons", "GJ_LaunchSheet", "player_ball_00", "player_dart_00"];
-function R(_0xfe584, _0x2da093) {
+function R(scene, _0x2da093) {
   for (let _0x15819b of P) {
-    if (_0xfe584.textures.exists(_0x15819b)) {
-      if (_0xfe584.textures.get(_0x15819b).has(_0x2da093)) {
+    if (scene.textures.exists(_0x15819b)) {
+      if (scene.textures.get(_0x15819b).has(_0x2da093)) {
         return {
           atlas: _0x15819b,
           frame: _0x2da093
@@ -339,12 +339,12 @@ function R(_0xfe584, _0x2da093) {
   }
   return null;
 }
-function L(_0x56b804, _0x310a42, _0x71aad, _0x4272eb) {
-  let _0x4a4e1f = R(_0x56b804, _0x4272eb);
+function L(scene, _0x310a42, _0x71aad, _0x4272eb) {
+  let _0x4a4e1f = R(scene, _0x4272eb);
   if (_0x4a4e1f) {
-    return _0x56b804.add.image(_0x310a42, _0x71aad, _0x4a4e1f.atlas, _0x4a4e1f.frame);
-  } else if (_0x56b804.textures.exists(_0x4272eb)) {
-    return _0x56b804.add.image(_0x310a42, _0x71aad, _0x4272eb);
+    return scene.add.image(_0x310a42, _0x71aad, _0x4a4e1f.atlas, _0x4a4e1f.frame);
+  } else if (scene.textures.exists(_0x4272eb)) {
+    return scene.add.image(_0x310a42, _0x71aad, _0x4272eb);
   } else {
     return null;
   }
@@ -1716,12 +1716,12 @@ class cs {
     }
   }
 }
-function ds(_0x415536, _0x592bc1, _0x4d69dc, _0xfb965c, _0x43d3fd, _0x5bbdf1) {
+function ds(scene, _0x592bc1, _0x4d69dc, _0xfb965c, _0x43d3fd, _0x5bbdf1) {
   let _0x221d10 = R(_0x415536, _0xfb965c);
   if (!_0x221d10) {
     return null;
   }
-  let _0x38da45 = _0x415536.add.image(_0x592bc1, _0x4d69dc, _0x221d10.atlas, _0x221d10.frame);
+  let _0x38da45 = scene.add.image(_0x592bc1, _0x4d69dc, _0x221d10.atlas, _0x221d10.frame);
   _0x38da45.setDepth(_0x43d3fd);
   _0x38da45.setVisible(_0x5bbdf1);
   return {
@@ -1843,8 +1843,8 @@ class ps {
     this._waveLayers = [this._waveSpriteLayer, this._waveOverlayLayer, this._waveExtraLayer, this._waveGlowLayer].filter(_0x37ad93 => !!_0x37ad93);
     this._allLayers = [...this._playerLayers, ...this._ballLayers, ...this._waveLayers, ...this._shipLayers];
   }
-  _initParticles(_0x538533) {
-    this._particleEmitter = _0x538533.add.particles(0, 0, "GJ_WebSheet", {
+  _initParticles(scene) {
+    this._particleEmitter = scene.add.particles(0, 0, "GJ_WebSheet", {
       frame: "square.png",
       speed: {
         min: 110,
@@ -1874,7 +1874,7 @@ class ps {
     this._particleEmitter.stop();
     this._particleEmitter.setDepth(9);
     this._gameLayer.container.add(this._particleEmitter);
-    this._flyParticleEmitter = _0x538533.add.particles(0, 0, "GJ_WebSheet", {
+    this._flyParticleEmitter = scene.add.particles(0, 0, "GJ_WebSheet", {
       frame: "square.png",
       speed: {
         min: 22,
@@ -1907,7 +1907,7 @@ class ps {
     this._flyParticleEmitter.stop();
     this._flyParticleEmitter.setDepth(9);
     this._gameLayer.container.add(this._flyParticleEmitter);
-    this._flyParticle2Emitter = _0x538533.add.particles(0, 0, "GJ_WebSheet", {
+    this._flyParticle2Emitter = scene.add.particles(0, 0, "GJ_WebSheet", {
       frame: "square.png",
       speed: {
         min: 220,
@@ -1940,7 +1940,7 @@ class ps {
     this._flyParticle2Emitter.stop();
     this._flyParticle2Emitter.setDepth(9);
     this._gameLayer.container.add(this._flyParticle2Emitter);
-    this._shipDragEmitter = _0x538533.add.particles(0, 0, "GJ_WebSheet", {
+    this._shipDragEmitter = scene.add.particles(0, 0, "GJ_WebSheet", {
       frame: "square.png",
       x: {
         min: -18,
@@ -2004,13 +2004,13 @@ class ps {
       tint: window.mainColor,
       emitting: false
     };
-    this._landEmitter1 = _0x538533.add.particles(0, 0, "GJ_WebSheet", {
+    this._landEmitter1 = scene.add.particles(0, 0, "GJ_WebSheet", {
       ..._0x57911a
     });
-    this._landEmitter2 = _0x538533.add.particles(0, 0, "GJ_WebSheet", {
+    this._landEmitter2 = scene.add.particles(0, 0, "GJ_WebSheet", {
       ..._0x57911a
     });
-    this._aboveContainer = _0x538533.add.container(0, 0);
+    this._aboveContainer = scene.add.container(0, 0);
     this._aboveContainer.setDepth(13);
     this._aboveContainer.add(this._landEmitter1);
     this._aboveContainer.add(this._landEmitter2);
