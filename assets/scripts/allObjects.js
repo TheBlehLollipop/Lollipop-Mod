@@ -72958,14 +72958,18 @@ return {
     frame: "portal_01_front_001.png",
     gridW: 0.8333333134651184,
     gridH: 2.5,
-    sub: "gravity_flip"
+    sub: "gravity_flip",
+    portalParticle: true,
+    portalParticleColor: 2736127
   },
   11: {
     type: "portal",
     frame: "portal_02_front_001.png",
     gridW: 0.8333333134651184,
     gridH: 2.5,
-    sub: "gravity_normal"
+    sub: "gravity_normal",
+    portalParticle: true,
+    portalParticleColor: 15462948
   },
   12: {
     type: "portal",
@@ -73004,9 +73008,29 @@ return {
     frame: "portal_07_front_001.png",
     gridW: 1,
     gridH: 3,
-    sub: "ball"
+    sub: "ball",
+    portalParticle: true,
+    portalParticleColor: 16711680
   },
-    200: {
+  99: {
+    type: "portal",
+    frame: "portal_08_front_001.png",
+    gridW: 1,
+    gridH: 3,
+    sub: "grow",
+    portalParticle: true,
+    portalParticleColor: 5111552
+  },
+  101: {
+    type: "portal",
+    frame: "portal_09_front_001.png",
+    gridW: 1,
+    gridH: 3,
+    sub: "shrink",
+    portalParticle: true,
+    portalParticleColor: 16711935
+  },
+  200: {
         "can_color": false,
         "default_base_color_channel": 0,
         "frame": "boost_01_001.png",
@@ -73016,7 +73040,7 @@ return {
         "spritesheet": "GJ_GameSheet02-uhd",
         "type": "deco",
         "z": -6
-    },
+  },
   201: {
     type: "speed",
     frame: "portal_10_front_001.png",
