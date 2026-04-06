@@ -29,20 +29,6 @@ function hexadecimalToHex(num) {
   return num.toString(16).padStart(6, '0');
 }
 
-function t(_0x5ebeba) {
-  if (_0x5ebeba && _0x5ebeba.__esModule && Object.prototype.hasOwnProperty.call(_0x5ebeba, "default")) {
-    return _0x5ebeba.default;
-  } else {
-    return _0x5ebeba;
-  }
-}
-var e;
-var i = { exports: {} };
-
-const s = t(e ? i.exports : (e = 1, i.exports = (() => {
-  return window.Phaser;
-})()));
-
 let r = Math.round(10240 / 9);
 const n = 640;
 const a = 60;
@@ -3997,19 +3983,19 @@ class xs extends Phaser.Scene {
       this._glitterEmitter.stop();
     }
   }
-  _setParticleTimeScale(_0x41fa6a) {
-    const _0x2a8756 = _0x3d71c7 => {
-      if (_0x3d71c7 && _0x3d71c7.type === "ParticleEmitter") {
-        _0x3d71c7.timeScale = _0x41fa6a;
+  _setParticleTimeScale(timeScale) {
+    const updateTimeScale = object => {
+      if (object && object.type === "ParticleEmitter") {
+        object.timeScale = timeScale;
       }
-      if (_0x3d71c7 && _0x3d71c7.list) {
-        _0x3d71c7.list.forEach(_0x2a8756);
+      if (object && object.list) {
+        object.list.forEach(updateTimeScale);
       }
     };
-    _0x2a8756(this._level.container);
-    _0x2a8756(this._level.topContainer);
+    updateTimeScale(this._level.container);
+    updateTimeScale(this._level.topContainer);
     if (this._glitterEmitter) {
-      this._glitterEmitter.timeScale = _0x41fa6a;
+      this._glitterEmitter.timeScale = timeScale;
     }
   }
   _pauseGame() {
@@ -5433,7 +5419,7 @@ function ws(_0x13c75c, _0x23c5aa = 16777215, _0x52bb5b = 16777215) {
   }).setScrollFactor(0).setDepth(57);
 }
 const Ss = {
-  type: s.AUTO,
+  type: Phaser.AUTO,
   width: r,
   height: n,
   resolution: 1,
@@ -5449,9 +5435,9 @@ const Ss = {
     powerPreference: "high-performance"
   },
   scale: {
-    mode: s.Scale.FIT,
-    autoCenter: s.Scale.CENTER_BOTH
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH
   },
   scene: [A, xs]
 };
-new s.Game(Ss);
+new Phaser.Game(Ss);
