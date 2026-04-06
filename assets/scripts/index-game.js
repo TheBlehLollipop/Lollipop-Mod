@@ -1248,7 +1248,7 @@ class us {
           }
         } else if (_0x24471f.type === padType) {
           let padW = _0x24471f.gridW * a;
-          let padH = Math.max(_0x24471f.gridH, 10);
+          let padH = Math.max(_0x24471f.gridH, 7);
           let padObj = new O(jumpPadType, _0x173c58, _0x7ab528, padW, padH, _0x1b937f.rot || 0);
           padObj.padId = _0x1b937f.id;
           this.objects.push(padObj);
