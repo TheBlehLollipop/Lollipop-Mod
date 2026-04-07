@@ -73599,10 +73599,10 @@ return {
     gridH: 1.0333333015441895
   },
   146: {
-    type: "deco",
-    frame: "d_largeSquare_02_001.png",
-    gridW: 0,
-    gridH: 0
+    type: "solid",
+    frame: "invis_square_01_001.png",
+    gridW: 1,
+    gridH: 1
   },
   138: {
     type: "deco",
@@ -74742,6 +74742,12 @@ return {
         "type": "solid",
         "z": 2
     },
+    193: {
+        "type": "deco",
+        "frame": "square_g_11_001.png",
+        "gridH": 1,
+        "gridW": 1
+    },
     394: {
         "can_color": true,
         "children": [
@@ -75246,6 +75252,13 @@ return {
         "type": "portal",
         "z": 10
     },
+    116: {
+        "type": "solid",
+        "frame": "square_f_01_001.png",
+        "gridW": 1,
+        "gridH": 1,
+        "spritesheet": "GJ_GameSheet-uhd"
+    },
     117: {
         "type": "solid",
         "frame": "square_f_02_001.png",
@@ -75260,11 +75273,32 @@ return {
         "gridH": 1,
         "spritesheet": "GJ_GameSheet-uhd"
     },
+    119: {
+        "type": "solid",
+        "frame": "blockOutline_06_001.png",
+        "gridW": 1,
+        "gridH": 1,
+        "spritesheet": "GJ_GameSheet-uhd"
+    },
     120: {
         "type": "deco",
         "frame": "square_f_05_001.png",
         "gridW": 0,
         "gridH": 0,
+        "spritesheet": "GJ_GameSheet-uhd"
+    },
+    121: {
+        "type": "solid",
+        "frame": "square_f_06_001.png",
+        "gridW": 1,
+        "gridH": 1,
+        "spritesheet": "GJ_GameSheet-uhd"
+    },        
+    122: {
+        "type": "solid",
+        "frame": "square_f_07_001.png",
+        "gridW": 1,
+        "gridH": 1,
         "spritesheet": "GJ_GameSheet-uhd"
     },    
     162: {
