@@ -3834,7 +3834,7 @@ class xs extends Phaser.Scene {
       this._leftBtn.setVisible(false)
       this._rightBtn.setVisible(false)
       this._percentageLabel.setVisible(true)
-      this._percentageLabel.setDepth(1000);
+      this._percentageLabel.setDepth(9999);
     }, () => this._menuActive && !this._playBtnPressed);
     this._positionMenuItems();
     this._spaceWasDown = false;
