@@ -1136,6 +1136,7 @@ class us {
           let _0x10e5ae = _0x24471f.gridW * a;
           let _0x11e08d = _0x24471f.gridH * a;
           let _0x4628ff = new Collider(solidType, _0x173c58, _0x7ab528, _0x10e5ae, _0x11e08d, _0x1b937f.rot || 0);
+          _0x4628ff.objid = _0x1b937f.id;
           this.objects.push(_0x4628ff);
           this._addCollisionToSection(_0x4628ff);
         } else if (_0x24471f.type === hazardType) {
@@ -3109,8 +3110,9 @@ _updateBallJump(_0x2fe319) {
           const _0xLandBot = (this.p.yVelocity <= 0 || this.p.onGround) && (_0x146a97 >= bottom || _0x869e42 >= bottom);
           const _0xLandTop = (this.p.yVelocity >= 0 || this.p.onGround) && (_0x3e7199 <= top || _0x135a9d <= top);
           const _0x2841ea = this.p.gravityFlipped ? _0xLandTop : _0xLandBot;
+          console.log(gameObj)
           if (_0x3c1654 && !_0x2841ea) {
-            if (!window.noClip){
+            if (!window.noClip && gameObj.objid !== 143){
               this.killPlayer();
             }
             return;
@@ -3146,7 +3148,7 @@ _updateBallJump(_0x2fe319) {
             }
             if (!this.p.gravityFlipped && (_0x3e7199 <= top || _0x135a9d <= top) && this.p.yVelocity >= 0) {
               if (_0x3c1654) {
-                if (!window.noClip) {
+                if (!window.noClip && gameObj.objid !== 143) {
                   this.killPlayer();
                 }
                 return;
@@ -3155,7 +3157,7 @@ _updateBallJump(_0x2fe319) {
             }
             if (this.p.gravityFlipped && !this.p.isFlying && (_0x146a97 >= bottom || _0x869e42 >= bottom) && this.p.yVelocity <= 0) {
               if (_0x3c1654) {
-                if (!window.noClip) {
+                if (!window.noClip && gameObj.objid !== 143) {
                   this.killPlayer();
                 }
                 return;

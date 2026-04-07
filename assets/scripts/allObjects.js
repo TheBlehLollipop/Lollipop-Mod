@@ -73665,7 +73665,7 @@ return {
     gridH: 1.0,
     gridW: 1.0,
     spritesheet: "GJ_GameSheet-uhd",
-    type: "deco",
+    type: "solid",
     z: 2
   },
   144: {
