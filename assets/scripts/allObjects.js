@@ -68648,43 +68648,6 @@ window.allobjects = function() {
         "type": "deco",
         "z": -7
     },
-    76: {
-        "can_color": true,
-        "children": [
-            {
-                "frame": "square_d_05_001.png",
-                "localDy": 0.0,
-                "tint": 65280,
-                "z": -1
-            },
-            {
-                "frame": "lightsquare_04_02_001.png",
-                "localDy": 0.0,
-                "tint": 65280,
-                "z": 1
-            },
-            {
-                "frame": "lightsquare_04_02_001.png",
-                "localDy": 0.0,
-                "tint": 65280,
-                "z": 1
-            },
-            {
-                "frame": "lightsquare_04_02_001.png",
-                "localDy": 0.0,
-                "tint": 65280,
-                "z": 1
-            }
-        ],
-        "default_base_color_channel": 1004,
-        "frame": "lightsquare_04_02_001.png",
-        "glow_frame": "lightsquare_04_02_glow_001.png",
-        "gridH": 1.0,
-        "gridW": 1.0,
-        "spritesheet": "GJ_GameSheet-uhd",
-        "type": "solid",
-        "z": 2
-    },
     762: {
         "can_color": true,
         "children": [
@@ -68820,25 +68783,6 @@ window.allobjects = function() {
         "type": "deco",
         "z": -7
     },
-    77: {
-        "can_color": true,
-        "children": [
-            {
-                "frame": "square_d_05_001.png",
-                "localDy": 0.0,
-                "tint": 65280,
-                "z": -1
-            }
-        ],
-        "default_base_color_channel": 1004,
-        "frame": "lightsquare_04_02_001.png",
-        "glow_frame": "lightsquare_04_02_glow_001.png",
-        "gridH": 1.0,
-        "gridW": 1.0,
-        "spritesheet": "GJ_GameSheet-uhd",
-        "type": "solid",
-        "z": 2
-    },
     770: {
         "can_color": true,
         "children": [
@@ -68950,31 +68894,6 @@ window.allobjects = function() {
         "type": "deco",
         "z": -7
     },
-    78: {
-        "can_color": true,
-        "children": [
-            {
-                "frame": "square_d_05_001.png",
-                "localDy": 0.0,
-                "tint": 65280,
-                "z": -1
-            },
-            {
-                "frame": "lightsquare_04_02_001.png",
-                "localDy": 0.0,
-                "tint": 65280,
-                "z": 1
-            }
-        ],
-        "default_base_color_channel": 1004,
-        "frame": "lightsquare_04_02_001.png",
-        "glow_frame": "lightsquare_04_02_glow_001.png",
-        "gridH": 1.0,
-        "gridW": 1.0,
-        "spritesheet": "GJ_GameSheet-uhd",
-        "type": "solid",
-        "z": 2
-    },
     8: {
         "can_color": true,
         "default_base_color_channel": 1004,
@@ -68985,17 +68904,6 @@ window.allobjects = function() {
         "spritesheet": "GJ_GameSheet-uhd",
         "type": "hazard",
         "z": 2
-    },
-    80: {
-        "can_color": true,
-        "default_base_color_channel": 1004,
-        "frame": "square_d_05_001.png",
-        "glow_frame": "square_d_05_glow_001.png",
-        "gridH": 1.0,
-        "gridW": 1.0,
-        "spritesheet": "GJ_GameSheet-uhd",
-        "type": "deco",
-        "z": -7
     },
     807: {
         "black": true,
@@ -69080,37 +68988,6 @@ window.allobjects = function() {
         "spritesheet": "GJ_GameSheet-uhd",
         "type": "deco",
         "z": -7
-    },
-    81: {
-        "can_color": true,
-        "children": [
-            {
-                "frame": "square_d_05_001.png",
-                "localDy": 0.0,
-                "tint": 65280,
-                "z": -1
-            },
-            {
-                "frame": "lightsquare_04_02_001.png",
-                "localDy": 0.0,
-                "tint": 65280,
-                "z": 1
-            },
-            {
-                "frame": "lightsquare_04_02_001.png",
-                "localDy": 0.0,
-                "tint": 65280,
-                "z": 1
-            }
-        ],
-        "default_base_color_channel": 1004,
-        "frame": "lightsquare_04_02_001.png",
-        "glow_frame": "lightsquare_04_02_glow_001.png",
-        "gridH": 1.0,
-        "gridW": 1.0,
-        "spritesheet": "GJ_GameSheet-uhd",
-        "type": "solid",
-        "z": 2
     },
     810: {
         "black": true,
@@ -69391,31 +69268,6 @@ window.allobjects = function() {
         "spritesheet": "GJ_GameSheet-uhd",
         "type": "deco",
         "z": -7
-    },
-    82: {
-        "can_color": true,
-        "children": [
-            {
-                "frame": "square_d_05_001.png",
-                "localDy": 0.0,
-                "tint": 65280,
-                "z": -1
-            },
-            {
-                "frame": "lightsquare_04_02_001.png",
-                "localDy": 0.0,
-                "tint": 65280,
-                "z": 1
-            }
-        ],
-        "default_base_color_channel": 1004,
-        "frame": "lightsquare_04_sideLine_001.png",
-        "glow_frame": "lightsquare_04_sideLine_glow_001.png",
-        "gridH": 1.0,
-        "gridW": 1.0,
-        "spritesheet": "GJ_GameSheet-uhd",
-        "type": "solid",
-        "z": 2
     },
     820: {
         "black": true,
@@ -75320,6 +75172,154 @@ return {
     frame: "secretCoin_2_01_001.png",
     gridW: 1,
     gridH: 1
-  }
+  },
+    76: {
+        "can_color": true,
+        "children": [
+            {
+                "frame": "square_d_05_001.png",
+                "localDy": 0.0,
+                "tint": 65280,
+                "z": -1
+            },
+            {
+                "frame": "lightsquare_04_02_001.png",
+                "localDy": 0.0,
+                "tint": 65280,
+                "z": 1
+            },
+            {
+                "frame": "lightsquare_04_02_001.png",
+                "localDy": 0.0,
+                "tint": 65280,
+                "z": 1
+            },
+            {
+                "frame": "lightsquare_04_02_001.png",
+                "localDy": 0.0,
+                "tint": 65280,
+                "z": 1
+            }
+        ],
+        "default_base_color_channel": 1004,
+        "frame": "lightsquare_04_02_001.png",
+        "glow_frame": "lightsquare_04_02_glow_001.png",
+        "gridH": 1.0,
+        "gridW": 1.0,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "solid",
+        "z": 2
+    },
+    77: {
+        "can_color": true,
+        "children": [
+            {
+                "frame": "square_d_05_001.png",
+                "localDy": 0.0,
+                "tint": 65280,
+                "z": -1
+            }
+        ],
+        "default_base_color_channel": 1004,
+        "frame": "lightsquare_04_02_001.png",
+        "glow_frame": "lightsquare_04_02_glow_001.png",
+        "gridH": 1.0,
+        "gridW": 1.0,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "solid",
+        "z": 2
+    },
+    78: {
+        "can_color": true,
+        "children": [
+            {
+                "frame": "square_d_05_001.png",
+                "localDy": 0.0,
+                "tint": 65280,
+                "z": -1
+            },
+            {
+                "frame": "lightsquare_04_02_001.png",
+                "localDy": 0.0,
+                "tint": 65280,
+                "z": 1
+            }
+        ],
+        "default_base_color_channel": 1004,
+        "frame": "lightsquare_04_02_001.png",
+        "glow_frame": "lightsquare_04_02_glow_001.png",
+        "gridH": 1.0,
+        "gridW": 1.0,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "solid",
+        "z": 2
+    },
+    80: {
+        "can_color": true,
+        "default_base_color_channel": 1004,
+        "frame": "square_d_05_001.png",
+        "glow_frame": "square_d_05_glow_001.png",
+        "gridH": 1.0,
+        "gridW": 1.0,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "deco",
+        "z": -7
+    },
+    81: {
+        "can_color": true,
+        "children": [
+            {
+                "frame": "square_d_05_001.png",
+                "localDy": 0.0,
+                "tint": 65280,
+                "z": -1
+            },
+            {
+                "frame": "lightsquare_04_02_001.png",
+                "localDy": 0.0,
+                "tint": 65280,
+                "z": 1
+            },
+            {
+                "frame": "lightsquare_04_02_001.png",
+                "localDy": 0.0,
+                "tint": 65280,
+                "z": 1
+            }
+        ],
+        "default_base_color_channel": 1004,
+        "frame": "lightsquare_04_02_001.png",
+        "glow_frame": "lightsquare_04_02_glow_001.png",
+        "gridH": 1.0,
+        "gridW": 1.0,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "solid",
+        "z": 2
+    },
+    82: {
+        "can_color": true,
+        "children": [
+            {
+                "frame": "square_d_05_001.png",
+                "localDy": 0.0,
+                "tint": 65280,
+                "z": -1
+            },
+            {
+                "frame": "lightsquare_04_02_001.png",
+                "localDy": 0.0,
+                "tint": 65280,
+                "z": 1
+            }
+        ],
+        "default_base_color_channel": 1004,
+        "frame": "lightsquare_04_sideLine_001.png",
+        "glow_frame": "lightsquare_04_sideLine_glow_001.png",
+        "gridH": 1.0,
+        "gridW": 1.0,
+        "spritesheet": "GJ_GameSheet-uhd",
+        "type": "solid",
+        "z": 2
+    },
 };
 }
