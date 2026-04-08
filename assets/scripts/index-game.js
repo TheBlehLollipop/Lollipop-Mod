@@ -277,6 +277,9 @@ preload() {
     this.load.text("level_137677336", "assets/levels/137677336.txt");
     this.load.audio("disco_dinosaur", "assets/music/DiscoDinosaur.mp3");
  
+    this.load.text("level_116489424", "assets/levels/116489424.txt");
+    this.load.audio("the_dark_star", "assets/music/TheDarkStar.mp3");
+ 
     this.load.audio("explode_11", "assets/sfx/explode_11.ogg");
     this.load.audio("endStart_02", "assets/sfx/endStart_02.ogg");
     this.load.audio("playSound_01", "assets/sfx/playSound_01.ogg");

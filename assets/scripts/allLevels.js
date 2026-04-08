@@ -161,4 +161,10 @@ window.allLevels = [
 	    "level_137677336",
 	    ["kmr", "DJ-Nate"]
     ],
+    [
+        "the_dark_star",
+	    "The Dark Star",
+	    "level_116489424",
+	    ["Torrenware", "MidiGuyDP"]
+    ],
 ]
