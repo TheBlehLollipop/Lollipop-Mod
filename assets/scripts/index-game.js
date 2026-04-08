@@ -2948,6 +2948,11 @@ _updateBallJump(_0x2fe319) {
     let _boostedThisStep = false;
     const _0x198534 = this._gameLayer.getNearbySectionObjects(_0x3c691e);
     for (let gameObj of _0x198534) {
+      if (gameObj.type === "hazard") {
+        if (window.noClip) {
+          continue;
+        }
+      }
       let left = gameObj.x - gameObj.w / 2;
       let right = gameObj.x + gameObj.w / 2;
       let top = gameObj.y - gameObj.h / 2;
