@@ -152,7 +152,7 @@ preload() {
       barFill.fillStyle(0x4488ff, 0.5);
       barFill.fillRoundedRect(barX, barY, fillW, barH / 2, { tl: 8, tr: 8, bl: 0, br: 0 });
       pctText.setText(Math.floor(value * 100) + '%');
-      loadingText.setText(value < 1 ? 'Loading...' : 'Launching!');
+      loadingText.setText(value < 1 ? 'Loading...' : 'Ready!');
     });
     this.load.on("loaderror", _0x550fba => {});
     this.load.atlas("GJ_WebSheet", "assets/sheets/GJ_WebSheet.png", "assets/sheets/GJ_WebSheet.json");
@@ -412,6 +412,7 @@ class PlayerState {
     this.mirrored = false;
     this.isDashing = false;
     this.dashYVelocity = 0;
+    this.isMini = false;
   }
 }
 const P = ["GJ_WebSheet", "GJ_GameSheet", "GJ_GameSheet02", "GJ_GameSheet03", "GJ_GameSheet04", "GJ_GameSheetEditor", "GJ_GameSheetGlow", "GJ_GameSheetIcons", "GJ_LaunchSheet", "player_ball_00", "player_dart_00"];
@@ -526,7 +527,7 @@ const flyPortal = "fly";
 const cubePortal = "cube";
 const portalWaveType = "portal_wave";
 const allObjects = window.allobjects();
-const objsWithGlow = [1, 2, 3, 4, 6, 7, 83, 8, 39, 103, 392, 35, 36, 40, 140, 141, 62, 65, 66, 68, 195, 196];
+const objsWithGlow = [1, 2, 3, 4, 6, 7, 83, 8, 39, 103, 392, 35, 36, 40, 140, 141, 62, 65, 66, 68, 195, 196, 1022, 1594];
 for (let obj of objsWithGlow) {
   if (allObjects[obj]) {
     allObjects[obj].glow = true;
@@ -564,6 +565,7 @@ class us {
     this._audioScaleSprites = [];
     this._orbSprites = [];
     this._coinSprites = [];
+    this._sawSprites = [];
     this._enterEffectTriggers = [];
     this._enterEffectTriggerIdx = 0;
     this._activeEnterEffect = 0;
@@ -1085,6 +1087,23 @@ class us {
             _0x554e0e._coinBaseScale = _0x554e0e.scaleX || 1;
             this._coinSprites.push(_0x554e0e);
           }
+          if (_0x4c7589 && _0x4c7589.indexOf("sawblade") >= 0) {
+            _0x554e0e.setTint(0x000000);
+            _0x554e0e._isSaw = true;
+            this._sawSprites.push(_0x554e0e);
+            let _sawMirror = L(_0xd15974, _0x2ddc05, _0x1b10a0, _0x4c7589);
+            if (_sawMirror) {
+              this._applyVisualProps(_0xd15974, _sawMirror, _0x4c7589, _0x1b937f, _0x24471f);
+              _sawMirror.setTint(0x000000);
+              _sawMirror.rotation = _0x554e0e.rotation + Math.PI;
+              _sawMirror._isSaw = true;
+              _sawMirror._eeWorldX = _0x173c58;
+              _sawMirror._eeBaseY = _0x1b10a0;
+              this._addToSection(_sawMirror);
+              this._addVisualSprite(_sawMirror);
+              this._sawSprites.push(_sawMirror);
+            }
+          }
         } else {
           console.warn("No sprite found for object ID " + _0x1b937f.id + " frame=" + _0x4c7589 + " type=" + (_0x24471f ? _0x24471f.type : "null"));
         }
@@ -1134,6 +1153,22 @@ class us {
               _0x42173e._eeWorldX = _0x173c58 + _0x3b4e8c;
               _0x42173e._eeBaseY = _0x1b10a0 + _0x172131;
               this._addToSection(_0x42173e);
+              if (_0x4c7589 && _0x4c7589.indexOf("sawblade") >= 0) {
+                _0x42173e.setTint(0x000000);
+                _0x42173e._isSaw = true;
+                this._sawSprites.push(_0x42173e);
+                let _childMirror = L(_0xd15974, _0x2ddc05 + _0x3b4e8c, _0x1b10a0 + _0x172131, _0x2ca803.frame);
+                if (_childMirror) {
+                  this._applyVisualProps(_0xd15974, _childMirror, _0x2ca803.frame, _0x1b937f, _0x2ca803);
+                  _childMirror.setTint(0x000000);
+                  _childMirror.rotation = _0x42173e.rotation + Math.PI;
+                  _childMirror._isSaw = true;
+                  _childMirror._eeWorldX = _0x173c58 + _0x3b4e8c;
+                  _childMirror._eeBaseY = _0x1b10a0 + _0x172131;
+                  this._addToSection(_childMirror);
+                  this._sawSprites.push(_childMirror);
+                }
+              }
             }
           }
         }
@@ -1147,12 +1182,15 @@ class us {
         const _0x143187 = 2;
         let _0x5926ad = _0x3a9438 - _0x143187 * 5;
         let _0x1ebc69 = _0x2e9079;
+        const _portalRot = (_0x1b937f.rot || 0) * Math.PI / 180;
         const _0x388526 = {
           getRandomPoint: _0x4ad804 => {
             let _0x5b7fb4 = (Math.random() * 190 + 85) * Math.PI / 180;
             let _0x2bc56f = _0x143187 * 20 + Math.random() * 40 * _0x143187;
-            _0x4ad804.x = Math.cos(_0x5b7fb4) * _0x2bc56f;
-            _0x4ad804.y = Math.sin(_0x5b7fb4) * _0x2bc56f;
+            let _rx = Math.cos(_0x5b7fb4) * _0x2bc56f;
+            let _ry = Math.sin(_0x5b7fb4) * _0x2bc56f;
+            _0x4ad804.x = _rx * Math.cos(_portalRot) - _ry * Math.sin(_portalRot);
+            _0x4ad804.y = _rx * Math.sin(_portalRot) + _ry * Math.cos(_portalRot);
             return _0x4ad804;
           }
         };
@@ -1244,7 +1282,9 @@ class us {
             ball: "portal_ball",
             wave: portalWaveType,
             mirrora: "portal_mirror_on",
-            mirrorb: "portal_mirror_off"
+            mirrorb: "portal_mirror_off",
+            shrink: "portal_mini_on",
+            grow: "portal_mini_off"
           }[_0x5bcd81] || null;
           if (!_0x25452a) {
             console.warn("unknown portal sub-type: id=" + _0x1b937f.id + " sub=" + _0x24471f.sub);
@@ -1438,8 +1478,8 @@ class us {
     if (_0x1dce22 < 0) {
       return;
     }
-    const _0x5b29dd = Math.max(0, Math.floor((_0xa5f1e1 - 50) / 400));
-    const _0x3b33db = Math.min(_0x1dce22, Math.floor((_0xa5f1e1 + r + 50) / 400));
+    const _0x5b29dd = Math.max(0, Math.floor((_0xa5f1e1 - 200) / 400));
+    const _0x3b33db = Math.min(_0x1dce22, Math.floor((_0xa5f1e1 + r + 200) / 400));
     const _0x1800fc = this._visMinSec;
     const _0xc31046 = this._visMaxSec;
     if (_0x1800fc < 0) {
@@ -2208,8 +2248,9 @@ if (this.p.isFlying) {
           _0x5dc75c.sprite.x = _0x7f0705 + _0x1b1d28;
           _0x5dc75c.sprite.y = _0x1a433c + _0x185f91;
           _0x5dc75c.sprite.rotation = this.p.mirrored ? -_0x2907d3 : _0x2907d3;
-          _0x5dc75c.sprite.scaleY = this.p.gravityFlipped ? -Math.abs(_0x5dc75c.sprite.scaleY) : Math.abs(_0x5dc75c.sprite.scaleY);
-          _0x5dc75c.sprite.scaleX = this.p.mirrored ? -Math.abs(_0x5dc75c.sprite.scaleX) : Math.abs(_0x5dc75c.sprite.scaleX);
+          const _miniS = this.p.isMini ? 0.6 : 1;
+          _0x5dc75c.sprite.scaleY = this.p.gravityFlipped ? -_miniS : _miniS;
+          _0x5dc75c.sprite.scaleX = this.p.mirrored ? -_miniS : _miniS;
         }
       }
       for (const _0x536f40 of this._playerLayers) {
@@ -2217,8 +2258,10 @@ if (this.p.isFlying) {
           _0x536f40.sprite.x = _0x7f0705 + _0x562424;
           _0x536f40.sprite.y = _0x1a433c + _0x3011c9;
           _0x536f40.sprite.rotation = this.p.mirrored ? -_0x2907d3 : _0x2907d3;
-          _0x536f40.sprite.scaleY = this.p.gravityFlipped ? -Math.abs(_0x536f40.sprite.scaleY) : Math.abs(_0x536f40.sprite.scaleY);
-          _0x536f40.sprite.scaleX = this.p.mirrored ? -Math.abs(_0x536f40.sprite.scaleX) : Math.abs(_0x536f40.sprite.scaleX);
+          const _miniS = this.p.isMini ? 0.6 : 1;
+          const _shipCubeS = _miniS * 0.55;
+          _0x536f40.sprite.scaleY = this.p.gravityFlipped ? -_shipCubeS : _shipCubeS;
+          _0x536f40.sprite.scaleX = this.p.mirrored ? -_shipCubeS : _shipCubeS;
         }
       }
     } else {
@@ -2228,8 +2271,9 @@ if (this.p.isFlying) {
           _0x2c61a1.sprite.y = _0x1a433c;
           const isBallLayer = this._ballLayers.includes(_0x2c61a1);
           _0x2c61a1.sprite.rotation = isBallLayer ? _0x2907d3 : (this.p.mirrored ? -_0x2907d3 : _0x2907d3);
-          _0x2c61a1.sprite.scaleY = this.p.gravityFlipped ? -Math.abs(_0x2c61a1.sprite.scaleY) : Math.abs(_0x2c61a1.sprite.scaleY);
-          _0x2c61a1.sprite.scaleX = this.p.mirrored ? -Math.abs(_0x2c61a1.sprite.scaleX) : Math.abs(_0x2c61a1.sprite.scaleX);
+          const _miniS = this.p.isMini ? 0.6 : 1;
+          _0x2c61a1.sprite.scaleY = (this.p.gravityFlipped ? -_miniS : _miniS);
+          _0x2c61a1.sprite.scaleX = (this.p.mirrored ? -_miniS : _miniS);
         }
       }
     }
@@ -2892,10 +2936,11 @@ hitGround() {
       this.p.canJump = false;
       this.p.upKeyPressed = false;
       this.p.queuedHold = false;
-      this.p.yVelocity = this.flipMod() * 22.360064;
+      this.p.yVelocity = this.flipMod() * (this.p.isMini ? 15.652 : 22.360064);
       this.runRotateAction();
     } else if (this.p.isJumping) {
-      this.p.yVelocity -= p * _0x3d1c6f * this.flipMod();
+      const _miniGrav = this.p.isMini ? 1.4 : 1;
+      this.p.yVelocity -= p * _0x3d1c6f * this.flipMod() * _miniGrav;
       if (this.playerIsFalling()) {
         this.p.isJumping = false;
         this.p.onGround = false;
@@ -2904,7 +2949,8 @@ hitGround() {
       if (this.playerIsFalling()) {
         this.p.canJump = false;
       }
-      this.p.yVelocity -= p * _0x3d1c6f * this.flipMod();
+      const _miniGrav = this.p.isMini ? 1.4 : 1;
+      this.p.yVelocity -= p * _0x3d1c6f * this.flipMod() * _miniGrav;
       if (this.p.gravityFlipped) {
         this.p.yVelocity = Math.min(this.p.yVelocity, 30);
       } else {
@@ -2949,11 +2995,12 @@ hitGround() {
     }
   }
 _updateBallJump(_0x2fe319) {
-  const _0x144266 = p * 0.6;
+  const _miniGrav = this.p.isMini ? 1.4 : 1;
+  const _0x144266 = p * 0.6 * _miniGrav;
   if (this.p.upKeyPressed && this.p.canJump) {
     const _0x47d739 = this.flipMod();
     this.p.upKeyPressed = false;
-    this.p.yVelocity = _0x47d739 * 22.360064;
+    this.p.yVelocity = _0x47d739 * (this.p.isMini ? 15.652 : 22.360064);
     this.flipGravity(!this.p.gravityFlipped);
     this.p.onGround = false;
     this.p.canJump = false;
@@ -2993,7 +3040,8 @@ _updateBallJump(_0x2fe319) {
     this._rotation = _0x312a7f === 0 ? 0 : _0x312a7f > 0 ? -Math.PI / 4 : Math.PI / 4;
   }
   checkCollisions(_0x2f5078) {
-    const _0x6bfa06 = 30;
+    const _0x6bfa06 = this.p.isMini ? 18 : 30;
+    const _xHalf = this.p.isMini ? 18 : 30;
     const _0x3c691e = _0x2f5078 + h;
     const _0x8e0d28 = this.p.y;
     const _0x37040a = this.p.lastY;
@@ -3025,7 +3073,7 @@ _updateBallJump(_0x2fe319) {
       let rotatedRight = gameObj.x + rotatedHalfWidth;
       let rotatedTop = gameObj.y - rotatedHalfHeight;
       let rotatedBottom = gameObj.y + rotatedHalfHeight;
-      if (!(_0x3c691e + 30 <= rotatedLeft) && !(_0x3c691e - 30 >= rotatedRight) && !(_0x8e0d28 + _0x6bfa06 <= rotatedTop) && !(_0x8e0d28 - _0x6bfa06 >= rotatedBottom)) {
+      if (!(_0x3c691e + _xHalf <= rotatedLeft) && !(_0x3c691e - _xHalf >= rotatedRight) && !(_0x8e0d28 + _0x6bfa06 <= rotatedTop) && !(_0x8e0d28 - _0x6bfa06 >= rotatedBottom)) {
         const _colType = gameObj.type;
         if (_colType === "portal_fly") {
           if (!gameObj.activated) {
@@ -3066,13 +3114,13 @@ _updateBallJump(_0x2fe319) {
           if (!gameObj.activated) {
             gameObj.activated = true;
             this._playPortalShine(gameObj);
-            this.flipGravity(false, this.p.isBall ? 0.5: 0.5);
+            this.flipGravity(false, 0.5);
           }
         } else if (_colType === "portal_gravity_up") {
           if (!gameObj.activated) {
             gameObj.activated = true;
             this._playPortalShine(gameObj);
-            this.flipGravity(true, this.p.isBall ? 0.5: 0.5);
+            this.flipGravity(true, 0.5);
           }
         } else if (_colType === "portal_mirror_on") {
           if (!gameObj.activated) {
@@ -3085,6 +3133,18 @@ _updateBallJump(_0x2fe319) {
             gameObj.activated = true;
             this._playPortalShine(gameObj);
             this.p.mirrored = false;
+          }
+        } else if (_colType === "portal_mini_on") {
+          if (!gameObj.activated) {
+            gameObj.activated = true;
+            this._playPortalShine(gameObj);
+            this.p.isMini = true;
+          }
+        } else if (_colType === "portal_mini_off") {
+          if (!gameObj.activated) {
+            gameObj.activated = true;
+            this._playPortalShine(gameObj);
+            this.p.isMini = false;
           }
         } else if (_colType === jumpPadType) {
           if (!gameObj.activated) {
@@ -3110,21 +3170,22 @@ _updateBallJump(_0x2fe319) {
               this.p.isJumping = false;
               _boostedThisStep = true;
             } else {
+              const _miniPad = this.p.isMini ? 0.65 : 1;
               if (this.p.isFlying) {
-                if (_padId === 35) { _padVel = 16 * _grav; _padNextTickVel = _fm * 8 * _grav; }
-                else if (_padId === 140) { _padVel = 5.6 * _grav; }
-                else if (_padId === 1332) { _padVel = 10.08 * _grav; }
-                else if (_padId === 67) { _padVel = 6.4 * _grav; _padFlip = true; }
+                if (_padId === 35) { _padVel = 16 * _grav * _miniPad; _padNextTickVel = _fm * 8 * _grav * _miniPad; }
+                else if (_padId === 140) { _padVel = 5.6 * _grav * _miniPad; }
+                else if (_padId === 1332) { _padVel = 10.08 * _grav * _miniPad; }
+                else if (_padId === 67) { _padVel = 6.4 * _grav * _miniPad; _padFlip = true; }
               } else if (this.p.isBall) {
-                if (_padId === 35) { _padVel = 9.6 * _grav; }
-                else if (_padId === 140) { _padVel = 6.72 * _grav; }
-                else if (_padId === 1332) { _padVel = 12 * _grav; }
-                else if (_padId === 67) { _padVel = 3.84 * _grav; _padFlip = true; }
+                if (_padId === 35) { _padVel = 9.6 * _grav * _miniPad; }
+                else if (_padId === 140) { _padVel = 6.72 * _grav * _miniPad; }
+                else if (_padId === 1332) { _padVel = 12 * _grav * _miniPad; }
+                else if (_padId === 67) { _padVel = 3.84 * _grav * _miniPad; _padFlip = true; }
               } else {
-                if (_padId === 35) { _padVel = 16 * _grav; }
-                else if (_padId === 140) { _padVel = 10.4 * _grav; }
-                else if (_padId === 1332) { _padVel = 20 * _grav; }
-                else if (_padId === 67) { _padVel = 6.4 * _grav; _padFlip = true; }
+                if (_padId === 35) { _padVel = 16 * _grav * _miniPad; }
+                else if (_padId === 140) { _padVel = 10.4 * _grav * _miniPad; }
+                else if (_padId === 1332) { _padVel = 20 * _grav * _miniPad; }
+                else if (_padId === 67) { _padVel = 6.4 * _grav * _miniPad; _padFlip = true; }
               }
               this.p.isJumping = true;
               this.p.onGround = false;
@@ -3214,6 +3275,7 @@ _updateBallJump(_0x2fe319) {
                   else if (_orbId === 1022) { _orbVel = _cubeJump * 0.8; _flipBefore = true; }
                   else if (_orbId === 1330) { _orbVel = -30; }
                 }
+                if (this.p.isMini) { _orbVel *= 0.65; }
                 this.p.isJumping = true;
                 this.p.onGround = false;
                 this.p.canJump = false;
@@ -3268,7 +3330,7 @@ _updateBallJump(_0x2fe319) {
                       duration: 1200,
                       ease: 'Quad.In',
                       onComplete: () => {
-                        _coinSpr.setVisible(false);
+                        try { _coinSpr.setVisible(false); } catch(e) {}
                       }
                     });
                   }
@@ -3413,6 +3475,8 @@ _updateBallJump(_0x2fe319) {
         _0x17cd1a = 16776960;
       } else if (_0x42ccb8.type === "portal_mirror_on" || _0x42ccb8.type === "portal_mirror_off") {
         _0x17cd1a = 16744448;
+      } else if (_0x42ccb8.type === "portal_mini_on" || _0x42ccb8.type === "portal_mini_off") {
+        _0x17cd1a = 16711935;
       } else if (_0x42ccb8.type === jumpPadType) {
         _0x17cd1a = 16744192;
       } else if (_0x42ccb8.type === jumpRingType) {
@@ -3875,6 +3939,8 @@ class xs extends Phaser.Scene {
     };
     this._state = new PlayerState();
     this._level = new us(this, this._cameraXRef);
+    this._orbGfx = null;
+    this._orbGfxTimer = 0;
     this._player = new ps(this, this._state, this._level);
     this._colorManager = new ms();
     if (this._audio == null) {
@@ -3948,7 +4014,7 @@ class xs extends Phaser.Scene {
     this._downloadBtns = [];
     const _0x4fc67f = [{
       key: "downloadSteam_001",
-      url: "https://store.steampowered.com/app/322170/Geometry_Dash"
+      url: "https://github.com/web-dashers/web-dashers.github.io"
     },
     {
       key: "downloadApple_001",
@@ -4716,6 +4782,7 @@ class xs extends Phaser.Scene {
     this._level.resetColorTriggers();
     this._level.resetEnterEffectTriggers();
     this._level.resetVisibility();
+    if (this._orbGfx) { this._orbGfx.clear(); }
     this._colorManager.reset();
     this._audio.reset();
     this._audio.startMusic();
@@ -5001,33 +5068,46 @@ class xs extends Phaser.Scene {
         }
       }
     }
+    if (this._level && this._level._sawSprites) {
+      const _sawRot = _0xaf2ffd * 0.003;
+      for (let _saw of this._level._sawSprites) {
+        if (_saw && _saw.active) _saw.rotation += _sawRot;
+      }
+    }
     this._level.updateAudioScale(this._audio.getMeteringValue());
     if (!this._orbGfx) {
       this._orbGfx = this.add.graphics().setDepth(54).setBlendMode(S);
     }
-    this._orbGfx.clear();
     this._orbParticleAngle = ((this._orbParticleAngle || 0) + _0xaf2ffd * 0.004) % (Math.PI * 2);
-    if (this._level && this._level._orbSprites && this._level.container) {
-      try {
-      for (let _oSpr of this._level._orbSprites) {
-        if (!_oSpr || !_oSpr.visible || !_oSpr.active || !_oSpr.scene) continue;
-        const _sx = _oSpr.x + this._level.container.x;
-        const _sy = _oSpr.y + this._level.container.y;
-        if (_sx < -80 || _sx > r + 80 || _sy < -80 || _sy > n + 80) continue;
-        const _orbTint = _oSpr.tintTopLeft !== undefined && _oSpr.tintTopLeft !== 16777215 ? _oSpr.tintTopLeft : window.mainColor;
-        for (let _pi = 0; _pi < 8; _pi++) {
-          const _orbitSpeed = 0.7 + (_pi % 3) * 0.35;
-          const _orbitR = 34 + (_pi * 5 % 17);
-          const _ang = this._orbParticleAngle * _orbitSpeed + (_pi * Math.PI * 2 / 8);
-          const _px = _sx + Math.cos(_ang) * _orbitR;
-          const _py = _sy + Math.sin(_ang) * (_orbitR * 0.85);
-          const _size = (window.orbParticleSize || 3.5) + (_pi % 3) * 1.0;
-          const _alpha = 0.5 + (_pi % 4) * 0.12;
-          this._orbGfx.fillStyle(_orbTint, _alpha);
-          this._orbGfx.fillCircle(_px, _py, _size);
+    this._orbGfxTimer = (this._orbGfxTimer || 0) + _0xaf2ffd;
+    if (this._orbGfxTimer > 33) {
+      this._orbGfxTimer = 0;
+      this._orbGfx.clear();
+      if (this._level && this._level._orbSprites && this._level.container) {
+        try {
+        let _drawn = 0;
+        for (let _oSpr of this._level._orbSprites) {
+          if (_drawn >= 4) break;
+          if (!_oSpr || !_oSpr.visible || !_oSpr.active || !_oSpr.scene) continue;
+          const _sx = _oSpr.x + this._level.container.x;
+          const _sy = _oSpr.y + this._level.container.y;
+          if (_sx < -40 || _sx > r + 40 || _sy < -40 || _sy > n + 40) continue;
+          _drawn++;
+          const _orbTint = _oSpr.tintTopLeft !== undefined && _oSpr.tintTopLeft !== 16777215 ? _oSpr.tintTopLeft : window.mainColor;
+          for (let _pi = 0; _pi < 5; _pi++) {
+            const _orbitSpeed = 0.7 + (_pi % 3) * 0.35;
+            const _orbitR = 34 + (_pi * 5 % 17);
+            const _ang = this._orbParticleAngle * _orbitSpeed + (_pi * Math.PI * 2 / 5);
+            const _px = _sx + Math.cos(_ang) * _orbitR;
+            const _py = _sy + Math.sin(_ang) * (_orbitR * 0.85);
+            const _size = (window.orbParticleSize || 3.5) + (_pi % 3) * 1.0;
+            const _alpha = 0.5 + (_pi % 4) * 0.12;
+            this._orbGfx.fillStyle(_orbTint, _alpha);
+            this._orbGfx.fillRect(_px - _size, _py - _size, _size * 2, _size * 2);
+          }
         }
+        } catch(e) {}
       }
-      } catch(e) {}
     }
     let _0x30fa5d = this._quantizeDelta(_0xaf2ffd);
     let _0x5efc2d = _0x30fa5d > 0 ? Math.max(1, Math.round(_0x30fa5d * 4)) : 0;
