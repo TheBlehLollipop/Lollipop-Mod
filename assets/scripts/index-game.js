@@ -2716,8 +2716,6 @@ hitGround() {
     }
   }
   flipGravity(flipped, _0x11bbde = 0.5) {
-    if (this.flipCooldown == null || this.flipCooldown < Date.now()) {
-      this.flipCooldown = Date.now() + 100;
       console.log("flipGravity called: flipped=" + flipped + " current=" + this.p.gravityFlipped);
       if (this.p.gravityFlipped === flipped) {
         return;
@@ -2727,7 +2725,6 @@ hitGround() {
       this.p.onGround = false;
       this.p.canJump = false;
       this.p.isJumping = false;
-    }
   }
   runRotateAction() {
 
@@ -2791,9 +2788,9 @@ hitGround() {
   }
   playerIsFalling() {
     if (this.p.gravityFlipped) {
-      return this.p.yVelocity > 3.832796;
+      return this.p.yVelocity > p;
     } else {
-      return this.p.yVelocity < 3.832796;
+      return this.p.yVelocity < p;
     }
   }
   updateJump(_0x3d1c6f) {
@@ -2835,7 +2832,7 @@ hitGround() {
       }
       if (this.playerIsFalling()) {
         let _0x47ed2a;
-        _0x47ed2a = this.p.gravityFlipped ? this.p.yVelocity > p * 4 : this.p.yVelocity < -(p * 4);
+        _0x47ed2a = this.p.gravityFlipped ? this.p.yVelocity > p * 2 : this.p.yVelocity < -(p * 2);
         if (_0x47ed2a) {
           this.p.onGround = false;
         }
@@ -2890,7 +2887,7 @@ _updateBallJump(_0x2fe319) {
       this.p.yVelocity = Math.max(this.p.yVelocity, -30);
     }
     if (this.playerIsFalling()) {
-      const _0x1439be = this.p.gravityFlipped ? this.p.yVelocity > p * 4 : this.p.yVelocity < -(p * 4);
+      const _0x1439be = this.p.gravityFlipped ? this.p.yVelocity > p * 2 : this.p.yVelocity < -(p * 2);
       if (_0x1439be) {
         this.p.onGround = false;
       }
@@ -4701,6 +4698,11 @@ class xs extends Phaser.Scene {
       this._fpsFrames = 0;
     }
     if (this._paused) {
+      if ((this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown) && !this._spaceWasDown) {
+        setTimeout(() => {
+          this._resumeGame();
+        }, 75);
+      }
       this._deltaBuffer = 0;
       return;
     }
@@ -4708,7 +4710,7 @@ class xs extends Phaser.Scene {
       if ((this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown) && !this._spaceWasDown) {
         this._spaceWasDown = true;
         this._audio.playEffect("playSound_01", {
-          volume: 1
+          volume: 1 
         });
         this._levelLabel.setVisible(false)
         this._leftBtn.setVisible(false)
