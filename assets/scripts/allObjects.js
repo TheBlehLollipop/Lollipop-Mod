@@ -1,4 +1,3 @@
-
 window.allobjects = function() {
     /*return {
     0: {
@@ -212,7 +211,8 @@ window.allobjects = function() {
         "gridH": 3.0,
         "gridW": 1.0333333015441895,
         "spritesheet": "GJ_GameSheet02-uhd",
-        "type": "deco",
+        "type": "portal",
+        "sub": "shrink",
         "z": 10
     },
     1010: {
@@ -503,19 +503,19 @@ window.allobjects = function() {
         "can_color": false,
         "children": [
             {
-                "frame": "gravJumpRing_01_001.png",
+                "frame": "gravring_01_001.png",
                 "localDy": 0.0,
                 "tint": 65280,
                 "z": -1
             }
         ],
         "default_base_color_channel": 0,
-        "frame": "gravJumpRing_01_001.png",
-        "glow_frame": "gravJumpRing_01_glow_001.png",
+        "frame": "gravring_01_001.png",
+        "glow_frame": "gravring_01_glow_001.png",
         "gridH": 1.0,
         "gridW": 1.0,
         "spritesheet": "GJ_GameSheet-uhd",
-        "type": "deco",
+        "type": "ring",
         "z": 12
     },
     1024: {
@@ -9754,7 +9754,7 @@ window.allobjects = function() {
         "gridH": 1.2000000476837158,
         "gridW": 1.2000000476837158,
         "spritesheet": "GJ_GameSheet-uhd",
-        "type": "deco",
+        "type": "ring",
         "z": 12
     },
     1595: {
@@ -72532,7 +72532,8 @@ window.allobjects = function() {
         "gridH": 3.0,
         "gridW": 1.0333333015441895,
         "spritesheet": "GJ_GameSheet02-uhd",
-        "type": "deco",
+        "type": "portal",
+        "sub": "grow",
         "z": 10
     },
     990: {
@@ -72962,6 +72963,24 @@ return {
     gridH: 1
   },
   1704: {
+    type: "ring",
+    frame: "dashRing_01_001.png",
+    gridW: 1,
+    gridH: 1
+  },
+  1022: {
+    type: "ring",
+    frame: "gravring_01_001.png",
+    gridW: 1,
+    gridH: 1
+  },
+  1594: {
+    type: "ring",
+    frame: "ring_custom_01_001.png",
+    gridW: 1.2,
+    gridH: 1.2
+  },
+  1751: {
     type: "ring",
     frame: "dashRing_01_001.png",
     gridW: 1,
@@ -74335,7 +74354,8 @@ return {
         "gridH": 3.0,
         "gridW": 1.0333333015441895,
         "spritesheet": "GJ_GameSheet02-uhd",
-        "type": "deco",
+        "type": "portal",
+        "sub": "shrink",
         "z": 10
     },
     95: {
