@@ -152,7 +152,7 @@ preload() {
       barFill.fillStyle(0x4488ff, 0.5);
       barFill.fillRoundedRect(barX, barY, fillW, barH / 2, { tl: 8, tr: 8, bl: 0, br: 0 });
       pctText.setText(Math.floor(value * 100) + '%');
-      loadingText.setText(value < 1 ? 'Loading...' : 'Ready!');
+      loadingText.setText(value < 1 ? 'Loading...' : 'Launching!');
     });
     this.load.on("loaderror", _0x550fba => {});
     this.load.atlas("GJ_WebSheet", "assets/sheets/GJ_WebSheet.png", "assets/sheets/GJ_WebSheet.json");
