@@ -2752,15 +2752,33 @@ hitGround() {
     let _0x5f531c = Math.PI / 2;
     return Math.round(this._rotation / _0x5f531c) * _0x5f531c;
   }
-  slerp2D(_0x11f190, _0xf2c7b9, _0x8b3942) {
-    let _0x4ee783 = _0xf2c7b9 - _0x11f190;
-    while (_0x4ee783 > Math.PI) {
-      _0x4ee783 -= Math.PI * 2;
+  slerp2D(startAngle, endAngle, t) {
+    let halfStart = startAngle * 0.5;
+    let halfEnd = endAngle * 0.5;
+    let cosStart = Math.cos(halfStart);
+    let sinStart = Math.sin(halfStart);
+    let cosEnd = Math.cos(halfEnd);
+    let sinEnd = Math.sin(halfEnd);
+    let dot = (cosStart * cosEnd) + (sinStart * sinEnd);
+    let weightStart, weightEnd;
+    if (dot < 0.0) {
+        dot = -dot;
+        sinEnd = -sinEnd;
+        cosEnd = -cosEnd;
     }
-    while (_0x4ee783 < -Math.PI) {
-      _0x4ee783 += Math.PI * 2;
+    if (1.0 - dot > 0.0001) {
+        let theta = Math.acos(dot);
+        let sinTheta = Math.sin(theta);
+        weightStart = Math.sin(theta * (1.0 - t)) / sinTheta;
+        weightEnd = Math.sin(theta * t) / sinTheta;
+    } else {
+        weightStart = 1.0 - t;
+        weightEnd = t;
     }
-    return _0x11f190 + _0x4ee783 * _0x8b3942;
+    let interpSin = (sinStart * weightStart) + (sinEnd * weightEnd);
+    let interpCos = (cosStart * weightStart) + (cosEnd * weightEnd);
+    let out = Math.atan2(interpSin, interpCos);
+    return out + out;
   }
   updateGroundRotation(_0x5c24f7) {
     if (this.p.isBall || this.p.isWave) {
