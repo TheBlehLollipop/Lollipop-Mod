@@ -2634,7 +2634,6 @@ hitGround() {
     this._explosionPieces = null;
   }
   _playPortalShine(_0x49e81f) {
-    console.log(_0x49e81f)
     const _0x4ed8ff = this._scene;
     const _0xf31b0d = _0x49e81f.x;
     const _0x3824c0 = b(_0x49e81f.portalY);
@@ -3175,7 +3174,6 @@ _updateBallJump(_0x2fe319) {
           const _0xLandBot = (this.p.yVelocity <= 0 || this.p.onGround) && (_0x146a97 >= bottom || _0x869e42 >= bottom);
           const _0xLandTop = (this.p.yVelocity >= 0 || this.p.onGround) && (_0x3e7199 <= top || _0x135a9d <= top);
           const _0x2841ea = this.p.gravityFlipped ? _0xLandTop : _0xLandBot;
-          console.log(gameObj)
           if (_0x3c1654 && !_0x2841ea) {
             if (!window.noClip && gameObj.objid !== 143){
               this.killPlayer();
