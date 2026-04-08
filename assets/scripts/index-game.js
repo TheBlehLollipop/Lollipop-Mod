@@ -18,6 +18,9 @@ window.currentlevel = [
 ];
 window.showHitboxes = false;
 window.noClip = false; // experimental
+window.orbClickScale = 2.0;
+window.orbClickShrinkTime = 250;
+window.orbParticleSize = 3.5;
 
 // -------------------------------
 
@@ -407,6 +410,8 @@ class PlayerState {
     this.queuedHold = false;
     this.isDead = false;
     this.mirrored = false;
+    this.isDashing = false;
+    this.dashYVelocity = 0;
   }
 }
 const P = ["GJ_WebSheet", "GJ_GameSheet", "GJ_GameSheet02", "GJ_GameSheet03", "GJ_GameSheet04", "GJ_GameSheetEditor", "GJ_GameSheetGlow", "GJ_GameSheetIcons", "GJ_LaunchSheet", "player_ball_00", "player_dart_00"];
@@ -558,6 +563,7 @@ class us {
     this._colorTriggerIdx = 0;
     this._audioScaleSprites = [];
     this._orbSprites = [];
+    this._coinSprites = [];
     this._enterEffectTriggers = [];
     this._enterEffectTriggerIdx = 0;
     this._activeEnterEffect = 0;
@@ -1064,14 +1070,20 @@ class us {
             window._animatedSprites.push(_0x554e0e);
           }
           if (_0x24471f && _0x24471f.type === ringType) {
-            _0x554e0e.setScale(0.1);
+            _0x554e0e.setScale(0.75);
             _0x554e0e._eeAudioScale = true;
             this._orbSprites.push(_0x554e0e);
             if (_0xOrbGlow) {
-              _0xOrbGlow.setScale(0.1);
+              _0xOrbGlow.setScale(0.75);
               _0xOrbGlow._eeAudioScale = true;
               this._orbSprites.push(_0xOrbGlow);
             }
+          }
+          if (_0x24471f && _0x24471f.type === coinType) {
+            _0x554e0e._coinWorldX = _0x173c58;
+            _0x554e0e._coinWorldY = _0x7ab528;
+            _0x554e0e._coinBaseScale = _0x554e0e.scaleX || 1;
+            this._coinSprites.push(_0x554e0e);
           }
         } else {
           console.warn("No sprite found for object ID " + _0x1b937f.id + " frame=" + _0x4c7589 + " type=" + (_0x24471f ? _0x24471f.type : "null"));
@@ -1264,6 +1276,13 @@ class us {
           this.objects.push(orbObj);
           this._addCollisionToSection(orbObj);
           console.log("orb collision created: id=" + _0x1b937f.id + " x=" + _0x173c58 + " y=" + _0x7ab528);
+        } else if (_0x24471f.type === coinType) {
+          let coinW = (_0x24471f.gridW || 1) * a * 0.9;
+          let coinH = (_0x24471f.gridH || 1) * a * 0.9;
+          let coinObj = new Collider(coinType, _0x173c58, _0x7ab528, coinW, coinH, _0x1b937f.rot || 0);
+          coinObj.coinId = _0x1b937f.id;
+          this.objects.push(coinObj);
+          this._addCollisionToSection(coinObj);
         }
       }
     }
@@ -1419,8 +1438,8 @@ class us {
     if (_0x1dce22 < 0) {
       return;
     }
-    const _0x5b29dd = Math.max(0, Math.floor((_0xa5f1e1 - 140) / 400));
-    const _0x3b33db = Math.min(_0x1dce22, Math.floor((_0xa5f1e1 + r + 140) / 400));
+    const _0x5b29dd = Math.max(0, Math.floor((_0xa5f1e1 - 50) / 400));
+    const _0x3b33db = Math.min(_0x1dce22, Math.floor((_0xa5f1e1 + r + 50) / 400));
     const _0x1800fc = this._visMinSec;
     const _0xc31046 = this._visMaxSec;
     if (_0x1800fc < 0) {
@@ -1610,8 +1629,27 @@ class us {
     for (let _0x24afdb of this._audioScaleSprites) {
       _0x24afdb.setScale(_0x337bf7);
     }
+    const _now = Date.now();
+    const _clickMult = window.orbClickScale || 2.0;
+    const _shrinkMs = window.orbClickShrinkTime || 250;
     for (let _0xOrbSpr of this._orbSprites) {
-      _0xOrbSpr.setScale(_0x337bf7);
+      const _baseScale = 0.75 + _0x337bf7 * 0.15;
+      if (_0xOrbSpr._hitTime) {
+        const _elapsed = _now - _0xOrbSpr._hitTime;
+        if (_elapsed < 80) {
+          const _t = _elapsed / 80;
+          _0xOrbSpr.setScale(_baseScale + (_baseScale * (_clickMult - 1)) * _t);
+        } else if (_elapsed < 80 + _shrinkMs) {
+          const _t = (_elapsed - 80) / _shrinkMs;
+          const _peak = _baseScale * _clickMult;
+          _0xOrbSpr.setScale(_peak + (_baseScale - _peak) * _t);
+        } else {
+          _0xOrbSpr._hitTime = null;
+          _0xOrbSpr.setScale(_baseScale);
+        }
+      } else {
+        _0xOrbSpr.setScale(_baseScale);
+      }
     }
   }
   resetVisibility() {
@@ -1624,6 +1662,16 @@ class us {
     }
     for (let _0x5c5d9a of this._audioScaleSprites) {
       _0x5c5d9a.setScale(0.1);
+    }
+    for (let _cs of this._coinSprites) {
+      if (_cs) {
+        _cs.setVisible(true);
+        _cs.setAlpha(1);
+        _cs.setScale(_cs._coinBaseScale || 1);
+        if (_cs._coinWorldY !== undefined) {
+          _cs.y = b(_cs._coinWorldY);
+        }
+      }
     }
   }
 }
@@ -2823,6 +2871,15 @@ hitGround() {
       this.p.yVelocity = this.p.pendingVelocity;
       this.p.pendingVelocity = null;
     }
+    if (this.p.isDashing) {
+      if (!this.p.upKeyDown || this.p.onGround) {
+        this.p.isDashing = false;
+        this.p.dashYVelocity = 0;
+      } else {
+        this.p.yVelocity = this.p.dashYVelocity;
+        return;
+      }
+    }
     if (this.p.isFlying) {
       this._updateFlyJump(_0x3d1c6f);
     } else if (this.p.isWave) {
@@ -3090,15 +3147,7 @@ _updateBallJump(_0x2fe319) {
           if (!gameObj.activated && _needsClick) {
             if (_isDash) {
               gameObj._dashHoldTicks = (gameObj._dashHoldTicks || 0) + 1;
-              if (_orbId === 1704 && gameObj._dashHoldTicks < 2) {
-              } else if (_orbId === 1751 && gameObj._dashHoldTicks < 2) {
-                gameObj.activated = true;
-                this.p.yVelocity *= 0.5;
-                this.flipGravity(!this.p.gravityFlipped);
-                this.p.upKeyPressed = false;
-                this.p.queuedHold = false;
-                _boostedThisStep = true;
-              } else {
+              if (gameObj._dashHoldTicks < 2) {
                 gameObj.activated = true;
                 const _dashAngleDeg = gameObj.orbRotation || 0;
                 let _clampedAngle = _dashAngleDeg;
@@ -3106,16 +3155,28 @@ _updateBallJump(_0x2fe319) {
                 if (_clampedAngle >= 90 && _clampedAngle <= 270) { _clampedAngle = 180 - _clampedAngle; }
                 _clampedAngle = Math.max(-70, Math.min(70, _clampedAngle));
                 const _dashRad = _clampedAngle * Math.PI / 180;
-                const _dashSpeed = Math.abs(this.p.yVelocity) > 0.1 ? Math.abs(this.p.yVelocity) : 10.3860036;
-                this.p.yVelocity = Math.sin(_dashRad) * _dashSpeed * this.flipMod();
+                const _dashSpeed = 18;
+                const _dashVelY = Math.sin(_dashRad) * _dashSpeed * this.flipMod();
                 if (_orbId === 1751) {
                   this.flipGravity(!this.p.gravityFlipped);
                 }
+                this.p.isDashing = true;
+                this.p.dashYVelocity = _dashVelY;
+                this.p.yVelocity = _dashVelY;
                 this.p.onGround = false;
                 this.p.canJump = false;
+                this.p.isJumping = false;
                 this.p.upKeyPressed = false;
                 this.p.queuedHold = false;
+                this.runRotateAction();
                 _boostedThisStep = true;
+                try {
+                  for (let _orbSpr of (this._gameLayer._orbSprites || [])) {
+                    if (_orbSpr && _orbSpr._eeWorldX !== undefined && Math.abs(_orbSpr._eeWorldX - gameObj.x) < 10) {
+                      _orbSpr._hitTime = Date.now();
+                    }
+                  }
+                } catch(e) {}
               }
             } else {
               gameObj.activated = true;
@@ -3172,10 +3233,48 @@ _updateBallJump(_0x2fe319) {
                 if (_flipAfter) {
                   this.flipGravity(!this.p.gravityFlipped);
                 }
+                try {
+                  for (let _orbSpr of (this._gameLayer._orbSprites || [])) {
+                    if (_orbSpr && _orbSpr._eeWorldX !== undefined && Math.abs(_orbSpr._eeWorldX - gameObj.x) < 10) {
+                      _orbSpr._hitTime = Date.now();
+                    }
+                  }
+                } catch(e) {}
               }
             }
           } else if (_isDash && !this.p.upKeyDown) {
             gameObj._dashHoldTicks = 0;
+          }
+        } else if (_colType === coinType) {
+          if (!gameObj.activated) {
+            gameObj.activated = true;
+            try {
+              const _coinSpr = this._gameLayer._coinSprites.find(s => s && s.active && Math.abs(s._coinWorldX - gameObj.x) < 2 && Math.abs(s._coinWorldY - gameObj.y) < 2);
+              if (_coinSpr && _coinSpr.scene) {
+                const _startY = _coinSpr.y;
+                _coinSpr.scene.tweens.add({
+                  targets: _coinSpr,
+                  y: _startY - 70,
+                  scaleX: (_coinSpr.scaleX || 1) * 1.3,
+                  scaleY: (_coinSpr.scaleY || 1) * 1.3,
+                  duration: 180,
+                  ease: 'Quad.Out',
+                  onComplete: () => {
+                    if (!_coinSpr.scene) return;
+                    _coinSpr.scene.tweens.add({
+                      targets: _coinSpr,
+                      y: _startY + 600,
+                      alpha: 0,
+                      duration: 1200,
+                      ease: 'Quad.In',
+                      onComplete: () => {
+                        _coinSpr.setVisible(false);
+                      }
+                    });
+                  }
+                });
+              }
+            } catch(e) {}
           }
         } else if (_colType === hazardType) {
           if (!window.noClip){
@@ -3927,7 +4026,7 @@ class xs extends Phaser.Scene {
     this._aKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
     this._dKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
 
-    this._percentageLabel = this.add.bitmapText(r / 2, 20, "bigFont", "0.00%", 30).setOrigin(0.5, 0.5).setVisible(false);
+    this._percentageLabel = this.add.bitmapText(r / 2, 20, "bigFont", "0.00%", 30).setOrigin(0.5, 0.5).setVisible(false).setDepth(100);
     this._pauseBtn = this.add.image(r - 30, 30, "GJ_WebSheet", "GJ_pauseBtn_clean_001.png").setScrollFactor(0).setDepth(30).setAlpha(75 / 255).setVisible(false);
     this._pauseBtn.setInteractive();
     this._expandHitArea(this._pauseBtn, 2);
@@ -4205,7 +4304,7 @@ class xs extends Phaser.Scene {
     const _0x3cdf70a = this.add.bitmapText(xPos, yPos, "goldFont", "Modded by: AntiMatter, breadbb", 40).setOrigin(0.5, 0.5).setScale(0.6);
     this._infoPopup.add(_0x3cdf70a);
     yPos += 30;
-    const _0x3cdf70b = this.add.bitmapText(xPos, yPos, "goldFont", "bog, aloaf, arbstro, and PinkDev", 40).setOrigin(0.5, 0.5).setScale(0.6);
+    const _0x3cdf70b = this.add.bitmapText(xPos, yPos, "goldFont", "bog, aloaf, PinkDev, and arbstro", 40).setOrigin(0.5, 0.5).setScale(0.6);
     this._infoPopup.add(_0x3cdf70b);
     yPos += 30;
     const _0x97b2a9 = this.add.text(xPos, 463, "© 2026 RobTop Games. All rights reserved.", {
@@ -4903,6 +5002,33 @@ class xs extends Phaser.Scene {
       }
     }
     this._level.updateAudioScale(this._audio.getMeteringValue());
+    if (!this._orbGfx) {
+      this._orbGfx = this.add.graphics().setDepth(54).setBlendMode(S);
+    }
+    this._orbGfx.clear();
+    this._orbParticleAngle = ((this._orbParticleAngle || 0) + _0xaf2ffd * 0.004) % (Math.PI * 2);
+    if (this._level && this._level._orbSprites && this._level.container) {
+      try {
+      for (let _oSpr of this._level._orbSprites) {
+        if (!_oSpr || !_oSpr.visible || !_oSpr.active || !_oSpr.scene) continue;
+        const _sx = _oSpr.x + this._level.container.x;
+        const _sy = _oSpr.y + this._level.container.y;
+        if (_sx < -80 || _sx > r + 80 || _sy < -80 || _sy > n + 80) continue;
+        const _orbTint = _oSpr.tintTopLeft !== undefined && _oSpr.tintTopLeft !== 16777215 ? _oSpr.tintTopLeft : window.mainColor;
+        for (let _pi = 0; _pi < 8; _pi++) {
+          const _orbitSpeed = 0.7 + (_pi % 3) * 0.35;
+          const _orbitR = 34 + (_pi * 5 % 17);
+          const _ang = this._orbParticleAngle * _orbitSpeed + (_pi * Math.PI * 2 / 8);
+          const _px = _sx + Math.cos(_ang) * _orbitR;
+          const _py = _sy + Math.sin(_ang) * (_orbitR * 0.85);
+          const _size = (window.orbParticleSize || 3.5) + (_pi % 3) * 1.0;
+          const _alpha = 0.5 + (_pi % 4) * 0.12;
+          this._orbGfx.fillStyle(_orbTint, _alpha);
+          this._orbGfx.fillCircle(_px, _py, _size);
+        }
+      }
+      } catch(e) {}
+    }
     let _0x30fa5d = this._quantizeDelta(_0xaf2ffd);
     let _0x5efc2d = _0x30fa5d > 0 ? Math.max(1, Math.round(_0x30fa5d * 4)) : 0;
     if (_0x5efc2d > 60) {
@@ -4926,6 +5052,8 @@ if (!this._state.isFlying && !this._state.isWave) {
     this._player.updateGroundRotation(_0x5caeb1);
   } else if (this._player.rotateActionActive) {
     this._player.updateRotateAction(u);
+  } else if (this._state.isDashing) {
+    this._player.runRotateAction();
   }
 }
     }
