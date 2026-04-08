@@ -3005,7 +3005,7 @@ _updateBallJump(_0x2fe319) {
           if (!gameObj.activated) {
             gameObj.activated = true;
             const _padId = gameObj.padId;
-            const _grav = p;
+            const _grav = 2;
             const _fm = this.flipMod();
             let _padVel = 0;
             let _padFlip = false;
