@@ -2256,7 +2256,7 @@ if (this.p.isFlying) {
       for (const _0x536f40 of this._playerLayers) {
         if (_0x536f40) {
           _0x536f40.sprite.x = _0x7f0705 + _0x562424;
-          _0x536f40.sprite.y = _0x1a433c + _0x3011c9;
+          _0x536f40.sprite.y = (_0x1a433c + _0x3011c9)+(this.p.isMini?8:0);
           _0x536f40.sprite.rotation = this.p.mirrored ? -_0x2907d3 : _0x2907d3;
           const _miniS = this.p.isMini ? 0.6 : 1;
           const _shipCubeS = _miniS * 0.55;
