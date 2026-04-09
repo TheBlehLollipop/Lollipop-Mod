@@ -16,7 +16,7 @@ window.currentlevel = [
 	"level_1",        // level id in assets/levels
 	"Forever Bound"   // person who made the song
 ];
-window.showHitboxes = true;
+window.showHitboxes = false;
 window.noClip = false; // experimental
 window.orbClickScale = 2.0;
 window.orbClickShrinkTime = 250;
@@ -3000,7 +3000,7 @@ _updateBallJump(_0x2fe319) {
   if (this.p.upKeyPressed && this.p.canJump) {
     const _0x47d739 = this.flipMod();
     this.p.upKeyPressed = false;
-    this.p.yVelocity = _0x47d739 * (this.p.isMini ? 15.652 : 22.360064);
+    this.p.yVelocity = _0x47d739 * 22.360064;
     this.flipGravity(!this.p.gravityFlipped);
     this.p.onGround = false;
     this.p.canJump = false;
@@ -3169,22 +3169,21 @@ _updateBallJump(_0x2fe319) {
               this.p.isJumping = false;
               _boostedThisStep = true;
             } else {
-              const _miniPad = this.p.isMini ? 0.65 : 1;
               if (this.p.isFlying) {
-                if (_padId === 35) { _padVel = 16 * _grav * _miniPad; _padNextTickVel = _fm * 8 * _grav * _miniPad; }
-                else if (_padId === 140) { _padVel = 5.6 * _grav * _miniPad; }
-                else if (_padId === 1332) { _padVel = 10.08 * _grav * _miniPad; }
-                else if (_padId === 67) { _padVel = 6.4 * _grav * _miniPad; _padFlip = true; }
+                if (_padId === 35) { _padVel = 16 * _grav; _padNextTickVel = _fm * 8 * _grav; }
+                else if (_padId === 140) { _padVel = 5.6 * _grav; }
+                else if (_padId === 1332) { _padVel = 10.08 * _grav; }
+                else if (_padId === 67) { _padVel = 6.4 * _grav; _padFlip = true; }
               } else if (this.p.isBall) {
-                if (_padId === 35) { _padVel = 9.6 * _grav * _miniPad; }
-                else if (_padId === 140) { _padVel = 6.72 * _grav * _miniPad; }
-                else if (_padId === 1332) { _padVel = 12 * _grav * _miniPad; }
-                else if (_padId === 67) { _padVel = 3.84 * _grav * _miniPad; _padFlip = true; }
+                if (_padId === 35) { _padVel = 9.6 * _grav; }
+                else if (_padId === 140) { _padVel = 6.72 * _grav; }
+                else if (_padId === 1332) { _padVel = 12 * _grav; }
+                else if (_padId === 67) { _padVel = 3.84 * _grav; _padFlip = true; }
               } else {
-                if (_padId === 35) { _padVel = 16 * _grav * _miniPad; }
-                else if (_padId === 140) { _padVel = 10.4 * _grav * _miniPad; }
-                else if (_padId === 1332) { _padVel = 20 * _grav * _miniPad; }
-                else if (_padId === 67) { _padVel = 6.4 * _grav * _miniPad; _padFlip = true; }
+                if (_padId === 35) { _padVel = 16 * _grav; }
+                else if (_padId === 140) { _padVel = 10.4 * _grav; }
+                else if (_padId === 1332) { _padVel = 20 * _grav; }
+                else if (_padId === 67) { _padVel = 6.4 * _grav; _padFlip = true; }
               }
               this.p.isJumping = true;
               this.p.onGround = false;
@@ -3274,7 +3273,6 @@ _updateBallJump(_0x2fe319) {
                   else if (_orbId === 1022) { _orbVel = _cubeJump * 0.8; _flipBefore = true; }
                   else if (_orbId === 1330) { _orbVel = -30; }
                 }
-                if (this.p.isMini) { _orbVel *= 0.65; }
                 this.p.isJumping = true;
                 this.p.onGround = false;
                 this.p.canJump = false;
