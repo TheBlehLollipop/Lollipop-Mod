@@ -3149,6 +3149,16 @@ _updateBallJump(_0x2fe319) {
           if (!gameObj.activated) {
             gameObj.activated = true;
             const _padId = gameObj.padId;
+            if (_padId === 67) {
+              const now = Date.now();
+              if (!window.lastbluepad) {
+                window.lastbluepad = 0;
+              }
+              if (now - window.lastbluepad < 20) {
+                continue;
+              }
+              window.lastbluepad = now;
+            }
             const _grav = 2;
             const _fm = this.flipMod();
             let _padVel = 0;
