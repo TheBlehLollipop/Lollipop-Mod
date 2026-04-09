@@ -72938,6 +72938,12 @@ return {
     gridW: 1,
     gridH: 1
   },
+  1332: {
+    type: "pad",
+    frame: "bump_02_001.png",
+    gridW: 1,
+    gridH: 1
+  },
   36: {
     type: "ring",
     frame: "ring_01_001.png",
@@ -72965,6 +72971,12 @@ return {
   1330: {
     type: "ring",
     frame: "dropRing_01_001.png",
+    gridW: 1,
+    gridH: 1
+  },
+  1333: {
+    type: "ring",
+    frame: "ring_02_001.png",
     gridW: 1,
     gridH: 1
   },
