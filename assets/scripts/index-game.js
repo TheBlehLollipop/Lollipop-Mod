@@ -2470,7 +2470,7 @@ if (this.p.isFlying) {
     } else {
       for (const _0x2c61a1 of this._allLayers) {
         if (_0x2c61a1) {
-          if (!isWave) {
+          if (!this.p.isWave) {
             _0x2c61a1.sprite.x = _0x7f0705;
             _0x2c61a1.sprite.y = _0x1a433c;
             const isBallLayer = this._ballLayers.includes(_0x2c61a1);
