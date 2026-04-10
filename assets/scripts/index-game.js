@@ -2475,8 +2475,8 @@ if (this.p.isFlying) {
           const isBallLayer = this._ballLayers.includes(_0x2c61a1);
           _0x2c61a1.sprite.rotation = isBallLayer ? _0x2907d3 : (this.p.mirrored ? -_0x2907d3 : _0x2907d3);
           const _miniS = this.p.isMini ? 0.6 : 1;
-          _0x2c61a1.sprite.scaleY = (this.p.gravityFlipped ? -_miniS : _miniS);
-          _0x2c61a1.sprite.scaleX = (this.p.mirrored ? -_miniS : _miniS);
+          _0x2c61a1.sprite.scaleY = (this.p.gravityFlipped ? -Math.abs(_0x2c61a1.sprite.scaleY) : Math.abs(_0x2c61a1.sprite.scaleY)) * _miniS;
+          _0x2c61a1.sprite.scaleX = (this.p.mirrored ? -Math.abs(_0x2c61a1.sprite.scaleX) : Math.abs(_0x2c61a1.sprite.scaleX)) * _miniS;
         }
       }
     }
