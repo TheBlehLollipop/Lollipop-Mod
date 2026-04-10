@@ -4236,7 +4236,7 @@ class xs extends Phaser.Scene {
       this._downloadBtns.push(_0x1d293f);
     }
     const _0x28fa5b = this.scale.isFullscreen;
-    this._menuFsBtn = this.add.image(33, 33, "GJ_WebSheet", _0x28fa5b ? "toggleFullscreenOff_001.png" : "toggleFullscreenOn_001.png").setScrollFactor(0).setDepth(30).setScale(0.64).setAlpha(0.8).setTint(Phaser.Display.Color.GetColor(0, Math.round(102), 255)).setInteractive();
+    this._menuFsBtn = this.add.image(33, 33, "GJ_WebSheet", _0x28fa5b ? "toggleFullscreenOff_001.png" : "toggleFullscreenOn_001.png").setScrollFactor(0).setDepth(30).setScale(0.64).setAlpha(0.8).setTint(Phaser.Display.Color.GetColor(255, 255, 255)).setInteractive();
     this._expandHitArea(this._menuFsBtn, 1.5);
     this._makeBouncyButton(this._menuFsBtn, 0.64, () => {
       const _0x26b7c = !this.scale.isFullscreen;
