@@ -514,6 +514,66 @@ function parseLevel(levelString) {
     objects: objects
   };
 }
+// from https://github.com/opstic/gdclone/blob/main/src/level/easing.rs
+class Easing {
+  static sample(type, rate, x) {
+    if (x === 0 || x === 1) return x;
+    switch (type) {
+      case 0: return x;
+      case 1: return this._easeInOut(x, rate);
+      case 2: return this._easeIn(x, rate);
+      case 3: return this._easeOut(x, rate);
+      case 4: return this._elasticInOut(x, rate);
+      case 5: return this._elasticIn(x, rate);
+      case 6: return this._elasticOut(x, rate);
+      case 7: return this._bounceInOut(x);
+      case 8: return this._bounceIn(x);
+      case 9: return this._bounceOut(x);
+      case 10: return this._expInOut(x);
+      case 11: return this._expIn(x);
+      case 12: return this._expOut(x);
+      case 13: return this._sineInOut(x);
+      case 14: return this._sineIn(x);
+      case 15: return this._sineOut(x);
+      case 16: return this._backInOut(x);
+      case 17: return this._backIn(x);
+      case 18: return this._backOut(x);
+      default: return x;
+    }
+  };
+  static _easeInOut(x, r) { const t=x*2; return t<1 ? 0.5*Math.pow(t,r) : 1-0.5*Math.pow(2-t,r); };
+  static _easeIn(x, r) { return Math.pow(x, r); };
+  static _easeOut(x, r) { return Math.pow(x, 1/r); };
+  static _elasticInOut(x, p) {
+    let period = p||0.3*1.5; const s=period/4; const t=x-1;
+    return t<0 ? -0.5*Math.pow(2,10*t)*Math.sin((t-s)*(2*Math.PI)/period)
+               : Math.pow(2,-10*t)*Math.sin((t-s)*(2*Math.PI)/period)*0.5+1;
+  };
+  static _elasticIn(x, p) { const s=p/4; const t=x-1; return -Math.pow(2,10*t)*Math.sin((t-s)*(2*Math.PI)/p); };
+  static _elasticOut(x, p) { const s=p/4; return Math.pow(2,-10*x)*Math.sin((x-s)*(2*Math.PI)/p)+1; };
+  static _bounceTime(x) {
+    if (x<1/2.75)          return 7.5625*x*x;
+    else if (x<2/2.75)   { const t=x-1.5/2.75;  return 7.5625*t*t+0.75; }
+    else if (x<2.5/2.75) { const t=x-2.25/2.75; return 7.5625*t*t+0.9375; }
+    else                 { const t=x-2.625/2.75; return 7.5625*t*t+0.984375; }
+  };
+  static _bounceInOut(x) { return x<0.5 ? (1-this._bounceTime(1-x*2))*0.5 : this._bounceTime(x*2-1)*0.5+0.5; };
+  static _bounceIn(x) { return 1-this._bounceTime(1-x); };
+  static _bounceOut(x) { return this._bounceTime(x); };
+  static _expInOut(x) { return x<0.5 ? 0.5*Math.pow(2,10*(x*2-1)) : 0.5*(-Math.pow(2,-10*(x*2-1))+2); };
+  static _expIn(x) { return Math.pow(2,10*(x-1))-0.001; };
+  static _expOut(x) { return -Math.pow(2,-10*x)+1; };
+  static _sineInOut(x) { return -0.5*(Math.cos(x*Math.PI)-1); };
+  static _sineIn(x) { return 1-Math.cos((x*Math.PI)/2); };
+  static _sineOut(x) { return Math.sin((x*Math.PI)/2); };
+  static _backInOut(x) {
+    const ov=1.70158*1.525; const t=x*2;
+    return t<1 ? (t*t*((ov+1)*t-ov))/2 : ((t-2)*(t-2)*((ov+1)*(t-2)+ov))/2+1;
+  };
+  static _backIn(x) { const ov=1.70158; return x*x*((ov+1)*x-ov); };
+  static _backOut(x) { const ov=1.70158; const t=x-1; return t*t*((ov+1)*t+ov)+1; };
+};
+
 const solidType = "solid";
 const hazardType = "hazard";
 const decoType = "deco";
@@ -570,6 +630,12 @@ class us {
     this._enterEffectTriggerIdx = 0;
     this._activeEnterEffect = 0;
     this._activeExitEffect = 0;
+    this._moveTriggers = [];
+    this._moveTriggerIdx = 0;
+    this._activeMoveTweens = [];
+    this._groupSprites = {};
+    this._groupOffsets = {};
+    this._groupColliders = {};
     this._sections = [];
     this._sectionContainers = [];
     this._collisionSections = [];
@@ -1023,6 +1089,20 @@ class us {
             effect: _0x24471f.enterEffect
           });
         }
+        if (_0x1b937f.id === 901) {
+          const _raw = _0x1b937f._raw;
+          this._moveTriggers.push({
+            x: _0x1b937f.x * 2,
+            duration: parseFloat(_raw[10] ?? 0),
+            easingType: parseInt(_raw[30] ?? 0, 10),
+            easingRate: parseFloat(_raw[85] ?? 2),
+            targetGroup: parseInt(_raw[51] ?? 0, 10),
+            offsetX: parseFloat(_raw[28] ?? 0) * 2,
+            offsetY: parseFloat(_raw[29] ?? 0) * 2,
+            lockX: _raw[58] === '1',
+            lockY: _raw[59] === '1',
+          });
+        }
         continue;
       }
       let _0x173c58 = _0x1b937f.x * 2;
@@ -1064,6 +1144,16 @@ class us {
           _0x554e0e._eeWorldX = _0x173c58;
           _0x554e0e._eeBaseY = _0x1b10a0;
           this._addToSection(_0x554e0e);
+          if (_0x1b937f.groups) {
+            const _gids = _0x1b937f.groups.split('.').map(Number).filter(n => n > 0);
+            _0x554e0e._eeGroups = _gids;
+            _0x554e0e._origWorldX = _0x554e0e._eeWorldX;
+            _0x554e0e._origBaseY = _0x554e0e._eeBaseY;
+            for (const _gid of _gids) {
+              if (!this._groupSprites[_gid]) this._groupSprites[_gid] = [];
+              this._groupSprites[_gid].push(_0x554e0e);
+            }
+          }
           if (_0x24471f && _0x24471f.animFrames) {
             _0x554e0e._animFrames = _0x24471f.animFrames;
             _0x554e0e._animInterval = _0x24471f.animInterval || 100;
@@ -1236,11 +1326,26 @@ class us {
         this._addToSection(_0x1bed6b);
       }
       if (_0x24471f) {
+        const _registerCollider = (col) => {
+          col._baseX = col.x;
+          col._baseY = col.y;
+          col._origBaseX = col.x;
+          col._origBaseY = col.y;
+          if (_0x1b937f.groups) {
+            const _cgids = _0x1b937f.groups.split('.').map(Number).filter(n => n > 0);
+            col._eeGroups = _cgids;
+            for (const _cgid of _cgids) {
+              if (!this._groupColliders[_cgid]) this._groupColliders[_cgid] = [];
+              this._groupColliders[_cgid].push(col);
+            }
+          }
+        };
         if (_0x24471f.type === solidType && _0x24471f.gridW > 0 && _0x24471f.gridH > 0) {
           let _0x10e5ae = _0x24471f.gridW * a;
           let _0x11e08d = _0x24471f.gridH * a;
           let _0x4628ff = new Collider(solidType, _0x173c58, _0x7ab528, _0x10e5ae, _0x11e08d, _0x1b937f.rot || 0);
           _0x4628ff.objid = _0x1b937f.id;
+          _registerCollider(_0x4628ff);
           this.objects.push(_0x4628ff);
           this._addCollisionToSection(_0x4628ff);
         } else if (_0x24471f.type === hazardType) {
@@ -1255,6 +1360,7 @@ class us {
           }
           if (_0x3f8c4f > 0 && _0x2a123d > 0) {
             let _0x3c84ad = new Collider(hazardType, _0x173c58, _0x7ab528, _0x3f8c4f, _0x2a123d, _0x1b937f.rot || 0);
+            _registerCollider(_0x3c84ad);
             this.objects.push(_0x3c84ad);
             this._addCollisionToSection(_0x3c84ad);
           }
@@ -1292,6 +1398,7 @@ class us {
           if (_0x25452a) {
             let _0x4bd7bc = new Collider(_0x25452a, _0x173c58, _0x7ab528, _0xad0974, _0x2c2226, _0x1b937f.rot || 0);
             _0x4bd7bc.portalY = _0x7ab528;
+            _registerCollider(_0x4bd7bc);
             this.objects.push(_0x4bd7bc);
             this._addCollisionToSection(_0x4bd7bc);
             console.log("portal collision created: type=" + _0x25452a + " id=" + _0x1b937f.id + " x=" + _0x173c58 + " y=" + _0x7ab528 + " w=" + _0xad0974 + " h=" + _0x2c2226);
@@ -1303,6 +1410,7 @@ class us {
           let padH = Math.max(_0x24471f.gridH, 10);
           let padObj = new Collider(jumpPadType, _0x173c58, _0x7ab528, padW, padH, _0x1b937f.rot || 0);
           padObj.padId = _0x1b937f.id;
+          _registerCollider(padObj);
           this.objects.push(padObj);
           this._addCollisionToSection(padObj);
           console.log("pad collision created: id=" + _0x1b937f.id + " x=" + _0x173c58 + " y=" + _0x7ab528);
@@ -1313,6 +1421,7 @@ class us {
           orbObj.orbId = _0x1b937f.id;
           orbObj.orbRotation = _0x1b937f.rot || 0;
           orbObj._dashHoldTicks = 0;
+          _registerCollider(orbObj);
           this.objects.push(orbObj);
           this._addCollisionToSection(orbObj);
           console.log("orb collision created: id=" + _0x1b937f.id + " x=" + _0x173c58 + " y=" + _0x7ab528);
@@ -1321,6 +1430,7 @@ class us {
           let coinH = (_0x24471f.gridH || 1) * a * 0.9;
           let coinObj = new Collider(coinType, _0x173c58, _0x7ab528, coinW, coinH, _0x1b937f.rot || 0);
           coinObj.coinId = _0x1b937f.id;
+          _registerCollider(coinObj);
           this.objects.push(coinObj);
           this._addCollisionToSection(coinObj);
         }
@@ -1337,6 +1447,7 @@ class us {
     console.log("colision objects by type:", JSON.stringify(colTypeCounts));
     this._colorTriggers.sort((_0x359c7f, _0x28dd8b) => _0x359c7f.x - _0x28dd8b.x);
     this._enterEffectTriggers.sort((_0x3e43f2, _0x5e3d9a) => _0x3e43f2.x - _0x5e3d9a.x);
+    this._moveTriggers.sort((a, b) => a.x - b.x);
     this.endXPos = Math.max(screenWidth + 1200, this._lastObjectX + 680);
   }
   createEndPortal(_0x41fbdb) {
@@ -1542,6 +1653,98 @@ class us {
       this._enterEffectTriggerIdx++;
     }
   }
+  checkMoveTriggers(playerX) {
+    while (this._moveTriggerIdx < this._moveTriggers.length) {
+      const trig = this._moveTriggers[this._moveTriggerIdx];
+      if (trig.x > playerX) break;
+      this._activeMoveTweens.push({
+        trig,
+        elapsed: 0,
+        prevProgress: 0,
+      });
+      if (!this._groupOffsets[trig.targetGroup]) {
+        this._groupOffsets[trig.targetGroup] = { x: 0, y: 0 };
+      }
+      this._moveTriggerIdx++;
+    }
+  }
+
+  stepMoveTriggers(dt) {
+    let i = 0;
+    while (i < this._activeMoveTweens.length) {
+      const anim = this._activeMoveTweens[i];
+      const { trig } = anim;
+      const dur = trig.duration > 0 ? trig.duration : 0;
+
+      anim.elapsed += dt;
+      const progress = dur > 0 ? Math.min(anim.elapsed / dur, 1) : 1;
+      const prevProgress = anim.prevProgress;
+
+      const curSample = Easing.sample(trig.easingType, trig.easingRate, progress);
+      const prevSample = Easing.sample(trig.easingType, trig.easingRate, prevProgress);
+      const amount = curSample - prevSample;
+
+      anim.prevProgress = progress;
+
+      const deltaX = trig.offsetX * amount;
+      const deltaY = -(trig.offsetY * amount);
+
+      const sprites = this._groupSprites[trig.targetGroup];
+      const colliders = this._groupColliders[trig.targetGroup];
+      if (sprites || colliders) {
+        const off = this._groupOffsets[trig.targetGroup];
+        off.x += deltaX;
+        off.y += deltaY;
+        if (sprites) {
+          for (const spr of sprites) {
+            if (!spr || !spr.active) continue;
+            spr.x = spr._origWorldX + off.x;
+            spr.y = spr._origBaseY + off.y;
+            spr._eeWorldX = spr.x;
+            spr._eeBaseY  = spr.y;
+          }
+        }
+        if (colliders) {
+          for (const col of colliders) {
+            col.x = col._origBaseX + off.x;
+            col.y = col._origBaseY - off.y;
+            col._baseX = col.x;
+            col._baseY = col.y;
+          }
+        }
+      }
+
+      if (progress >= 1) {
+        this._activeMoveTweens.splice(i, 1);
+      } else {
+        i++;
+      }
+    }
+  }
+
+  resetMoveTriggers() {
+    this._moveTriggerIdx = 0;
+    this._activeMoveTweens = [];
+    this._groupOffsets = {};
+    for (const gid in this._groupSprites) {
+      for (const spr of this._groupSprites[gid]) {
+        if (!spr || !spr.active) continue;
+        spr.x = spr._origWorldX;
+        spr.y = spr._origBaseY;
+        spr._eeWorldX = spr._origWorldX;
+        spr._eeBaseY = spr._origBaseY;
+      }
+    }
+    for (const gid in this._groupColliders) {
+      for (const col of this._groupColliders[gid]) {
+        col.x = col._origBaseX;
+        col.y = col._origBaseY;
+        col._baseX = col._origBaseX;
+        col._baseY = col._origBaseY;
+      }
+    }
+  }
+
   resetEnterEffectTriggers() {
     this._enterEffectTriggerIdx = 0;
     this._activeEnterEffect = 0;
@@ -4786,6 +4989,7 @@ class xs extends Phaser.Scene {
     this._level.resetGroundState();
     this._level.resetColorTriggers();
     this._level.resetEnterEffectTriggers();
+    this._level.resetMoveTriggers();
     this._level.resetVisibility();
     if (this._orbGfx) { this._orbGfx.clear(); }
     this._colorManager.reset();
@@ -5195,6 +5399,8 @@ if (!this._state.isFlying && !this._state.isWave) {
         this._colorManager.triggerColor(gs, _0x2001f6.color, _0x2001f6.duration);
       }
     }
+    this._level.checkMoveTriggers(_0x5464ab);
+    this._level.stepMoveTriggers(_0xaf2ffd / 1000);
     this._colorManager.step(_0xaf2ffd / 1000);
     this._bg.setTint(this._colorManager.getHex(fs));
     this._level.setGroundColor(this._colorManager.getHex(gs));
