@@ -22,6 +22,8 @@ window.orbClickScale = 2.0;
 window.orbClickShrinkTime = 250;
 window.orbParticleSize = 3.5;
 
+window.currentCommit = "";
+
 // -------------------------------
 
 function hexToHexadecimal(str) {
