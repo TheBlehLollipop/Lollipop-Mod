@@ -2312,8 +2312,8 @@ class ps {
     });
     this._aboveContainer = scene.add.container(0, 0);
     this._aboveContainer.setDepth(13);
-    this._aboveContainer.add(this._landEmitter1);
-    this._aboveContainer.add(this._landEmitter2);
+    this._gameLayer.topContainer.add(this._landEmitter1);
+    this._gameLayer.topContainer.add(this._landEmitter2);
     this._landIdx = false;
     this._streak = new cs(this._scene, "streak_01", 0.231, 10, 8, 100, window.secondaryColor, 0.7);
     this._streak.addToContainer(this._gameLayer.container, 8);
@@ -2324,9 +2324,8 @@ class ps {
     }
     const _0x119eb7 = this._scene._playerWorldX;
     const _0x519d38 = b(this.p.y);
-    const _mirrorMod = this.p.mirrored ? -1 : 1;
-this._particleEmitter.particleX = _0x119eb7 - 20 * _mirrorMod;
-this._particleEmitter.particleY = _0x519d38 + (this.p.gravityFlipped ? -26 : 26);
+    this._particleEmitter.particleX = _0x119eb7 - 20;
+    this._particleEmitter.particleY = _0x519d38 + (this.p.gravityFlipped ? -26 : 26);
     const _0x4436ac = this.p.onGround && !this.p.isFlying && !this.p.isWave;
     if (_0x4436ac && !this._particleActive) {
       this._particleEmitter.start();
@@ -2338,8 +2337,8 @@ this._particleEmitter.particleY = _0x519d38 + (this.p.gravityFlipped ? -26 : 26)
     {
       const _0xe76a85 = Math.cos(this._rotation);
       const _0x26ec65 = Math.sin(this._rotation);
-      const _0x216018 = this.p.isWave ? 0 : -24 * _mirrorMod;
-      const _0x2baeac = this.p.isWave ? 16 : 18;
+      const _0x216018 = this.p.isWave ? 0 : -24;
+      const _0x2baeac = this.p.isWave ? 4 : 18;
       const _0x75c380 = _0x119eb7 + _0x216018 * _0xe76a85 - _0x2baeac * _0x26ec65;
       const _0x2b31d7 = _0x519d38 + _0x216018 * _0x26ec65 + _0x2baeac * _0xe76a85;
       const _0x5d66f4 = (Math.random() * 2 - 1) * 2 * 2;
@@ -2366,8 +2365,17 @@ this._particleEmitter.particleY = _0x519d38 + (this.p.gravityFlipped ? -26 : 26)
       this._flyParticle2Emitter.stop();
       this._flyParticle2Active = false;
     }
-    this._shipDragEmitter.x = centerX;
+    const _0x2e5643 = _0xc43238 + this._scene._getMirrorXOffset(_0x119eb7 - _0xc43238);
+    this._shipDragEmitter.x = _0x2e5643;
     this._shipDragEmitter.particleY = this.p.gravityFlipped ? b(this.p.y) + _0x52b718 - 30 : b(this.p.y) + _0x52b718 + 30;
+    this._shipDragEmitter.setAngle(this.p.mirrored ? {
+      min: 245,
+      max: 335
+    } : {
+      min: 205,
+      max: 295
+    });
+    this._shipDragEmitter.gravityX = this.p.mirrored ? 700 : -700;
     const _0x2ac9d0 = this.p.isFlying && this.p.onGround && (this.p.gravityFlipped ? this.p.onCeiling : !this.p.onCeiling);
     if (_0x2ac9d0 && !this._shipDragActive) {
       this._shipDragEmitter.start();
@@ -2474,7 +2482,10 @@ if (this.p.isFlying) {
             _0x2c61a1.sprite.y = _0x1a433c;
             const isBallLayer = this._ballLayers.includes(_0x2c61a1);
             _0x2c61a1.sprite.rotation = isBallLayer ? _0x2907d3 : (this.p.mirrored ? -_0x2907d3 : _0x2907d3);
-            const _miniS = this.p.isMini ? 0.6 : 1;
+            let _miniS = this.p.isMini ? 0.6 : 1;
+            if (this.p.isWave && this._waveLayers.includes(_0x2c61a1)) {
+              _miniS *= 0.42; //fix wave size
+            }
             _0x2c61a1.sprite.scaleY = (this.p.gravityFlipped ? -_miniS : _miniS);
             _0x2c61a1.sprite.scaleX = (this.p.mirrored ? -_miniS : _miniS);
         }
@@ -2652,7 +2663,7 @@ hitGround() {
     if (_0x4a38a5 && !this.p.isFlying && !this.p.isWave) {
       this._landIdx = !this._landIdx;
       const _0x31584b = this._landIdx ? this._landEmitter1 : this._landEmitter2;
-      const _0x2248d5 = this._lastCameraX + centerX;
+      const _0x2248d5 = this._scene._playerWorldX;
       const _0x17e0bb = this.p.gravityFlipped ? b(this.p.y) - 30 : b(this.p.y) + 30;
       _0x31584b.explode(10, _0x2248d5, _0x17e0bb);
     }
@@ -2674,7 +2685,7 @@ hitGround() {
     this._streak.stop();
     this._streak.reset();
     const _0x3f4b84 = this._scene;
-    const _0x3f0446 = _0x3f4b84._playerWorldX - _0x3f4b84._cameraX;
+    const _0x3f0446 = _0x3f4b84._getMirrorXOffset(_0x3f4b84._playerWorldX - _0x3f4b84._cameraX);
     const _0x53ac5b = b(this.p.y) + this._lastCameraY;
     const _0x281e43 = 0.9;
     _0x3f4b84.add.particles(_0x3f0446, _0x53ac5b, "GJ_WebSheet", {
@@ -2842,7 +2853,7 @@ hitGround() {
         const _0x159cfa = {
           spr: _0xba83f5,
           particle: _0x298d34,
-          xVel: _0x422587 + (Math.random() * 2 - 1) * _0x1e87b0,
+          xVel: (_0x422587 + (Math.random() * 2 - 1) * _0x1e87b0) * (this.p.mirrored ? -1 : 1),
           yVel: -(12 + (Math.random() * 2 - 1) * 6),
           timer: 1.4,
           fadeTime: 0.5,
@@ -4575,10 +4586,13 @@ class xs extends Phaser.Scene {
     const _0x22e4c7 = this.add.bitmapText(xPos, yPos, "goldFont", "Made by RobTop Games", 40).setOrigin(0.5, 0.5).setScale(0.6);
     this._infoPopup.add(_0x22e4c7);
     yPos += 60;
-    const _0x3cdf70a = this.add.bitmapText(xPos, yPos, "goldFont", "Modded by: AntiMatter, breadbb", 40).setOrigin(0.5, 0.5).setScale(0.6);
+    const _0x3cdf70a = this.add.bitmapText(xPos, yPos, "goldFont", "Modded by:", 40).setOrigin(0.5, 0.5).setScale(0.6);
     this._infoPopup.add(_0x3cdf70a);
+    yPos += 40;
+    const _0x3cdf70c = this.add.bitmapText(xPos, yPos, "goldFont", "AntiMatter, breadbb, bog, aloaf", 40).setOrigin(0.5, 0.5).setScale(0.6);
+    this._infoPopup.add(_0x3cdf70c);
     yPos += 30;
-    const _0x3cdf70b = this.add.bitmapText(xPos, yPos, "goldFont", "bog, aloaf, PinkDev, and arbstro", 40).setOrigin(0.5, 0.5).setScale(0.6);
+    const _0x3cdf70b = this.add.bitmapText(xPos, yPos, "goldFont", "PinkDev, t0nchi7 and arbstro", 40).setOrigin(0.5, 0.5).setScale(0.6);
     this._infoPopup.add(_0x3cdf70b);
     yPos += 30;
     const _0x97b2a9 = this.add.text(xPos, 463, "© 2026 RobTop Games. All rights reserved.", {
