@@ -1367,7 +1367,7 @@ class us {
           }
         } else if (_0x24471f.type === portalType) {
 
-          let _0xad0974 = 90;
+          let _0xad0974 = _0x24471f.gridW * a;
           let _0x2c2226 = _0x24471f.gridH * a;
           const _0x5bcd81 = _0x24471f.sub || {
             10: "gravity_flip",
@@ -1408,7 +1408,7 @@ class us {
           }
         } else if (_0x24471f.type === padType) {
           let padW = _0x24471f.gridW * a;
-          let padH = Math.max(_0x24471f.gridH, 10);
+          let padH = _0x24471f.gridH * a;
           let padObj = new Collider(jumpPadType, _0x173c58, _0x7ab528, padW, padH, _0x1b937f.rot || 0);
           padObj.padId = _0x1b937f.id;
           _registerCollider(padObj);
@@ -3040,7 +3040,6 @@ hitGround() {
       this.p.yVelocity *= _0x11bbde;
       this.p.onGround = false;
       this.p.canJump = false;
-      this.p.isJumping = false;
   }
   runRotateAction() {
 

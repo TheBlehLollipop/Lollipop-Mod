@@ -72922,75 +72922,75 @@ return {
   35: {
     type: "pad",
     frame: "bump_01_001.png",
-    gridW: 1,
-    gridH: 1
+        "gridH": 0.13333334028720856,
+        "gridW": 0.8333333134651184,
   },
   
   67: {
     type: "pad",
     frame: "gravbump_01_001.png",
-    gridW: 1,
-    gridH: 1
+        "gridH": 0.20000000298023224,
+        "gridW": 0.8333333134651184,
   },
   140: {
     type: "pad",
     frame: "bump_03_001.png",
-    gridW: 1,
-    gridH: 1
+        "gridH": 0.1666666716337204,
+        "gridW": 0.8333333134651184,
   },
   1332: {
     type: "pad",
     frame: "bump_02_001.png",
-    gridW: 1,
-    gridH: 1
+        "gridH": 0.23333333432674408,
+        "gridW": 0.9666666388511658,
   },
   36: {
     type: "ring",
     frame: "ring_01_001.png",
-    gridW: 1,
-    gridH: 1
+    gridW: 1.2,
+    gridH: 1.2
   },
   84: {
     type: "ring",
     frame: "gravring_01_001.png",
-    gridW: 1,
-    gridH: 1
+    gridW: 1.2,
+    gridH: 1.2
   },
   141: {
     type: "ring",
     frame: "ring_03_001.png",
-    gridW: 1,
-    gridH: 1
+    gridW: 1.2,
+    gridH: 1.2
   },
   1022: {
     type: "ring",
     frame: "gravJumpRing_01_001.png",
-    gridW: 1,
-    gridH: 1,
+    gridW: 1.2,
+    gridH: 1.2,
   },
   1330: {
     type: "ring",
     frame: "dropRing_01_001.png",
-    gridW: 1,
-    gridH: 1
+    gridW: 1.2,
+    gridH: 1.2
   },
   1333: {
     type: "ring",
     frame: "ring_02_001.png",
-    gridW: 1,
-    gridH: 1
+    gridW: 1.2,
+    gridH: 1.2
   },
   1704: {
     type: "ring",
     frame: "dashRing_01_001.png",
-    gridW: 1,
-    gridH: 1
+    gridW: 1.2,
+    gridH: 1.2
   },
   1022: {
     type: "ring",
     frame: "gravring_01_001.png",
-    gridW: 1,
-    gridH: 1
+    gridW: 1.2,
+    gridH: 1.2
   },
   1594: {
     type: "ring",
@@ -73001,8 +73001,8 @@ return {
   1751: {
     type: "ring",
     frame: "dashRing_01_001.png",
-    gridW: 1,
-    gridH: 1
+    gridW: 1.2,
+    gridH: 1.2
   },
   62: {
     type: "solid",
