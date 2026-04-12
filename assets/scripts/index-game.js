@@ -1,12 +1,12 @@
 // editable config stuff 
 
 if (window.mainColor == null) {
-  window.mainColor = parseInt("404040", 16);
+  window.mainColor = parseInt("fb2651", 16);
 }
 if (window.secondaryColor == null) {
-  window.secondaryColor = parseInt("ff3a39", 16);
+  window.secondaryColor = parseInt("ffffff", 16);
 }
-window.currentPlayer = "player_12";
+window.currentPlayer = "player_42";
 window.currentShip = "ship_44";
 window.currentBall = "player_ball_23"
 window.currentWave = "dart_01"
