@@ -1415,8 +1415,8 @@ class us {
           this._addCollisionToSection(padObj);
           console.log("pad collision created: id=" + _0x1b937f.id + " x=" + _0x173c58 + " y=" + _0x7ab528);
         } else if (_0x24471f.type === ringType) {
-          let orbW = _0x24471f.gridW * a * 0.8;
-          let orbH = _0x24471f.gridH * a * 0.8;
+          let orbW = _0x24471f.gridW * a;
+          let orbH = _0x24471f.gridH * a;
           let orbObj = new Collider(jumpRingType, _0x173c58, _0x7ab528, orbW, orbH, _0x1b937f.rot || 0);
           orbObj.orbId = _0x1b937f.id;
           orbObj.orbRotation = _0x1b937f.rot || 0;
@@ -1426,8 +1426,8 @@ class us {
           this._addCollisionToSection(orbObj);
           console.log("orb collision created: id=" + _0x1b937f.id + " x=" + _0x173c58 + " y=" + _0x7ab528);
         } else if (_0x24471f.type === coinType) {
-          let coinW = (_0x24471f.gridW || 1) * a * 0.9;
-          let coinH = (_0x24471f.gridH || 1) * a * 0.9;
+          let coinW = (_0x24471f.gridW || 1) * a;
+          let coinH = (_0x24471f.gridH || 1) * a;
           let coinObj = new Collider(coinType, _0x173c58, _0x7ab528, coinW, coinH, _0x1b937f.rot || 0);
           coinObj.coinId = _0x1b937f.id;
           _registerCollider(coinObj);
