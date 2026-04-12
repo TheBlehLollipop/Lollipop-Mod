@@ -1,12 +1,12 @@
 // editable config stuff 
 
 if (window.mainColor == null) {
-  window.mainColor = parseInt("fb2651", 16);
+  window.mainColor = parseInt("404040", 16);
 }
 if (window.secondaryColor == null) {
-  window.secondaryColor = parseInt("ffffff", 16);
+  window.secondaryColor = parseInt("ff3a39", 16);
 }
-window.currentPlayer = "player_42";
+window.currentPlayer = "player_12";
 window.currentShip = "ship_44";
 window.currentBall = "player_ball_23"
 window.currentWave = "dart_01"
@@ -2039,7 +2039,7 @@ class ps {
     this.rotateActionDuration = 0;
     this.rotateActionStart = 0;
     this.rotateActionTotal = 0;
-    this._showHitboxes = true;
+    this._showHitboxes = !!window.showHitboxes;
     this._lastLandObject = null;
     this._lastXOffset = 0;
     this._lastCameraX = 0;
@@ -2497,8 +2497,10 @@ if (this.p.isFlying) {
       this._waveSpriteLayer.sprite.y -= 1;
     }
     this._updateParticles(cameraX, cameraY, _0x3afedf);
-    if (window.showHitboxes) {
+    if (this._showHitboxes) {
       this.drawHitboxes(this._hitboxGraphics, cameraX, cameraY);
+    } else if (this._hitboxGraphics) {
+      this._hitboxGraphics.clear();
     }
   }
   enterShipMode(_0xeb37c6 = null) {
@@ -3744,7 +3746,10 @@ _updateBallJump(_0x2fe319) {
     // ----
   }
   setShowHitboxes(_0x2133d2) {
-    this._showHitboxes = /*_0x2133d2*/ true;
+    this._showHitboxes = !!_0x2133d2;
+    if (!this._showHitboxes && this._hitboxGraphics) {
+      this._hitboxGraphics.clear();
+    }
   }
   playEndAnimation(_0x24408e, _0x281588, _0x54bbf4) {
     this._endAnimating = true;
@@ -4452,7 +4457,32 @@ class xs extends Phaser.Scene {
         this._pauseContainer.destroy();
         this._pauseContainer = null;
       }
+      this._noclipCheckbox = null;
+      this._showHitboxesCheckbox = null;
     }
+  }
+  _createPauseToggleButton(_0x5376fd, _0x3b6200, _0x2b25c8, _0xe203c3, _0x268e2b, _0x2d04c4) {
+    const _0x4864cc = this.add.container(_0x3b6200, _0x2b25c8);
+    const _0x3ae5dd = this.add.image(0, 0, "GJ_GameSheet03", _0x268e2b ? "GJ_checkOn_001.png" : "GJ_checkOff_001.png").setScale(0.7).setInteractive();
+    const _0x15c0df = this.add.bitmapText(_0x3ae5dd.width * 0.7 / 2 + 12, 0, "bigFont", _0xe203c3, 32).setOrigin(0, 0.5);
+    _0x4864cc.add([_0x3ae5dd, _0x15c0df]);
+    _0x5376fd.add(_0x4864cc);
+    const _0x232e51 = _0x1dce15 => {
+      _0x3ae5dd.setTexture("GJ_GameSheet03", _0x1dce15 ? "GJ_checkOn_001.png" : "GJ_checkOff_001.png");
+      this._expandHitArea(_0x3ae5dd, 2);
+      _0x2d04c4(_0x1dce15);
+    };
+    this._expandHitArea(_0x3ae5dd, 2);
+    this._makeBouncyButton(_0x3ae5dd, 0.7, () => {
+      _0x232e51(_0x3ae5dd.frame.name === "GJ_checkOff_001.png");
+    }, () => this._paused && !!this._pauseContainer);
+    _0x15c0df.setInteractive();
+    _0x15c0df.on("pointerdown", () => {
+      if (this._paused && this._pauseContainer) {
+        _0x232e51(_0x3ae5dd.frame.name === "GJ_checkOff_001.png");
+      }
+    });
+    return _0x4864cc;
   }
   _buildPauseOverlay() {
     const _0x13af33 = screenWidth / 2;
@@ -4559,6 +4589,15 @@ class xs extends Phaser.Scene {
     _0xe34699(_0x13af33 + 200, "GJ_sfxIcon_001.png", this._sfxVolume, _0x3224fb => {
       this._sfxVolume = _0x3224fb;
       localStorage.setItem("userSfxVol", _0x3224fb);
+    });
+
+    this._noclipCheckbox = this._createPauseToggleButton(this._pauseContainer, _0x13af33 - 200, 570, "Noclip", window.noClip, value => {
+      window.noClip = value;
+    });
+
+    this._showHitboxesCheckbox = this._createPauseToggleButton(this._pauseContainer, _0x13af33, 570, "Show Hitboxes", window.showHitboxes, value => {
+      window.showHitboxes = value;
+      this._player.setShowHitboxes(value);
     });
   }
   _buildInfoPopup() {
@@ -5014,6 +5053,8 @@ class xs extends Phaser.Scene {
       this._pauseContainer.destroy();
       this._pauseContainer = null;
     }
+    this._noclipCheckbox = null;
+    this._showHitboxesCheckbox = null;
     this._pauseBtn.setVisible(true).setAlpha(75 / 255);
     this._attemptsLabel.setText("Attempt " + this._attempts);
     this._attemptsLabel.setVisible(true);
@@ -5050,6 +5091,8 @@ class xs extends Phaser.Scene {
     if (this._paused && this._pauseContainer) {
       this._pauseContainer.destroy();
       this._pauseContainer = null;
+      this._noclipCheckbox = null;
+      this._showHitboxesCheckbox = null;
       this._buildPauseOverlay();
     }
     this._level.resizeScreen();
