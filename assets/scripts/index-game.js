@@ -21,6 +21,7 @@ window.noClip = false; // experimental
 window.orbClickScale = 2.0;
 window.orbClickShrinkTime = 250;
 window.orbParticleSize = 3.5;
+window.showPercentage = true;
 
 // -------------------------------
 
@@ -4303,7 +4304,7 @@ class xs extends Phaser.Scene {
       this._levelLabel.setVisible(false)
       this._leftBtn.setVisible(false)
       this._rightBtn.setVisible(false)
-      this._percentageLabel.setVisible(true)
+      this._percentageLabel.setVisible(window.showPercentage)
       this._percentageLabel.setDepth(9999);
     }, () => this._menuActive && !this._playBtnPressed);
     this._positionMenuItems();
@@ -4591,13 +4592,18 @@ class xs extends Phaser.Scene {
       localStorage.setItem("userSfxVol", _0x3224fb);
     });
 
-    this._noclipCheckbox = this._createPauseToggleButton(this._pauseContainer, _0x13af33 - 200, 570, "Noclip", window.noClip, value => {
+    this._noclipCheckbox = this._createPauseToggleButton(this._pauseContainer, _0x13af33 - 330, 570, "Noclip", window.noClip, value => {
       window.noClip = value;
     });
 
-    this._showHitboxesCheckbox = this._createPauseToggleButton(this._pauseContainer, _0x13af33, 570, "Show Hitboxes", window.showHitboxes, value => {
+    this._showHitboxesCheckbox = this._createPauseToggleButton(this._pauseContainer, _0x13af33 - 120, 570, "Hitboxes", window.showHitboxes, value => {
       window.showHitboxes = value;
       this._player.setShowHitboxes(value);
+    });
+
+    this._showPercentageCheckbox = this._createPauseToggleButton(this._pauseContainer, _0x13af33 + 130, 570, "Percentage", window.showPercentage, value => {
+      window.showPercentage = value;
+      this._percentageLabel.setVisible(value);
     });
   }
   _buildInfoPopup() {
@@ -5186,7 +5192,7 @@ class xs extends Phaser.Scene {
         this._levelLabel.setVisible(false)
         this._leftBtn.setVisible(false)
         this._rightBtn.setVisible(false)
-        this._percentageLabel.setVisible(true)
+        this._percentageLabel.setVisible(window.showPercentage)
         this._startGame();
         return;
       }
