@@ -44,6 +44,7 @@
 - **all game modes** - this will allow the full game to be playable with any level with certain gamemodes
 - **practice mode** - a working practice mode feature with deleting checkpoints and saving checkpoints
 - **all objects working** - as the current state of web dash; you may notice a lot of the objects seemed to be bugged and not showing
+- **level editor** - a working level editor with some objects to choose
 
 ### come try out the modded version out at:
 **[web-dashers.github.io](https://web-dashers.github.io/)**
