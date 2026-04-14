@@ -4470,10 +4470,11 @@ class xs extends Phaser.Scene {
       this._iconOverlayObjects = [overlay, blocker, titleTxt];
 
       const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_03_001.png")
-        .setScrollFactor(0).setDepth(104).setFlipX(true)
-        .setScale(1, -1).setRotation(Math.PI).setInteractive();
+        .setScrollFactor(0).setDepth(104).setFlipY(true)
+        .setFlipX(true)
+        .setRotation(Math.PI).setInteractive();
       this._iconOverlayObjects.push(backBtn);
-      backBtn.on("pointerup", () => this._closeIconSelector());
+      this._makeBouncyButton(backBtn, 1, () => this._closeIconSelector());
 
       const topBarHeight = 100;
       const lineY = topBarHeight + 100;
@@ -4530,7 +4531,7 @@ class xs extends Phaser.Scene {
       this._iconOverlayObjects.push(cornerTL, cornerTR, cornerBR, cornerBL);
 
       const navDotSpacing = 28;
-      const navDotY = containerY + containerHeight + 30;
+      const navDotY = containerY + containerHeight + 26;
       const navDot1 = this.add.image(sw / 2 - navDotSpacing / 1.5, navDotY, "GJ_GameSheet03", "gj_navDotBtn_on_001.png").setScrollFactor(0).setDepth(104).setScale(0.75);
       const navDot2 = this.add.image(sw / 2 + navDotSpacing / 1.5, navDotY, "GJ_GameSheet03", "gj_navDotBtn_off_001.png").setScrollFactor(0).setDepth(104).setScale(0.75);
       this._iconOverlayObjects.push(navDot1, navDot2);
@@ -4675,9 +4676,8 @@ class xs extends Phaser.Scene {
           .setInteractive();
         tabBtnSprites[tab] = btn;
         this._iconOverlayObjects.push(btn);
-        btn.on("pointerup", () => _switchTab(tab));
-        btn.on("pointerover", () => btn.setAlpha(0.75));
-        btn.on("pointerout",  () => btn.setAlpha(1));
+        
+        this._makeBouncyButton(btn, 0.75, () => _switchTab(tab));
       });
 
       this._iconGridObjects = [];
@@ -4687,14 +4687,26 @@ class xs extends Phaser.Scene {
 
       const iconsPerPage = cols * rows;
       let currentPage = 0;
+      let _currentTab = startTab;
 
       const arrowY = containerY + containerHeight / 2;
-      const arrowMargin = 36;
+      const arrowMargin = 54;
 
-      const prevArrow = this.add.image(containerX - arrowMargin, arrowY, "GJ_GameSheet03", "GJ_arrow_03_001.png")
+      const prevArrow = this.add.image(containerX - arrowMargin, arrowY, "GJ_GameSheet03", "GJ_arrow_01_001.png")
         .setScrollFactor(0).setDepth(106).setScale(0.8).setFlipX(false).setInteractive();
-      const nextArrow = this.add.image(containerX + containerWidth + arrowMargin, arrowY, "GJ_GameSheet03", "GJ_arrow_03_001.png")
+      const nextArrow = this.add.image(containerX + containerWidth + arrowMargin, arrowY, "GJ_GameSheet03", "GJ_arrow_01_001.png")
         .setScrollFactor(0).setDepth(106).setScale(0.8).setInteractive().setFlipX(true);
+
+      //bouncy buttons for arrows
+      const _togglePage = () => {
+        currentPage = currentPage === 0 ? 1 : 0;
+        _updateNavDots(currentPage);
+        _buildGrid(_currentTab, currentPage);
+      };
+
+      [prevArrow, nextArrow].forEach(arrow => {
+        this._makeBouncyButton(arrow, 0.8, _togglePage);
+      });
 
       this._iconOverlayObjects.push(prevArrow, nextArrow);
 
@@ -4716,38 +4728,32 @@ class xs extends Phaser.Scene {
           const ix  = startX + col * (iconSize + padding);
           const iy  = startY + row * (iconSize + padding);
 
-          const hitRect = this.add.rectangle(ix, iy, iconSize, iconSize, 0x000000, 0).setScrollFactor(0).setDepth(104).setInteractive();
+          const iconContainer = this.add.container(ix, iy).setScrollFactor(0).setDepth(104).setSize(iconSize, iconSize).setInteractive();
 
-          const iconImg = this.add.image(ix, iy, atlas, frame).setScrollFactor(0).setDepth(103);
+          const iconImg = this.add.image(0, 0, atlas, frame).setTint(0xAFAFAF); 
           const origScale = Math.min(
             iconSize / (iconImg.width  || iconSize),
             iconSize / (iconImg.height || iconSize)
           ) * 0.7;
           iconImg.setScale(origScale);
+          
+          iconContainer.add(iconImg);
 
           const extraFrame = frame.replace("_001.png", "_2_001.png");
           const extraInfo = R(this, extraFrame);
-          const extraImg = extraInfo
-            ? this.add.image(ix, iy, extraInfo.atlas, extraInfo.frame).setScrollFactor(0).setDepth(102).setScale(origScale)
-            : null;
+          let extraImg = null;
+          if (extraInfo) {
+            extraImg = this.add.image(0, 0, extraInfo.atlas, extraInfo.frame).setScale(origScale);
+            iconContainer.add(extraImg);
+          }
 
-          if (extraImg) this._iconGridObjects.push(extraImg);
-          this._iconGridObjects.push(iconImg, hitRect);
+          this._iconGridObjects.push(iconContainer);
 
-          ((capturedFrame, capturedImg, capturedExtra, capturedOrigScale) => {
-            hitRect.on("pointerover",  () => { capturedImg.setAlpha(0.65); if (capturedExtra) capturedExtra.setAlpha(0.65); });
-            hitRect.on("pointerout",   () => {
-              capturedImg.setAlpha(1); capturedImg.setScale(capturedOrigScale);
-              if (capturedExtra) { capturedExtra.setAlpha(1); capturedExtra.setScale(capturedOrigScale); }
-            });
-            hitRect.on("pointerdown",  () => { capturedImg.setScale(capturedOrigScale * 1.15); if (capturedExtra) capturedExtra.setScale(capturedOrigScale * 1.15); });
-            hitRect.on("pointerup",    () => {
-              capturedImg.setScale(capturedOrigScale);
-              capturedImg.setAlpha(1);
-              if (capturedExtra) { capturedExtra.setScale(capturedOrigScale); capturedExtra.setAlpha(1); }
+          ((capturedFrame, capturedContainer) => {
+            this._makeBouncyButton(capturedContainer, 1, () => {
               if (!this._iconOverlay) return;
 
-              selLabel.setPosition(capturedImg.x, capturedImg.y).setScale(0.75).setVisible(true);
+              selLabel.setPosition(capturedContainer.x, capturedContainer.y).setScale(0.75).setVisible(true);
 
               window[prop] = capturedFrame.replace("_001.png", "");
               localStorage.setItem("icon" + prop.charAt(0).toUpperCase() + prop.slice(1), window[prop]);
@@ -4805,23 +4811,10 @@ class xs extends Phaser.Scene {
 
               _refreshPreview(tab, capturedFrame);
             });
-          })(frame, iconImg, extraImg, origScale);
+          })(frame, iconContainer);
         });
       };
 
-      let _currentTab = startTab;
-      const _togglePage = () => {
-        currentPage = currentPage === 0 ? 1 : 0;
-        _updateNavDots(currentPage);
-        _buildGrid(_currentTab, currentPage);
-      };
-      prevArrow.on("pointerup", _togglePage);
-      prevArrow.on("pointerover", () => prevArrow.setAlpha(0.7));
-      prevArrow.on("pointerout",  () => prevArrow.setAlpha(1));
-
-      nextArrow.on("pointerup", _togglePage);
-      nextArrow.on("pointerover", () => nextArrow.setAlpha(0.7));
-      nextArrow.on("pointerout",  () => nextArrow.setAlpha(1));
 
       const _switchTabOrig = _switchTab;
       const _switchTabPaged = (tab) => {
@@ -4841,7 +4834,9 @@ class xs extends Phaser.Scene {
         const btn = tabBtnSprites[tab];
         if (btn) {
           btn.removeAllListeners("pointerup");
-          btn.on("pointerup", () => _switchTabPaged(tab));
+          btn.removeAllListeners("pointerdown");
+          btn.removeAllListeners("pointerout");
+          this._makeBouncyButton(btn, 0.75, () => _switchTabPaged(tab));
         }
       });
 
@@ -5047,54 +5042,19 @@ this._escKey.on("down", () => {
     }
   }
   _parseLevelColors(levelId) {
-    const COLOR_OVERRIDES = {
-      "level_14":  0xff6600, // clubstep
-      "level_20":  0xff1166, // deadlocked
-      "level_100": 0xdd1111, // bloodbath
-      "level_18":  0x44aaff, // toe 2
-    };
-    if (COLOR_OVERRIDES[levelId]) {
-      const bgHex = COLOR_OVERRIDES[levelId];
-      return { bgHex, groundHex: bgHex };
+    const LEVEL_COLORS = [
+      0x0100f5,0xf902f8,0xf90285,0xfa0102,
+      0xfa8702,0xfcfc06,0x03fb03,0x02fbfb,
+      0x007dff
+    ];
+    
+    let index = 0;
+    if (window.allLevels) {
+      index = window.allLevels.findIndex(l => l[2] === levelId);
+      if (index === -1) index = 0;
     }
-
-    const text = this.cache.text.get(levelId);
-    const fallback = { bgHex: 0x001aff, groundHex: 0x001aff };
-    if (!text) return fallback;
-    let settingsStr = null;
-    try {
-      const parsed = parseLevel(text);
-      settingsStr = parsed.settings;
-    } catch(e) { return fallback; }
-    if (!settingsStr) return fallback;
-    const pairs = settingsStr.split(",");
-    const sm = {};
-    for (let i = 0; i + 1 < pairs.length; i += 2) sm[pairs[i]] = pairs[i + 1];
-
-    const parseColorEntry = (str) => {
-      if (!str) return null;
-      const props = str.split("_");
-      const cp = {};
-      for (let j = 0; j + 1 < props.length; j += 2) cp[parseInt(props[j], 10)] = props[j + 1];
-      return { r: parseInt(cp[1] || "255", 10), g: parseInt(cp[2] || "255", 10), b: parseInt(cp[3] || "255", 10) };
-    };
-
-    const initialColors = {};
-    const colorStr = sm["kS38"];
-    if (colorStr) {
-      for (const ch of colorStr.split("|")) {
-        if (!ch) continue;
-        const props = ch.split("_");
-        const cp = {};
-        for (let j = 0; j + 1 < props.length; j += 2) cp[parseInt(props[j], 10)] = props[j + 1];
-        const chId = parseInt(cp[6], 10);
-        if (!isNaN(chId)) initialColors[chId] = { r: parseInt(cp[1] || "255", 10), g: parseInt(cp[2] || "255", 10), b: parseInt(cp[3] || "255", 10) };
-      }
-    }
-    if (!initialColors[1000] && sm["kS29"]) { const c = parseColorEntry(sm["kS29"]); if (c) initialColors[1000] = c; }
-
-    const bgCol = initialColors[1000] || { r: 0, g: 26, b: 255 };
-    const bgHex = (bgCol.r << 16) | (bgCol.g << 8) | bgCol.b;
+    
+    const bgHex = LEVEL_COLORS[index % LEVEL_COLORS.length];
     return { bgHex, groundHex: bgHex };
   }
 
@@ -5166,10 +5126,10 @@ this._escKey.on("down", () => {
     const staticFloorLine = this.add.image(cx, groundY - groundTileH, "GJ_WebSheet", "floorLine_01_001.png")
       .setScrollFactor(0).setDepth(153).setOrigin(0.5, 0.5).setScale(floorLineScale, 1).setBlendMode(S);
 
-    const cornerBL = this.add.image(0,  sh, "GJ_GameSheet03", "GJ_sideArt_001.png").setScrollFactor(0).setDepth(152).setOrigin(0, 1).setFlipX(true).setFlipY(true);
-    const cornerBR = this.add.image(sw, sh, "GJ_GameSheet03", "GJ_sideArt_001.png").setScrollFactor(0).setDepth(152).setOrigin(1, 1).setFlipY(true);
+    const cornerBL = this.add.image(0,  sh, "GJ_GameSheet03", "GJ_sideArt_001.png").setScrollFactor(0).setDepth(152).setOrigin(1, 1).setFlipY(true).setAngle(90);
+    const cornerBR = this.add.image(sw, sh, "GJ_GameSheet03", "GJ_sideArt_001.png").setScrollFactor(0).setDepth(152).setOrigin(1, 0).setFlipY(false).setAngle(90);
 
-    const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_03_001.png")
+    const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_01_001.png")
       .setScrollFactor(0).setDepth(154).setFlipX(true).setScale(1, -1).setRotation(Math.PI).setInteractive();
     backBtn.on("pointerdown", () => {
       backBtn._pressed = true;
@@ -5192,8 +5152,8 @@ this._escKey.on("down", () => {
       }
     });
 
-    const infoBtn = this.add.image(sw - 36, 36, "GJ_GameSheet03", "GJ_infoIcon_001.png")
-      .setScrollFactor(0).setDepth(154).setScale(0.7).setRotation(Math.PI / 2).setInteractive();
+    const infoBtn = this.add.image(sw - 40, 40, "GJ_GameSheet03", "GJ_infoIcon_001.png")
+      .setScrollFactor(0).setDepth(154).setRotation(Math.PI / 2).setInteractive();
 
     const arrowL = this.add.image(55, cy - 25, "GJ_GameSheet03", "navArrowBtn_001.png")
       .setScrollFactor(0).setDepth(154).setScale(1.1).setFlipX(true).setInteractive();
@@ -5203,7 +5163,7 @@ this._escKey.on("down", () => {
     const allLevels = window.allLevels || [];
     const dotY = sh - 36;
     const maxDots = Math.min(allLevels.length, 28);
-    const dotSpacing = 20;
+    const dotSpacing = 27;
     const dotStartX = cx - (maxDots - 1) * dotSpacing / 2;
     const dotObjs = [];
     const refreshDots = () => {
@@ -5214,7 +5174,7 @@ this._escKey.on("down", () => {
         const active = di === idx;
         const d = this.add.graphics().setScrollFactor(0).setDepth(153);
         d.fillStyle(0xffffff, active ? 1 : 0.3);
-        d.fillCircle(dotStartX + di * dotSpacing, dotY, active ? 7 : 5);
+        d.fillCircle(dotStartX + di * dotSpacing, dotY, 7);
         dotObjs.push(d);
       }
     };
@@ -5275,7 +5235,7 @@ this._escKey.on("down", () => {
       for (const o of cardContentObjs) { this.tweens.killTweensOf(o); o.destroy(); }
       cardContentObjs.length = 0;
 
-      const lvl     = window.currentlevel;
+      const lvl = window.currentlevel;
       const levelId = lvl[2] || "level_1";
 
       const levelDifficultyMap = {
@@ -5314,21 +5274,21 @@ this._escKey.on("down", () => {
       const isHardDemon = diffIconKey === "diffIcon_06_btn_001";
       const iconRotation = isHardDemon ? Math.PI / 2 : 0;
       const demonIcon = this.add.image(iconX - cardX, 0, "GJ_GameSheet03", diffFrame)
-        .setScrollFactor(0).setDepth(155).setScale(1.25).setOrigin(0.5, 0.5).setRotation(iconRotation);
+        .setScrollFactor(0).setDepth(155).setScale(1).setOrigin(0.5, 0.5).setRotation(iconRotation).setFlipY(isHardDemon);
       cardContentObjs.push(demonIcon);
       cardBounceContainer.add(demonIcon);
 
       const maxIconH = cardH - 16;
       const maxIconW = 80;
       const iconFrame = this.textures.getFrame("GJ_GameSheet03", diffFrame);
-      let finalIconScale = 1.25;
+      let finalIconScale = 1;
       if (iconFrame) {
         const scaleForH = maxIconH / iconFrame.height;
-        const scaleForW = maxIconW / iconFrame.width;
-        finalIconScale = Math.min(1.25, scaleForH, scaleForW);
+        let scaleForW = maxIconW / iconFrame.width;
+        finalIconScale = Math.min(1, scaleForH, scaleForW);
         demonIcon.setScale(finalIconScale);
       }
-      const iconDisplayW = (iconFrame ? iconFrame.width : 80) * finalIconScale;
+      let iconDisplayW = (iconFrame ? iconFrame.width : 80) * finalIconScale;
       const iconDisplayH = (iconFrame ? iconFrame.height : 80) * finalIconScale;
 
       const nameLabel = this.add.bitmapText(0, 0, "bigFont", lvl[1], 50)
@@ -5345,7 +5305,7 @@ this._escKey.on("down", () => {
 
       const scaledIconW  = iconDisplayW  * groupScale;
       const scaledLabelW = nameLabel.width * groupScale;
-      const scaledGap    = gap * groupScale;
+      const scaledGap = gap * groupScale;
       const totalW = scaledIconW + scaledGap + scaledLabelW;
 
       const groupStartX = cardX - totalW / 2;
@@ -5378,20 +5338,35 @@ this._escKey.on("down", () => {
       cardContainer.add(modeLabel);
 
       const barBg = this.add.graphics().setScrollFactor(0).setDepth(154);
-      barBg.fillStyle(0x000000, 0.5);
+      barBg.fillStyle(0x000000, 0.6);
       barBg.fillRoundedRect(barX0, barAreaY - barH2 / 2, barW2, barH2, barH2 / 2);
       barObjs.push(barBg);
       cardContainer.add(barBg);
 
-      const fillW = Math.max(barH2, barW2 * bestNormal / 100);
-      const radius = barH2 / 2;
+      const padding = 3;
+      const innerH2 = barH2 - padding * 2;
+      const innerW2 = barW2 - padding * 2;
+      const innerRadius = innerH2 / 2;
+      const fillW = Math.max(innerH2, innerW2 * bestNormal / 100);
 
+      console.log({ bestNormal, fillW });
+    
+    if(bestNormal > 0) {
       const barFg = this.add.graphics().setScrollFactor(0).setDepth(155);
-      barFg.fillStyle(0x22cc22, 1);
-      barFg.fillCircle(barX0 + radius, barAreaY, radius);
-      barFg.fillRect(barX0 + radius, barAreaY - radius, fillW - radius, barH2);
+      barFg.fillStyle(0x00FF00, 1);
+      
+      const rightR = (bestNormal >= 100) ? innerRadius : 0;
+      
+      barFg.fillRoundedRect(barX0 + padding, barAreaY - barH2 / 2 + padding, fillW, innerH2, {
+        tl: innerRadius,
+        bl: innerRadius,
+        tr: rightR,
+        br: rightR
+      });
+      
       barObjs.push(barFg);
-      cardContainer.add(barFg);
+        cardContainer.add(barFg);
+      }
 
       const pctLabel = this.add.bitmapText(cx, barAreaY, "bigFont", Math.round(bestNormal) + "%", 22)
         .setScrollFactor(0).setDepth(156).setOrigin(0.5, 0.5);
@@ -5402,11 +5377,16 @@ this._escKey.on("down", () => {
     buildCardContent();
     buildBar();
 
-    let _switching = false;
+    let _currentAnimUpdate = null;
+
     const switchLevel = (dir) => {
-      if (_switching) return;
       if (!window.allLevels || window.allLevels.length === 0) return;
-      _switching = true;
+
+      if (_currentAnimUpdate) {
+        this.events.off("preupdate", _currentAnimUpdate);
+        _currentAnimUpdate = null;
+        cardContainer.x = 0;
+      }
 
       let idx = window.allLevels.findIndex(l => l[2] === window.currentlevel[2]);
       idx = (idx + dir + window.allLevels.length) % window.allLevels.length;
@@ -5415,53 +5395,68 @@ this._escKey.on("down", () => {
       const newColors = this._parseLevelColors(window.currentlevel[2]);
       const dark = isEveryEnd(window.currentlevel[2]);
 
-      const slideOutX = -dir * sw * 0.6;
-      const slideInX  =  dir * sw * 0.6;
-      const slideDur  = 220;
+      const slideDist = cardW-200;
+      const slideOutTarget = -dir * slideDist;
+      const slideInStart = dir * slideDist;
 
       this.tweens.killTweensOf(cardContainer);
 
-      this.tweens.add({
-        targets: cardContainer,
-        x: slideOutX,
-        alpha: 0,
-        duration: slideDur,
-        ease: "Quad.In",
-        onComplete: () => {
-          for (const o of cardContentObjs) {
-            cardBounceContainer.remove(o, false);
-            this.tweens.killTweensOf(o);
-            o.destroy();
+      let state = "out";
+      let currentX = cardContainer.x;
+      let vel = 0;
+
+      const scrollAnimUpdate = (time,delta) => {
+        const dt = Math.min(delta / 1000, 0.05);
+
+        if (state === "out") {
+          const speed = slideDist * 14; 
+          currentX += (-dir) * speed * dt;
+          
+          if ((dir > 0 && currentX <= slideOutTarget) || (dir < 0 && currentX >= slideOutTarget)) {
+            for (const o of cardContentObjs) {
+              cardBounceContainer.remove(o, false);
+              o.destroy();
+            }
+            for (const o of barObjs) {
+              cardSlideContainer.remove(o, false);
+              o.destroy();
+            }
+            cardContentObjs.length = 0;
+            barObjs.length = 0;
+
+            drawCardBg(newColors.bgHex, dark);
+            buildCardContent();
+            buildBar();
+
+            drawOverlay(overlay, newColors.bgHex, dark);
+            for (const gt of staticGroundTiles) gt.setTint(groundTintHex(newColors.groundHex));
+            refreshDots();
+
+            state = "in";
+            currentX = slideInStart;
+            vel = (-dir) * slideDist * 6;
           }
-          for (const o of barObjs) {
-            cardSlideContainer.remove(o, false);
-            this.tweens.killTweensOf(o);
-            o.destroy();
+        } else if (state === "in") {
+          const tension = 300;
+          const friction = 15;
+          
+          const force = -tension * (currentX - 0) - friction * vel;
+          vel += force * dt;
+          currentX += vel * dt;
+
+          if (Math.abs(currentX) < 1 && Math.abs(vel) < 15) {
+            currentX = 0;
+            this.events.off("preupdate", scrollAnimUpdate);
+            if (_currentAnimUpdate === scrollAnimUpdate) {
+              _currentAnimUpdate = null;
+            }
           }
-          cardContentObjs.length = 0;
-          barObjs.length = 0;
-
-          drawCardBg(newColors.bgHex, dark);
-
-          buildCardContent();
-          buildBar();
-
-          drawOverlay(overlay, newColors.bgHex, dark);
-          for (const gt of staticGroundTiles) gt.setTint(groundTintHex(newColors.groundHex));
-          refreshDots();
-
-          cardContainer.x = slideInX;
-          cardContainer.alpha = 0;
-          this.tweens.add({
-            targets: cardContainer,
-            x: 0,
-            alpha: 1,
-            duration: slideDur,
-            ease: "Quad.Out",
-            onComplete: () => { _switching = false; }
-          });
         }
-      });
+        cardContainer.x = currentX;
+      };
+
+      _currentAnimUpdate = scrollAnimUpdate;
+      this.events.on("preupdate", scrollAnimUpdate);
     };
 
     this._makeBouncyButton(arrowL, 1.1, () => { switchLevel(-1); });
@@ -5469,28 +5464,28 @@ this._escKey.on("down", () => {
 
     const inputBlocker = this.add.zone(cx, cy, sw, sh)
       .setScrollFactor(0).setDepth(151).setInteractive();
-    this._levelSelectStaticObjs  = [overlay, inputBlocker, tableBottom, ...staticGroundTiles, staticFloorLine, cornerBL, cornerBR, backBtn, infoBtn, arrowL, arrowR, cardSlideContainer, cardHit];
+    this._levelSelectStaticObjs = [overlay, inputBlocker, tableBottom, ...staticGroundTiles, staticFloorLine, cornerBL, cornerBR, backBtn, infoBtn, arrowL, arrowR, cardSlideContainer, cardHit];
     this._levelSelectSwitchLevel = switchLevel;
-    this._levelSelectDotObjs     = dotObjs;
+    this._levelSelectDotObjs = dotObjs;
     this._levelSelectCardContent = cardContentObjs;
-    this._levelSelectBarObjs     = barObjs;
+    this._levelSelectBarObjs = barObjs;
   }
 
   _closeLevelSelect(silent = false) {
     if (!this._levelSelectOverlay) return;
     const destroy = () => {
       const all = [
-        ...(this._levelSelectStaticObjs  || []),
-        ...(this._levelSelectDotObjs     || []),
+        ...(this._levelSelectStaticObjs || []),
+        ...(this._levelSelectDotObjs || []),
         ...(this._levelSelectCardContent || []),
-        ...(this._levelSelectBarObjs     || []),
+        ...(this._levelSelectBarObjs || []),
       ];
       for (const o of all) { if (o && o.destroy) { this.tweens.killTweensOf(o); o.destroy(); } }
-      this._levelSelectOverlay     = null;
-      this._levelSelectStaticObjs  = null;
-      this._levelSelectDotObjs     = null;
+      this._levelSelectOverlay = null;
+      this._levelSelectStaticObjs = null;
+      this._levelSelectDotObjs = null;
       this._levelSelectCardContent = null;
-      this._levelSelectBarObjs     = null;
+      this._levelSelectBarObjs = null;
       this._levelSelectSwitchLevel = null;
     };
     if (silent) { destroy(); return; }
@@ -6713,6 +6708,9 @@ _applyMirrorEffect() {
     this._player.playEndAnimation(this._level.endXPos, () => this._levelComplete(), this._endPortalGameY);
   }
   _levelComplete() {
+    this._bestPercent = 100;
+    localStorage.setItem("bestPercent_" + (window.currentlevel[2] || "level_1"), 100);
+
     const _0x356782 = this._level.endXPos - this._cameraX;
     const _0x2d967b = b(this._endPortalGameY) + this._cameraY;
     for (let _0x481f7c = 0; _0x481f7c < 5; _0x481f7c++) {
