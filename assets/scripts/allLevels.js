@@ -3,7 +3,8 @@ window.allLevels = [
         "stereo_madness", // internal level name
 	    "Stereo Madness", // proper level name
 	    "level_1",        // level id in assets/levels
-	    ["RobTop", "Forever Bound"]   // person who made the level, person who made the song
+	    ["RobTop", "Forever Bound"], // person who made the level, person who made the song
+        //"Polargeist"    // in case a level uses a song not named the level
     ],
     [
         "back_on_track",
@@ -147,7 +148,8 @@ window.allLevels = [
         "the_nightmare",
 	    "The Nightmare",
 	    "level_5703070",
-	    ["Jax", "Step"]
+	    ["Jax", "Step"],
+        "Polargeist"
     ],
     [
         "three_step",

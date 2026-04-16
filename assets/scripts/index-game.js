@@ -14,7 +14,7 @@ window.currentlevel = [
 	"stereo_madness", // internal level name
 	"Stereo Madness", // proper level name
 	"level_1",        // level id in assets/levels
-	"Forever Bound"   // person who made the song
+	["RobTop", "Forever Bound"]   // person who made the level, person who made the song
 ];
 window.showHitboxes = false;
 window.noClip = false; // experimental
@@ -200,90 +200,10 @@ preload() {
  
     this.load.audio("menu_music", "assets/music/menuLoop.mp3");
  
-    this.load.text("level_1", "assets/levels/1.txt");
-    this.load.audio("stereo_madness", "assets/music/StereoMadness.mp3");
- 
-    this.load.text("level_2", "assets/levels/2.txt");
-    this.load.audio("back_on_track", "assets/music/BackOnTrack.mp3");
- 
-    this.load.text("level_3", "assets/levels/3.txt");
-    this.load.audio("polargeist", "assets/music/Polargeist.mp3");
- 
-    this.load.text("level_4", "assets/levels/4.txt");
-    this.load.audio("dry_out", "assets/music/DryOut.mp3");
- 
-    this.load.text("level_5", "assets/levels/5.txt");
-    this.load.audio("base_after_base", "assets/music/BaseAfterBase.mp3");
- 
-    this.load.text("level_6", "assets/levels/6.txt");
-    this.load.audio("cant_let_go", "assets/music/CantLetGo.mp3");
- 
-    this.load.text("level_7", "assets/levels/7.txt");
-    this.load.audio("jumper", "assets/music/Jumper.mp3");
- 
-    this.load.text("level_8", "assets/levels/8.txt");
-    this.load.audio("time_machine", "assets/music/TimeMachine.mp3");
- 
-    this.load.text("level_9", "assets/levels/9.txt");
-    this.load.audio("cycles", "assets/music/Cycles.mp3");
- 
-    this.load.text("level_10", "assets/levels/10.txt");
-    this.load.audio("xstep", "assets/music/xStep.mp3");
- 
-    this.load.text("level_11", "assets/levels/11.txt");
-    this.load.audio("clutterfunk", "assets/music/Clutterfunk.mp3");
- 
-    this.load.text("level_12", "assets/levels/12.txt");
-    this.load.audio("theory_of_everything", "assets/music/TheoryOfEverything.mp3");
- 
-    this.load.text("level_13", "assets/levels/13.txt");
-    this.load.audio("electroman_adventures", "assets/music/ElectromanAdventures.mp3");
- 
-    this.load.text("level_14", "assets/levels/14.txt");
-    this.load.audio("clubstep", "assets/music/Clubstep.mp3");
- 
-    this.load.text("level_15", "assets/levels/15.txt");
-    this.load.audio("electrodynamix", "assets/music/Electrodynamix.mp3");
- 
-    this.load.text("level_16", "assets/levels/16.txt");
-    this.load.audio("hexagon_force", "assets/music/HexagonForce.mp3");
- 
-    this.load.text("level_17", "assets/levels/17.txt");
-    this.load.audio("blast_processing", "assets/music/BlastProcessing.mp3");
- 
-    this.load.text("level_18", "assets/levels/18.txt");
-    this.load.audio("theory_of_everything_2", "assets/music/TheoryOfEverything2.mp3");
- 
-    this.load.text("level_19", "assets/levels/19.txt");
-    this.load.audio("geometrical_dominator", "assets/music/GeometricalDominator.mp3");
- 
-    this.load.text("level_20", "assets/levels/20.txt");
-    this.load.audio("deadlocked", "assets/music/Deadlocked.mp3");
- 
-    this.load.text("level_21", "assets/levels/21.txt");
-    this.load.audio("fingerdash", "assets/music/Fingerdash.mp3");
- 
-    this.load.text("level_22", "assets/levels/22.txt");
-    this.load.audio("dash", "assets/music/Dash.mp3");
- 
-    this.load.text("level_99", "assets/levels/99.txt");
-    this.load.audio("every_end", "assets/music/EveryEnd.mp3");
- 
-    this.load.text("level_100", "assets/levels/100.txt");
-    this.load.audio("bloodbath", "assets/music/Bloodbath.mp3");
- 
-    this.load.text("level_137409445", "assets/levels/137409445.txt");
-    this.load.audio("three_step", "assets/music/ThreeStep.mp3");
- 
-    this.load.text("level_5703070", "assets/levels/5703070.txt");
-    this.load.audio("the_nightmare", "assets/music/Polargeist.mp3");
- 
-    this.load.text("level_137677336", "assets/levels/137677336.txt");
-    this.load.audio("disco_dinosaur", "assets/music/DiscoDinosaur.mp3");
- 
-    this.load.text("level_116489424", "assets/levels/116489424.txt");
-    this.load.audio("the_dark_star", "assets/music/TheDarkStar.mp3");
- 
+    for (const lvlarray of window.allLevels){
+      this.load.text(lvlarray[2], "assets/levels/"+lvlarray[2].split("_")[1]+".txt");
+      this.load.audio(lvlarray[0], "assets/music/"+(lvlarray[4] ? lvlarray[4] : lvlarray[1].replaceAll(" ", ""))+".mp3");
+    }
     this.load.audio("explode_11", "assets/sfx/explode_11.ogg");
     this.load.audio("endStart_02", "assets/sfx/endStart_02.ogg");
     this.load.audio("playSound_01", "assets/sfx/playSound_01.ogg");
