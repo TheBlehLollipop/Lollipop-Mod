@@ -66,7 +66,7 @@ class A extends Phaser.Scene {
     });
   }
 preload() {
-	window.gameCache.init();
+	if (window.gameCache) window.gameCache.init();
     (function (game) {
       if (game.renderer.type === Phaser.WEBGL) {
         let _0x47cabb = game.renderer.gl;
@@ -160,27 +160,29 @@ preload() {
       loadingText.setText(value < 1 ? 'Loading...' : 'Ready!');
     });
     this.load.on("loaderror", _0x550fba => {});
-	const originalXhr = this.load.xhrLoader;
-    this.load.xhrLoader = (file) => {
-      const url = file.url;
-      if (window.gameCache.isFileCached(url)) {
-        const cached = window.gameCache.getCachedFile(url);
-        if (cached) {
-          return new Promise((resolve) => {
-            setTimeout(() => {
-              file.data = cached;
-              resolve(file);
-            }, 1);
-          });
+	if (window.gameCache) {
+      const originalXhr = this.load.xhrLoader;
+      this.load.xhrLoader = (file) => {
+        const url = file.url;
+        if (window.gameCache.isFileCached(url)) {
+          const cached = window.gameCache.getCachedFile(url);
+          if (cached) {
+            return new Promise((resolve) => {
+              setTimeout(() => {
+                file.data = cached;
+                resolve(file);
+              }, 1);
+            });
+          }
         }
-      }
-      return originalXhr.call(this.load, file).then((result) => {
-        if (result && result.data) {
-          window.gameCache.cacheFile(url, result.data);
-        }
-        return result;
-      });
-    };
+        return originalXhr.call(this.load, file).then((result) => {
+          if (result && result.data) {
+            window.gameCache.cacheFile(url, result.data);
+          }
+          return result;
+        });
+      };
+    }
     this.load.atlas("GJ_WebSheet", "assets/sheets/GJ_WebSheet.png", "assets/sheets/GJ_WebSheet.json");
     this.load.atlas("GJ_GameSheet", "assets/sheets/GJ_GameSheet.png", "assets/sheets/GJ_GameSheet.json");
     this.load.atlas("GJ_GameSheet02", "assets/sheets/GJ_GameSheet02.png", "assets/sheets/GJ_GameSheet02.json");
@@ -246,8 +248,10 @@ preload() {
     if (goldFontData) {
       loadFont(this, "goldFont", goldFontData);
     }
-	const stats = window.gameCache.getCacheStats();
-    console.log('stats:', stats);
+	if (window.gameCache) {
+      const stats = window.gameCache.getCacheStats();
+      console.log('stats:', stats);
+    }
     localStorage.setItem('webdash_assets_loaded', 'true');
     localStorage.setItem('webdash_last_load_time', Date.now().toString());
     this.scene.start("GameScene");
@@ -367,6 +371,7 @@ class PlayerState {
     this.isMini = false;
     this.isSpider = false;
     this._spiderTeleportPending = false;
+    this.isDual = false;
   }
 }
 const P = ["GJ_WebSheet", "GJ_GameSheet", "GJ_GameSheet02", "GJ_GameSheet03", "GJ_GameSheet04", "GJ_GameSheetEditor", "GJ_GameSheetGlow", "GJ_GameSheetIcons", "GJ_LaunchSheet", "player_ball_00", "player_dart_00"];
@@ -1353,6 +1358,8 @@ class us {
             660: "wave",
             111: "ufo",
             1331: "spider",
+            286: "dual_on",
+            287: "dual_off",
           }[_0x1b937f.id];
           if (_0x1b937f.id === 111) {
           }
@@ -1370,7 +1377,9 @@ class us {
             mirrora: "portal_mirror_on",
             mirrorb: "portal_mirror_off",
             shrink: "portal_mini_on",
-            grow: "portal_mini_off"
+            grow: "portal_mini_off",
+            dual_on: "portal_dual_on",
+            dual_off: "portal_dual_off",
           }[_0x5bcd81] || null;
           if (_0x1b937f.id === 111) {
             console.log("res - _0x5bcd81: " + _0x5bcd81 + ", _0x25452a: " + _0x25452a);
@@ -3395,10 +3404,10 @@ hitGround() {
       this.p.canJump = false;
   }
   runRotateAction() {
-
     this.rotateActionActive = true;
     this.rotateActionTime = 0;
-    this.rotateActionDuration = 0.39 / d;
+    const _miniDurScale = this.p.isMini ? (1 / 1.4) : 1;
+    this.rotateActionDuration = (0.39 / d) * _miniDurScale;
     this.rotateActionStart = this._rotation;
     this.rotateActionTotal = Math.PI * this.flipMod();
   }
@@ -3597,7 +3606,7 @@ _updateBallJump(_0x2fe319) {
     }
   }
   _updateWaveJump() {
-    const _0x1a4d8f = 10.3860036;
+    const _0x1a4d8f = this.p.isMini ? 22.7720072 : 11.3860036;
     let _0x312a7f = (this.p.upKeyDown ? 1 : -1) * this.flipMod() * _0x1a4d8f;
     if (this.p.onGround) {
       const _0x41866f = this.p.onCeiling ? _0x312a7f < 0 : _0x312a7f > 0;
@@ -3610,7 +3619,8 @@ _updateBallJump(_0x2fe319) {
     this.p.canJump = false;
     this.p.isJumping = false;
     this.p.yVelocity = _0x312a7f;
-    this._rotation = _0x312a7f === 0 ? 0 : _0x312a7f > 0 ? -Math.PI / 4 : Math.PI / 4;
+    const _waveAngle = this.p.isMini ? Math.atan(0.5) : Math.PI / 4;
+    this._rotation = _0x312a7f === 0 ? 0 : _0x312a7f > 0 ? -_waveAngle : _waveAngle;
   }
   _updateUfoJump(_dt) {
     const _miniGrav = this.p.isMini ? 1.35 : 1;
@@ -3840,6 +3850,18 @@ _updateBallJump(_0x2fe319) {
             gameObj.activated = true;
             this._playPortalShine(gameObj);
             this.p.isMini = false;
+          }
+        } else if (_colType === "portal_dual_on") {
+          if (!gameObj.activated) {
+            gameObj.activated = true;
+            this._playPortalShine(gameObj);
+            this._scene._enableDualMode();
+          }
+        } else if (_colType === "portal_dual_off") {
+          if (!gameObj.activated) {
+            gameObj.activated = true;
+            this._playPortalShine(gameObj);
+            this._scene._disableDualMode();
           }
         } else if (_colType === speedType) {
           if (!gameObj.activated) {
@@ -4684,6 +4706,13 @@ class xs extends Phaser.Scene {
     this._orbGfx = null;
     this._orbGfxTimer = 0;
     this._player = new ps(this, this._state, this._level);
+    this._state2  = new PlayerState();
+    this._player2 = new ps(this, this._state2, this._level);
+    this._isDual  = false;
+    this._player2.setCubeVisible(false);
+    this._player2.setShipVisible(false);
+    this._player2.setBallVisible(false);
+    this._player2.setWaveVisible(false);
     this._colorManager = new ms();
     if (this._audio == null) {
       this._audio = new ys(this);
@@ -6440,8 +6469,6 @@ this._escKey.on("down", () => {
     bounceContainer.add(contentContainer);
     const updateEntries = [
       { text: "4/17/26 - Update Log", scale: 0.85, font: "goldFont" },
-      { text: "Cache-manager added to speed up load time.", scale: 0.5 },
-	  { text: "Fixed UFO not disappearing on death.", scale: 0.6 },
       { text: "Added UFO, Spider and Wave trail.", scale: 0.65 },
       { text: "(ALL IN BETA, BUGS ARE NORMAL).", scale: 0.65, color: 0xff9944 },
       { text: "Spider is very broken.", scale: 0.65, color: 0xff6666 },
@@ -6858,6 +6885,13 @@ this._escKey.on("down", () => {
     this._level.topContainer.setVisible(true);
     this._player.setCubeVisible(true);
     this._player.reset();
+    this._isDual = false;
+    this._state2.reset();
+    this._player2.reset();
+    this._player2.setCubeVisible(false);
+    this._player2.setShipVisible(false);
+    this._player2.setBallVisible(false);
+    this._player2.setWaveVisible(false);
     this._attemptsLabel.setVisible(this._attempts > 1);
     this._positionAttemptsLabel();
     let gamemode = parseInt(window.settingsMap["kA2"] || "0");
@@ -6992,6 +7026,13 @@ this._escKey.on("down", () => {
     this._resetGameplayState();
     this._state.reset();
     this._player.reset();
+    this._isDual = false;
+    this._state2.reset();
+    this._player2.reset();
+    this._player2.setCubeVisible(false);
+    this._player2.setShipVisible(false);
+    this._player2.setBallVisible(false);
+    this._player2.setWaveVisible(false);
     this._glitterEmitter.stop();
     this._level.resetObjects();
     this._level.shiftGroundTiles(this._cameraX - _0x2ba78a);
@@ -7350,6 +7391,18 @@ this._escKey.on("down", () => {
       this._state.y += this._state.yVelocity * _0x5caeb1;
       this._player.checkCollisions(this._playerWorldX - centerX);
       this._playerWorldX += _0x5dfd5a;
+      if (this._isDual && !this._state2.isDead) {
+        this._state2.upKeyDown    = this._state.upKeyDown;
+        this._state2.upKeyPressed = this._state.upKeyPressed;
+        this._state2.queuedHold   = this._state.queuedHold;
+        this._state2.lastY        = this._state2.y;
+        this._player2.updateJump(_0x5caeb1);
+        this._state2.y += this._state2.yVelocity * _0x5caeb1;
+        this._player2.checkCollisions(this._playerWorldX - centerX - _0x5dfd5a);
+        if (this._state2.isDead && !this._state.isDead) {
+          this._player.killPlayer();
+        }
+      }
 if (!this._state.isFlying && !this._state.isWave && !this._state.isUfo) {
   if (this._state.isBall) {
     const ballOnSurface = this._state.onGround || this._state.onCeiling;
@@ -7434,6 +7487,9 @@ if (!this._state.isFlying && !this._state.isWave && !this._state.isUfo) {
     }
     const _0x259e68 = this._playerWorldX - this._cameraX;
     this._player.syncSprites(this._cameraX, this._cameraY, _0xaf2ffd / 1000, this._getMirrorXOffset(_0x259e68));
+    if (this._isDual && !this._state2.isDead) {
+      this._player2.syncSprites(this._cameraX, this._cameraY, _0xaf2ffd / 1000, this._getMirrorXOffset(_0x259e68));
+    }
     this._applyMirrorEffect();
     this._percentageLabel.setText(`${(this._playerWorldX / (this._level.endXPos || 6000) * 100).toFixed(2)}%`)
   }
@@ -7468,6 +7524,42 @@ _applyMirrorEffect() {
   }
   _getMirrorXOffset(xOffset) {
     return this._state.mirrored ? screenWidth - xOffset : xOffset;
+  }
+  _enableDualMode() {
+    if (this._isDual) return;
+    this._isDual = true;
+    this._state2.reset();
+    this._state2.y             = this._state.y;
+    this._state2.yVelocity     = 0;
+    this._state2.onGround      = false;
+    this._state2.gravityFlipped = !this._state.gravityFlipped;
+    this._state2.isMini        = this._state.isMini;
+    this._state2.mirrored      = this._state.mirrored;
+    this._state2.isDead        = false;
+    this._player2.reset();
+    if (this._state.isFlying) {
+      this._player2.enterShipMode();
+    } else if (this._state.isBall) {
+      this._player2.enterBallMode();
+    } else if (this._state.isWave) {
+      this._player2.enterWaveMode();
+    } else if (this._state.isUfo) {
+      this._player2.enterUfoMode();
+    } else if (this._state.isSpider) {
+      this._player2.enterSpiderMode();
+    } else {
+      this._player2.setCubeVisible(true);
+    }
+    this._state2.gravityFlipped = !this._state.gravityFlipped;
+  }
+  _disableDualMode() {
+    if (!this._isDual) return;
+    this._isDual = false;
+    this._state2.isDead = true;
+    this._player2.setCubeVisible(false);
+    this._player2.setShipVisible(false);
+    this._player2.setBallVisible(false);
+    this._player2.setWaveVisible(false);
   }
   _showNewBest() {
     let _0x9f2437 = screenWidth / 2;
