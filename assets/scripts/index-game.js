@@ -184,6 +184,11 @@ preload() {
       };
     }
     this.load.atlas("GJ_WebSheet", "assets/sheets/GJ_WebSheet.png", "assets/sheets/GJ_WebSheet.json");
+	this.load.once('filecomplete', (key) => {
+      if (key === 'GJ_WebSheet') {
+        this.add.image(cx, barY - 120, "GJ_WebSheet", "GJ_logo_001.png")
+      }
+    });
     this.load.atlas("GJ_GameSheet", "assets/sheets/GJ_GameSheet.png", "assets/sheets/GJ_GameSheet.json");
     this.load.atlas("GJ_GameSheet02", "assets/sheets/GJ_GameSheet02.png", "assets/sheets/GJ_GameSheet02.json");
     this.load.atlas("GJ_GameSheet03", "assets/sheets/GJ_GameSheet03.png", "assets/sheets/GJ_GameSheet03.json");
