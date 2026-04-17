@@ -4335,6 +4335,8 @@ _updateBallJump(_0x2fe319) {
     this.setShipVisible(false);
     this.setBallVisible(false);
     this.setWaveVisible(false);
+	this.setBirdVisible(false);
+    this.setSpiderVisible(false);
     for (const _0x5a0fa9 of this._allLayers) {
       if (_0x5a0fa9) {
         _0x5a0fa9.sprite.setAlpha(1);
