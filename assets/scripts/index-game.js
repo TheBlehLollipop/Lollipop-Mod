@@ -2555,17 +2555,12 @@ class ps {
     }
   }
   setBirdVisible(v) {
-    if (this._birdSpriteLayer) {
-      this._birdSpriteLayer.sprite.setVisible(v);
-    }
-    if (this._birdGlowLayer) {
-      this._birdGlowLayer.sprite.setVisible(v && this._birdGlowLayer.sprite._glowEnabled);
-    }
-    if (this._birdOverlayLayer) {
-      this._birdOverlayLayer.sprite.setVisible(v);
-    }
-    if (this._birdExtraLayer) {
-      this._birdExtraLayer.sprite.setVisible(v);
+    for (const layer of (this._birdLayers || [])) {
+      if (layer === this._birdGlowLayer) {
+        layer.sprite.setVisible(v && layer.sprite._glowEnabled);
+      } else {
+        layer.sprite.setVisible(v);
+      }
     }
   }
   setBallVisible(_0x5685cf) {
@@ -2635,7 +2630,7 @@ if (this.p.isFlying || this.p.isUfo) {
           }
         }
       }
-      if (this.p.isUfo) {
+	if (this.p.isUfo && !this.p.isDead) {
         for (const _0x5dc75c of this._birdLayers) {
           if (_0x5dc75c) {
             _0x5dc75c.sprite.setVisible(true);
@@ -3069,12 +3064,13 @@ hitGround() {
       },
       onComplete: () => _0x438d80.destroy()
     });
+	this.setBirdVisible(false);
     this._createExplosionPieces(_0x3f0446, _0x53ac5b, _0x281e43);
     this.setCubeVisible(false);
     this.setShipVisible(false);
     this.setBallVisible(false);
     this.setWaveVisible(false);
-    this.setBirdVisible(false);
+    
     this.setSpiderVisible(false);
   }
   _createExplosionPieces(_0x49be85, _0x13b56e, _0x349a09) {
@@ -3090,7 +3086,11 @@ hitGround() {
     });
     const _0x5c571a = [this._playerGlowLayer, this._playerOverlayLayer, this._ballGlowLayer, this._ballOverlayLayer, this._waveGlowLayer, this._waveOverlayLayer, this._waveExtraLayer, this._shipGlowLayer, this._shipOverlayLayer, this._playerSpriteLayer, this._playerExtraLayer, this._ballSpriteLayer, this._waveSpriteLayer, this._shipSpriteLayer, this._shipExtraLayer, this._birdSpriteLayer, this._birdGlowLayer, this._birdOverlayLayer, this._birdExtraLayer];
 	  for (const _0x1f09e3 of _0x5c571a) {
-      if (!_0x1f09e3 || !_0x1f09e3.sprite.visible) {
+      if (!_0x1f09e3) {
+        continue;
+      }
+      const isBirdLayer = this._birdLayers && this._birdLayers.includes(_0x1f09e3);
+      if (!isBirdLayer && !_0x1f09e3.sprite.visible) {
         continue;
       }
       const _0x53102a = _0x1f09e3.sprite;
