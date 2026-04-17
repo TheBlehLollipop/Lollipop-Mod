@@ -169,4 +169,10 @@ window.allLevels = [
 	    "level_116489424",
 	    ["Torrenware", "MidiGuyDP"]
     ],
+    [
+        "nine_circles",
+	    "Nine Circles",
+	    "level_4284013",
+	    ["Zobros", "Rukkus"]
+    ],
 ]
