@@ -66,6 +66,7 @@ class A extends Phaser.Scene {
     });
   }
 preload() {
+	window.gameCache.init();
     (function (game) {
       if (game.renderer.type === Phaser.WEBGL) {
         let _0x47cabb = game.renderer.gl;
@@ -159,6 +160,27 @@ preload() {
       loadingText.setText(value < 1 ? 'Loading...' : 'Ready!');
     });
     this.load.on("loaderror", _0x550fba => {});
+	const originalXhr = this.load.xhrLoader;
+    this.load.xhrLoader = (file) => {
+      const url = file.url;
+      if (window.gameCache.isFileCached(url)) {
+        const cached = window.gameCache.getCachedFile(url);
+        if (cached) {
+          return new Promise((resolve) => {
+            setTimeout(() => {
+              file.data = cached;
+              resolve(file);
+            }, 1);
+          });
+        }
+      }
+      return originalXhr.call(this.load, file).then((result) => {
+        if (result && result.data) {
+          window.gameCache.cacheFile(url, result.data);
+        }
+        return result;
+      });
+    };
     this.load.atlas("GJ_WebSheet", "assets/sheets/GJ_WebSheet.png", "assets/sheets/GJ_WebSheet.json");
     this.load.atlas("GJ_GameSheet", "assets/sheets/GJ_GameSheet.png", "assets/sheets/GJ_GameSheet.json");
     this.load.atlas("GJ_GameSheet02", "assets/sheets/GJ_GameSheet02.png", "assets/sheets/GJ_GameSheet02.json");
@@ -224,6 +246,10 @@ preload() {
     if (goldFontData) {
       loadFont(this, "goldFont", goldFontData);
     }
+	const stats = window.gameCache.getCacheStats();
+    console.log('stats:', stats);
+    localStorage.setItem('webdash_assets_loaded', 'true');
+    localStorage.setItem('webdash_last_load_time', Date.now().toString());
     this.scene.start("GameScene");
   }
 }
@@ -7914,6 +7940,46 @@ function ws(_0x13c75c, _0x23c5aa = 16777215, _0x52bb5b = 16777215) {
     }
   }).setScrollFactor(0).setDepth(57);
 }
+function checkForAutoLoad() {
+  const assetsLoaded = localStorage.getItem('webdash_assets_loaded') === 'true';
+  const lastLoadTime = parseInt(localStorage.getItem('webdash_last_load_time') || '0');
+  const now = Date.now();
+  const hoursSinceLoad = (now - lastLoadTime) / (1000 * 60 * 60);
+  if (assetsLoaded && hoursSinceLoad < 24 && window.gameCache.isCacheValid()) {
+    const stats = window.gameCache.getCacheStats();
+    if (stats.validEntries > 50) {
+      console.log('auto loading from cache');
+      return true;
+    }
+  }
+  return false;
+}
+if (window.gameCache) {
+  window.gameCache.init();
+  const canAutoLoad = checkForAutoLoad();
+  if (canAutoLoad) {
+    const autoLoadIndicator = document.createElement('div');
+    autoLoadIndicator.style.cssText = `
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #00ff00;
+      color: #000;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-family: Arial;
+      font-size: 12px;
+      z-index: 9999;
+    `;
+    autoLoadIndicator.textContent = 'turbo loading';
+    document.body.appendChild(autoLoadIndicator);
+    setTimeout(() => {
+      if (autoLoadIndicator.parentNode) {
+        autoLoadIndicator.parentNode.removeChild(autoLoadIndicator);
+      }
+    }, 3000);
+  }
+}
 const Ss = {
   type: Phaser.AUTO,
   width: screenWidth,
@@ -7937,3 +8003,20 @@ const Ss = {
   scene: [A, xs]
 };
 new Phaser.Game(Ss);
+
+window.clearGameCache = () => {
+  if (window.gameCache) {
+    window.gameCache.clearCache();
+    localStorage.removeItem('webdash_assets_loaded');
+    localStorage.removeItem('webdash_last_load_time');
+    console.log('Game cache cleared');
+    location.reload();
+  }
+};
+
+window.getCacheInfo = () => {
+  if (window.gameCache) {
+    return window.gameCache.getCacheStats();
+  }
+  return null;
+};
