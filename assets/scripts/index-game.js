@@ -160,7 +160,7 @@ preload() {
       loadingText.setText(value < 1 ? 'Loading...' : 'Ready!');
     });
     this.load.on("loaderror", _0x550fba => {});
-	if (window.gameCache) {
+    if (window.gameCache) {
       const originalXhr = this.load.xhrLoader;
       this.load.xhrLoader = (file) => {
         const url = file.url;
@@ -248,7 +248,7 @@ preload() {
     if (goldFontData) {
       loadFont(this, "goldFont", goldFontData);
     }
-	if (window.gameCache) {
+    if (window.gameCache) {
       const stats = window.gameCache.getCacheStats();
       console.log('stats:', stats);
     }
@@ -4706,9 +4706,9 @@ class xs extends Phaser.Scene {
     this._orbGfx = null;
     this._orbGfxTimer = 0;
     this._player = new ps(this, this._state, this._level);
-    this._state2  = new PlayerState();
+    this._state2 = new PlayerState();
     this._player2 = new ps(this, this._state2, this._level);
-    this._isDual  = false;
+    this._isDual = false;
     this._player2.setCubeVisible(false);
     this._player2.setShipVisible(false);
     this._player2.setBallVisible(false);
@@ -6469,6 +6469,8 @@ this._escKey.on("down", () => {
     bounceContainer.add(contentContainer);
     const updateEntries = [
       { text: "4/17/26 - Update Log", scale: 0.85, font: "goldFont" },
+      { text: "Cache-manager added to speed up load time.", scale: 0.5 },
+	    { text: "Fixed UFO not disappearing on death.", scale: 0.6 },
       { text: "Added UFO, Spider and Wave trail.", scale: 0.65 },
       { text: "(ALL IN BETA, BUGS ARE NORMAL).", scale: 0.65, color: 0xff9944 },
       { text: "Spider is very broken.", scale: 0.65, color: 0xff6666 },
@@ -7392,10 +7394,10 @@ this._escKey.on("down", () => {
       this._player.checkCollisions(this._playerWorldX - centerX);
       this._playerWorldX += _0x5dfd5a;
       if (this._isDual && !this._state2.isDead) {
-        this._state2.upKeyDown    = this._state.upKeyDown;
+        this._state2.upKeyDown = this._state.upKeyDown;
         this._state2.upKeyPressed = this._state.upKeyPressed;
-        this._state2.queuedHold   = this._state.queuedHold;
-        this._state2.lastY        = this._state2.y;
+        this._state2.queuedHold = this._state.queuedHold;
+        this._state2.lastY = this._state2.y;
         this._player2.updateJump(_0x5caeb1);
         this._state2.y += this._state2.yVelocity * _0x5caeb1;
         this._player2.checkCollisions(this._playerWorldX - centerX - _0x5dfd5a);
@@ -7529,13 +7531,13 @@ _applyMirrorEffect() {
     if (this._isDual) return;
     this._isDual = true;
     this._state2.reset();
-    this._state2.y             = this._state.y;
-    this._state2.yVelocity     = 0;
-    this._state2.onGround      = false;
+    this._state2.y = this._state.y;
+    this._state2.yVelocity = 0;
+    this._state2.onGround = false;
     this._state2.gravityFlipped = !this._state.gravityFlipped;
-    this._state2.isMini        = this._state.isMini;
-    this._state2.mirrored      = this._state.mirrored;
-    this._state2.isDead        = false;
+    this._state2.isMini = this._state.isMini;
+    this._state2.mirrored = this._state.mirrored;
+    this._state2.isDead = false;
     this._player2.reset();
     if (this._state.isFlying) {
       this._player2.enterShipMode();
