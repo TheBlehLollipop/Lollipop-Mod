@@ -6440,6 +6440,8 @@ this._escKey.on("down", () => {
     bounceContainer.add(contentContainer);
     const updateEntries = [
       { text: "4/17/26 - Update Log", scale: 0.85, font: "goldFont" },
+      { text: "Cache-manager added to speed up load time.", scale: 0.65 },
+	  { text: "Fixed UFO not disappearing on death.", scale: 0.65 },
       { text: "Added UFO, Spider and Wave trail.", scale: 0.65 },
       { text: "(ALL IN BETA, BUGS ARE NORMAL).", scale: 0.65, color: 0xff9944 },
       { text: "Spider is very broken.", scale: 0.65, color: 0xff6666 },
