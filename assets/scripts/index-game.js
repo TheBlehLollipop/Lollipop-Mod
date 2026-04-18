@@ -4147,6 +4147,13 @@ _updateBallJump(_0x2fe319) {
               }
               continue;
             }
+			if (this.p.isUfo) {
+  				this.p.y = top - playerSize;
+  				this.hitGround();
+  				this.p.onCeiling = true;
+  				this.p.collideTop = top;
+  			continue;
+			}
             if ((_0x3e7199 <= top || _0x135a9d <= top) && (this.p.yVelocity >= 0 || this.p.onGround) && this.p.isFlying) {
               this.p.y = top - playerSize;
               this.hitGround();
