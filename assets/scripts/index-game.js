@@ -1007,6 +1007,8 @@ class us {
       if (objectData && objectData.blend === "additive") {
         sprite.setBlendMode(S);
         sprite._eeLayer = 0;
+      } else if (objectData && objectData.type === "deco") {
+        sprite._eeLayer = 0;
       } else if (objectData && objectData._portalFront) {
         sprite._eeLayer = 2;
       } else if (objectData && objectData.z !== undefined && objectData.z < 0) {
