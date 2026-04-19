@@ -2702,6 +2702,11 @@ if (this.p.isFlying || this.p.isUfo) {
             _0x5dc75c.sprite.rotation = this.p.mirrored ? -_ufoTilt : _ufoTilt;
           }
         }
+		  for (const _0x536f40 of this._playerLayers) {
+          if (_0x536f40) {
+            _0x536f40.sprite.rotation = this.p.mirrored ? -_ufoTilt : _ufoTilt;
+          }
+        }
       }
     } else {
       for (const _0x5dc75c of this._spiderLayers) {
