@@ -6520,7 +6520,7 @@ this._escKey.on("down", () => {
     const updateEntries = [
       { text: "4/18/26 - Update Log", scale: 0.85, font: "goldFont" },
       { text: "Correct Wave hitboxes.", scale: 0.65 },
-      { text: "Move triggers now move orbs and etc.", scale: 0.65 },
+      { text: "Move triggers now move orbs and etc.", scale: 0.6 },
       // { text: "Added slopes. - PinkDev", scale: 0.65, color: 0xff00ff }, (soon)
       { text: "Bug fixes.", scale: 0.65 },
       // message of the update day (from me :P)
