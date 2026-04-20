@@ -36,9 +36,6 @@ function hexadecimalToHex(num) {
   return num.toString(16).padStart(6, '0');
 }
 
-const rotatingDecoObjs = [85,86,87,137,138,139,154,155,156,180,181,182,222,223,224,375,376,377,378,394,395,396,997,
-                          998,999,1000,1019,1020,1021,1055,1056,1057,1058,1059,1060,1061,1752,1831,1832,1833,1834]
-
 let screenWidth = 1138;
 const screenHeight = 640;
 const a = 60;
@@ -611,7 +608,6 @@ class us {
     this._orbSprites = [];
     this._coinSprites = [];
     this._sawSprites = [];
-    this._rotatingDecoSprites = [];
     this._enterEffectTriggers = [];
     this._enterEffectTriggerIdx = 0;
     this._activeEnterEffect = 0;
@@ -1011,8 +1007,6 @@ class us {
       if (objectData && objectData.blend === "additive") {
         sprite.setBlendMode(S);
         sprite._eeLayer = 0;
-      } else if (objectData && objectData.type === "deco") {
-        sprite._eeLayer = 0;
       } else if (objectData && objectData._portalFront) {
         sprite._eeLayer = 2;
       } else if (objectData && objectData.z !== undefined && objectData.z < 0) {
@@ -1052,35 +1046,35 @@ class us {
     return null;
   }
   _spawnLevelObjects(_0x35f1ae) {
-    const _0xd15974 = this._scene;
+    const scene = this._scene;
     let _0x443c50 = new Set();
     this._lastObjectX = 0;
-    for (let _0x1b937f of _0x35f1ae) {
-      let _0x24471f = getObjectFromId(_0x1b937f.id);
-      if (_0x24471f && _0x24471f.type === triggerType) {
-        if (_0x1b937f.id === 29 || _0x1b937f.id === 30) {
+    for (let levelObj of _0x35f1ae) {
+      let objectDef = getObjectFromId(levelObj.id);
+      if (objectDef && objectDef.type === triggerType) {
+        if (levelObj.id === 29 || levelObj.id === 30) {
           this._colorTriggers.push({
-            x: _0x1b937f.x * 2,
-            index: _0x1b937f.id === 29 ? 1000 : 1001,
+            x: levelObj.x * 2,
+            index: levelObj.id === 29 ? 1000 : 1001,
             color: {
-              r: parseInt(_0x1b937f._raw[7] ?? 255, 10),
-              g: parseInt(_0x1b937f._raw[8] ?? 255, 10),
-              b: parseInt(_0x1b937f._raw[9] ?? 255, 10)
+              r: parseInt(levelObj._raw[7] ?? 255, 10),
+              g: parseInt(levelObj._raw[8] ?? 255, 10),
+              b: parseInt(levelObj._raw[9] ?? 255, 10)
             },
-            duration: parseFloat(_0x1b937f._raw[10] ?? 0),
-            tintGround: _0x1b937f._raw[14] === "1"
+            duration: parseFloat(levelObj._raw[10] ?? 0),
+            tintGround: levelObj._raw[14] === "1"
           });
         }
-        if (_0x24471f.enterEffect) {
+        if (objectDef.enterEffect) {
           this._enterEffectTriggers.push({
-            x: _0x1b937f.x * 2,
-            effect: _0x24471f.enterEffect
+            x: levelObj.x * 2,
+            effect: objectDef.enterEffect
           });
         }
-        if (_0x1b937f.id === 901) {
-          const _raw = _0x1b937f._raw;
+        if (levelObj.id === 901) {
+          const _raw = levelObj._raw;
           this._moveTriggers.push({
-            x: _0x1b937f.x * 2,
+            x: levelObj.x * 2,
             duration: parseFloat(_raw[10] ?? 0),
             easingType: parseInt(_raw[30] ?? 0, 10),
             easingRate: parseFloat(_raw[85] ?? 2),
@@ -1093,184 +1087,190 @@ class us {
         }
         continue;
       }
-      let _0x173c58 = _0x1b937f.x * 2;
-      let _0x7ab528 = _0x1b937f.y * 2;
-      if (_0x173c58 > this._lastObjectX) {
-        this._lastObjectX = _0x173c58;
+      let worldX = levelObj.x * 2;
+      let worldY = levelObj.y * 2;
+      if (worldX > this._lastObjectX) {
+        this._lastObjectX = worldX;
       }
-      let _0x4c7589 = _0x24471f ? _0x24471f.frame : null;
-      if (_0x24471f && _0x24471f.randomFrames) {
-        _0x4c7589 = _0x24471f.randomFrames[Math.floor(Math.random() * _0x24471f.randomFrames.length)];
+      let frameName = objectDef ? objectDef.frame : null;
+      if (objectDef && objectDef.randomFrames) {
+        frameName = objectDef.randomFrames[Math.floor(Math.random() * objectDef.randomFrames.length)];
       }
-      if (_0x4c7589) {
-        let _0x2ddc05 = _0x173c58;
-        let _0x1b10a0 = b(_0x7ab528);
-        const _0x501fde = (_0x24471f.type === portalType || _0x24471f.type === speedType) && _0x4c7589.includes("_front_");
+      if (frameName) {
+        let spriteWorldX = worldX;
+        let baseY = b(worldY);
+        const _0x501fde = (objectDef.type === portalType || objectDef.type === speedType) && frameName.includes("_front_");
+        const _objGids = levelObj.groups
+          ? levelObj.groups.split('.').map(Number).filter(n => n > 0)
+          : null;
+        const _registerToGroups = (spr, baseWorldX, baseY) => {
+          if (!_objGids || !_objGids.length || !spr) return;
+          spr._origWorldX = baseWorldX;
+          spr._origBaseY = baseY;
+          for (const _gid of _objGids) {
+            if (!this._groupSprites[_gid]) this._groupSprites[_gid] = [];
+            this._groupSprites[_gid].push(spr);
+          }
+        };
         if (_0x501fde) {
-          const _0x32e8a1 = _0x4c7589.replace("_front_", "_back_");
-          let _0x517b49 = L(_0xd15974, _0x2ddc05, _0x1b10a0, _0x32e8a1);
-          if (_0x517b49) {
-            this._applyVisualProps(_0xd15974, _0x517b49, _0x32e8a1, _0x1b937f);
-            _0x517b49._eeLayer = 1;
-            _0x517b49._eeWorldX = _0x173c58;
-            _0x517b49._eeBaseY = _0x1b10a0;
-            this._addToSection(_0x517b49);
+          const _0x32e8a1 = frameName.replace("_front_", "_back_");
+          let backSprite = L(scene, spriteWorldX, baseY, _0x32e8a1);
+          if (backSprite) {
+            this._applyVisualProps(scene, backSprite, _0x32e8a1, levelObj);
+            backSprite._eeLayer = 1;
+            backSprite._eeWorldX = worldX;
+            backSprite._eeBaseY = baseY;
+            this._addToSection(backSprite);
+            _registerToGroups(backSprite, worldX, baseY);
           }
         }
         let _0xOrbGlow = null;
-        if (_0x24471f.glow) {
-          _0xOrbGlow = this._addGlowSprite(_0xd15974, _0x2ddc05, _0x1b10a0, _0x4c7589, _0x1b937f, _0x173c58);
+        if (objectDef.glow) {
+          _0xOrbGlow = this._addGlowSprite(scene, spriteWorldX, baseY, frameName, levelObj, worldX);
+          if (_0xOrbGlow) _registerToGroups(_0xOrbGlow, worldX, baseY);
         }
         const _0x36f679 = _0x501fde ? {
-          ..._0x24471f,
+          ...objectDef,
           _portalFront: true
-        } : _0x24471f;
-        let _0x554e0e = L(_0xd15974, _0x2ddc05, _0x1b10a0, _0x4c7589);
-        if (_0x554e0e) {
-          this._applyVisualProps(_0xd15974, _0x554e0e, _0x4c7589, _0x1b937f, _0x24471f);
-          this._addVisualSprite(_0x554e0e, _0x36f679);
-          _0x554e0e._eeWorldX = _0x173c58;
-          _0x554e0e._eeBaseY = _0x1b10a0;
-          this._addToSection(_0x554e0e);
-          if (typeof rotatingDecoObjs !== 'undefined' && rotatingDecoObjs.includes(Number(_0x1b937f.id))) {
-            _0x554e0e._isRotatingDeco = true;
-            this._sawSprites.push(_0x554e0e);
+        } : objectDef;
+        let sprite = L(scene, spriteWorldX, baseY, frameName);
+        if (sprite) {
+          this._applyVisualProps(scene, sprite, frameName, levelObj, objectDef);
+          this._addVisualSprite(sprite, _0x36f679);
+          sprite._eeWorldX = worldX;
+          sprite._eeBaseY = baseY;
+          this._addToSection(sprite);
+          if (_objGids && _objGids.length) {
+            sprite._eeGroups = _objGids;
+            _registerToGroups(sprite, sprite._eeWorldX, sprite._eeBaseY);
           }
-          if (_0x1b937f.groups) {
-            const _gids = _0x1b937f.groups.split('.').map(Number).filter(n => n > 0);
-            _0x554e0e._eeGroups = _gids;
-            _0x554e0e._origWorldX = _0x554e0e._eeWorldX;
-            _0x554e0e._origBaseY = _0x554e0e._eeBaseY;
-            for (const _gid of _gids) {
-              if (!this._groupSprites[_gid]) this._groupSprites[_gid] = [];
-              this._groupSprites[_gid].push(_0x554e0e);
-            }
+          if (objectDef && objectDef.animFrames) {
+            sprite._animFrames = objectDef.animFrames;
+            sprite._animInterval = objectDef.animInterval || 100;
+            sprite._animIdx = 0;
+            sprite._animScene = scene;
+            window._animatedSprites.push(sprite);
           }
-          if (_0x24471f && _0x24471f.animFrames) {
-            _0x554e0e._animFrames = _0x24471f.animFrames;
-            _0x554e0e._animInterval = _0x24471f.animInterval || 100;
-            _0x554e0e._animIdx = 0;
-            _0x554e0e._animScene = _0xd15974;
-            window._animatedSprites.push(_0x554e0e);
-          }
-          if (_0x24471f && _0x24471f.type === ringType) {
-            _0x554e0e.setScale(0.75);
-            _0x554e0e._eeAudioScale = true;
-            this._orbSprites.push(_0x554e0e);
+          if (objectDef && objectDef.type === ringType) {
+            sprite.setScale(0.75);
+            sprite._eeAudioScale = true;
+            this._orbSprites.push(sprite);
             if (_0xOrbGlow) {
               _0xOrbGlow.setScale(0.75);
               _0xOrbGlow._eeAudioScale = true;
               this._orbSprites.push(_0xOrbGlow);
             }
           }
-          if (_0x24471f && _0x24471f.type === coinType) {
-            _0x554e0e._coinWorldX = _0x173c58;
-            _0x554e0e._coinWorldY = _0x7ab528;
-            _0x554e0e._coinBaseScale = _0x554e0e.scaleX || 1;
-            this._coinSprites.push(_0x554e0e);
+          if (objectDef && objectDef.type === coinType) {
+            sprite._coinWorldX = worldX;
+            sprite._coinWorldY = worldY;
+            sprite._coinBaseScale = sprite.scaleX || 1;
+            this._coinSprites.push(sprite);
           }
-          if (_0x4c7589 && _0x4c7589.indexOf("sawblade") >= 0) {
-            _0x554e0e.setTint(0x000000);
-            _0x554e0e._isSaw = true;
-            this._sawSprites.push(_0x554e0e);
-            let _sawMirror = L(_0xd15974, _0x2ddc05, _0x1b10a0, _0x4c7589);
+          if (frameName && frameName.indexOf("sawblade") >= 0) {
+            sprite.setTint(0x000000);
+            sprite._isSaw = true;
+            this._sawSprites.push(sprite);
+            let _sawMirror = L(scene, spriteWorldX, baseY, frameName);
             if (_sawMirror) {
-              this._applyVisualProps(_0xd15974, _sawMirror, _0x4c7589, _0x1b937f, _0x24471f);
+              this._applyVisualProps(scene, _sawMirror, frameName, levelObj, objectDef);
               _sawMirror.setTint(0x000000);
-              _sawMirror.rotation = _0x554e0e.rotation + Math.PI;
+              _sawMirror.rotation = sprite.rotation + Math.PI;
               _sawMirror._isSaw = true;
-              _sawMirror._eeWorldX = _0x173c58;
-              _sawMirror._eeBaseY = _0x1b10a0;
+              _sawMirror._eeWorldX = worldX;
+              _sawMirror._eeBaseY = baseY;
               this._addToSection(_sawMirror);
               this._addVisualSprite(_sawMirror);
               this._sawSprites.push(_sawMirror);
+              _registerToGroups(_sawMirror, worldX, baseY);
             }
           }
         } else {
-          console.warn("No sprite found for object ID " + _0x1b937f.id + " frame=" + _0x4c7589 + " type=" + (_0x24471f ? _0x24471f.type : "null"));
+          console.warn("No sprite found for object ID " + levelObj.id + " frame=" + frameName + " type=" + (objectDef ? objectDef.type : "null"));
         }
-        if (_0x24471f && (_0x24471f.type === solidType || _0x24471f.type === hazardType)) {
-          let _0x47077e = _0x4c7589.replace("_001.png", "_2_001.png");
-          let _0xe3eaec = R(_0xd15974, _0x47077e) ? L(_0xd15974, _0x2ddc05, _0x1b10a0, _0x47077e) : null;
-          if (_0xe3eaec) {
-            this._applyVisualProps(_0xd15974, _0xe3eaec, _0x47077e, _0x1b937f);
-            this._addVisualSprite(_0xe3eaec);
-            _0xe3eaec._eeWorldX = _0x173c58;
-            _0xe3eaec._eeBaseY = _0x1b10a0;
-            this._addToSection(_0xe3eaec);
+        if (objectDef && (objectDef.type === solidType || objectDef.type === hazardType)) {
+          let _0x47077e = frameName.replace("_001.png", "_2_001.png");
+          let overlaySprite = R(scene, _0x47077e) ? L(scene, spriteWorldX, baseY, _0x47077e) : null;
+          if (overlaySprite) {
+            this._applyVisualProps(scene, overlaySprite, _0x47077e, levelObj);
+            this._addVisualSprite(overlaySprite);
+            overlaySprite._eeWorldX = worldX;
+            overlaySprite._eeBaseY = baseY;
+            this._addToSection(overlaySprite);
+            _registerToGroups(overlaySprite, worldX, baseY);
           }
         }
-        if (_0x24471f.children) {
-          for (let _0x2ca803 of _0x24471f.children) {
-            let _0x3b4e8c = _0x2ca803.dx || 0;
-            let _0x172131 = _0x2ca803.dy || 0;
-            if (_0x2ca803.localDx !== undefined || _0x2ca803.localDy !== undefined) {
-              let _0x38902b = _0x2ca803.localDx || 0;
-              let _0x256a8e = _0x2ca803.localDy || 0;
-              if (_0x1b937f.flipX) {
+        if (objectDef.children) {
+          for (let childDef of objectDef.children) {
+            let _0x3b4e8c = childDef.dx || 0;
+            let _0x172131 = childDef.dy || 0;
+            if (childDef.localDx !== undefined || childDef.localDy !== undefined) {
+              let _0x38902b = childDef.localDx || 0;
+              let _0x256a8e = childDef.localDy || 0;
+              if (levelObj.flipX) {
                 _0x38902b = -_0x38902b;
               }
-              if (_0x1b937f.flipY) {
+              if (levelObj.flipY) {
                 _0x256a8e = -_0x256a8e;
               }
-              let _0x3e62f2 = (_0x1b937f.rot || 0) * Math.PI / 180;
+              let _0x3e62f2 = (levelObj.rot || 0) * Math.PI / 180;
               _0x3b4e8c = _0x38902b * Math.cos(_0x3e62f2) - _0x256a8e * Math.sin(_0x3e62f2);
               _0x172131 = _0x38902b * Math.sin(_0x3e62f2) + _0x256a8e * Math.cos(_0x3e62f2);
             }
-            let _0x42173e = L(_0xd15974, _0x2ddc05 + _0x3b4e8c, _0x1b10a0 + _0x172131, _0x2ca803.frame);
-            if (_0x42173e) {
-              this._applyVisualProps(_0xd15974, _0x42173e, _0x2ca803.frame, _0x1b937f, _0x2ca803);
-              if (_0x2ca803.audioScale) {
-                _0x42173e.setScale(0.1);
-                _0x42173e.setAlpha(0.9);
-                _0x42173e._eeAudioScale = true;
-                this._audioScaleSprites.push(_0x42173e);
+            const _childWorldX = worldX + _0x3b4e8c;
+            const _childBaseY = baseY + _0x172131;
+            let childSprite = L(scene, spriteWorldX + _0x3b4e8c, baseY + _0x172131, childDef.frame);
+            if (childSprite) {
+              this._applyVisualProps(scene, childSprite, childDef.frame, levelObj, childDef);
+              if (childDef.audioScale) {
+                childSprite.setScale(0.1);
+                childSprite.setAlpha(0.9);
+                childSprite._eeAudioScale = true;
+                this._audioScaleSprites.push(childSprite);
               }
-              if ((_0x2ca803.z !== undefined ? _0x2ca803.z : -1) < 0) {
-                _0x42173e._eeLayer = 1;
-                _0x42173e._eeBehindParent = true;
+              if ((childDef.z !== undefined ? childDef.z : -1) < 0) {
+                childSprite._eeLayer = 1;
+                childSprite._eeBehindParent = true;
               } else {
-                this._addVisualSprite(_0x42173e, _0x2ca803);
+                this._addVisualSprite(childSprite, childDef);
               }
-              _0x42173e._eeWorldX = _0x173c58 + _0x3b4e8c;
-              _0x42173e._eeBaseY = _0x1b10a0 + _0x172131;
-              this._addToSection(_0x42173e);
-              if (typeof rotatingDecoObjs !== 'undefined' && rotatingDecoObjs.includes(Number(_0x1b937f.id))) {
-                _0x42173e._isRotatingDeco = true;
-                this._sawSprites.push(_0x42173e);
-              }
-              if (_0x4c7589 && _0x4c7589.indexOf("sawblade") >= 0) {
-                _0x42173e.setTint(0x000000);
-                _0x42173e._isSaw = true;
-                this._sawSprites.push(_0x42173e);
-                let _childMirror = L(_0xd15974, _0x2ddc05 + _0x3b4e8c, _0x1b10a0 + _0x172131, _0x2ca803.frame);
+              childSprite._eeWorldX = _childWorldX;
+              childSprite._eeBaseY = _childBaseY;
+              this._addToSection(childSprite);
+              _registerToGroups(childSprite, _childWorldX, _childBaseY);
+              if (frameName && frameName.indexOf("sawblade") >= 0) {
+                childSprite.setTint(0x000000);
+                childSprite._isSaw = true;
+                this._sawSprites.push(childSprite);
+                let _childMirror = L(scene, spriteWorldX + _0x3b4e8c, baseY + _0x172131, childDef.frame);
                 if (_childMirror) {
-                  this._applyVisualProps(_0xd15974, _childMirror, _0x2ca803.frame, _0x1b937f, _0x2ca803);
+                  this._applyVisualProps(scene, _childMirror, childDef.frame, levelObj, childDef);
                   _childMirror.setTint(0x000000);
-                  _childMirror.rotation = _0x42173e.rotation + Math.PI;
+                  _childMirror.rotation = childSprite.rotation + Math.PI;
                   _childMirror._isSaw = true;
-                  _childMirror._eeWorldX = _0x173c58 + _0x3b4e8c;
-                  _childMirror._eeBaseY = _0x1b10a0 + _0x172131;
+                  _childMirror._eeWorldX = _childWorldX;
+                  _childMirror._eeBaseY = _childBaseY;
                   this._addToSection(_childMirror);
                   this._sawSprites.push(_childMirror);
+                  _registerToGroups(_childMirror, _childWorldX, _childBaseY);
                 }
               }
             }
           }
         }
-      } else if (!_0x24471f) {
-        _0x443c50.add(_0x1b937f.id);
-        if (_0x1b937f.id === 1331) {
+      } else if (!objectDef) {
+        _0x443c50.add(levelObj.id);
+        if (levelObj.id === 1331) {
         }
-        console.warn("Object ID " + _0x1b937f.id + " has no definition in allObjects at x=" + _0x173c58 + " y=" + _0x7ab528);
+        console.warn("Object ID " + levelObj.id + " has no definition in allObjects at x=" + worldX + " y=" + worldY);
       }
-      if (_0x24471f && _0x24471f.portalParticle && _0x4c7589) {
-        let _0x3a9438 = _0x173c58;
-        let _0x2e9079 = b(_0x7ab528);
+      if (objectDef && objectDef.portalParticle && frameName) {
+        let _0x3a9438 = worldX;
+        let _0x2e9079 = b(worldY);
         const _0x143187 = 2;
         let _0x5926ad = _0x3a9438 - _0x143187 * 5;
         let _0x1ebc69 = _0x2e9079;
-        const _portalRot = (_0x1b937f.rot || 0) * Math.PI / 180;
+        const _portalRot = (levelObj.rot || 0) * Math.PI / 180;
         const _0x388526 = {
           getRandomPoint: _0x4ad804 => {
             let _0x5b7fb4 = (Math.random() * 190 + 85) * Math.PI / 180;
@@ -1283,7 +1283,7 @@ class us {
           }
         };
         const _0x100649 = 20;
-        let _0x1bed6b = _0xd15974.add.particles(_0x5926ad, _0x1ebc69, "GJ_WebSheet", {
+        let _0x1bed6b = scene.add.particles(_0x5926ad, _0x1ebc69, "GJ_WebSheet", {
           frame: "square.png",
           lifespan: {
             min: 200,
@@ -1298,7 +1298,7 @@ class us {
             start: 0.5,
             end: 0
           },
-          tint: _0x24471f.portalParticleColor,
+          tint: objectDef.portalParticleColor,
           blendMode: Phaser.BlendModes.ADD,
           frequency: 20,
           maxParticles: 0,
@@ -1319,18 +1319,18 @@ class us {
         });
         _0x1bed6b.setDepth(14);
         _0x1bed6b._eeLayer = 2;
-        _0x1bed6b._eeWorldX = _0x173c58;
+        _0x1bed6b._eeWorldX = worldX;
         _0x1bed6b._eeBaseY = _0x1ebc69;
         this._addToSection(_0x1bed6b);
       }
-      if (_0x24471f) {
+      if (objectDef) {
         const _registerCollider = (col) => {
           col._baseX = col.x;
           col._baseY = col.y;
           col._origBaseX = col.x;
           col._origBaseY = col.y;
-          if (_0x1b937f.groups) {
-            const _cgids = _0x1b937f.groups.split('.').map(Number).filter(n => n > 0);
+          if (levelObj.groups) {
+            const _cgids = levelObj.groups.split('.').map(Number).filter(n => n > 0);
             col._eeGroups = _cgids;
             for (const _cgid of _cgids) {
               if (!this._groupColliders[_cgid]) this._groupColliders[_cgid] = [];
@@ -1338,35 +1338,35 @@ class us {
             }
           }
         };
-        if (_0x24471f.type === solidType && _0x24471f.gridW > 0 && _0x24471f.gridH > 0) {
-          let _0x10e5ae = _0x24471f.gridW * a;
-          let _0x11e08d = _0x24471f.gridH * a;
-          let _0x4628ff = new Collider(solidType, _0x173c58, _0x7ab528, _0x10e5ae, _0x11e08d, _0x1b937f.rot || 0);
-          _0x4628ff.objid = _0x1b937f.id;
+        if (objectDef.type === solidType && objectDef.gridW > 0 && objectDef.gridH > 0) {
+          let _0x10e5ae = objectDef.gridW * a;
+          let _0x11e08d = objectDef.gridH * a;
+          let _0x4628ff = new Collider(solidType, worldX, worldY, _0x10e5ae, _0x11e08d, levelObj.rot || 0);
+          _0x4628ff.objid = levelObj.id;
           _registerCollider(_0x4628ff);
           this.objects.push(_0x4628ff);
           this._addCollisionToSection(_0x4628ff);
-        } else if (_0x24471f.type === hazardType) {
+        } else if (objectDef.type === hazardType) {
           let _0x3f8c4f = 0;
           let _0x2a123d = 0;
-          if (_0x24471f.spriteW > 0 && _0x24471f.spriteH > 0 && _0x24471f.hitboxScaleX !== undefined && _0x24471f.hitboxScaleY !== undefined) {
-            _0x3f8c4f = _0x24471f.spriteW * _0x24471f.hitboxScaleX * 2;
-            _0x2a123d = _0x24471f.spriteH * _0x24471f.hitboxScaleY * 2;
-          } else if (_0x24471f.gridW > 0 && _0x24471f.gridH > 0) {
-            _0x3f8c4f = _0x24471f.gridW * 12;
-            _0x2a123d = _0x24471f.gridH * 24;
+          if (objectDef.spriteW > 0 && objectDef.spriteH > 0 && objectDef.hitboxScaleX !== undefined && objectDef.hitboxScaleY !== undefined) {
+            _0x3f8c4f = objectDef.spriteW * objectDef.hitboxScaleX * 2;
+            _0x2a123d = objectDef.spriteH * objectDef.hitboxScaleY * 2;
+          } else if (objectDef.gridW > 0 && objectDef.gridH > 0) {
+            _0x3f8c4f = objectDef.gridW * 12;
+            _0x2a123d = objectDef.gridH * 24;
           }
           if (_0x3f8c4f > 0 && _0x2a123d > 0) {
-            let _0x3c84ad = new Collider(hazardType, _0x173c58, _0x7ab528, _0x3f8c4f, _0x2a123d, _0x1b937f.rot || 0);
+            let _0x3c84ad = new Collider(hazardType, worldX, worldY, _0x3f8c4f, _0x2a123d, levelObj.rot || 0);
             _registerCollider(_0x3c84ad);
             this.objects.push(_0x3c84ad);
             this._addCollisionToSection(_0x3c84ad);
           }
-        } else if (_0x24471f.type === portalType) {
+        } else if (objectDef.type === portalType) {
 
-          let _0xad0974 = _0x24471f.gridW * a;
-          let _0x2c2226 = _0x24471f.gridH * a;
-          const _0x5bcd81 = _0x24471f.sub || {
+          let _0xad0974 = objectDef.gridW * a;
+          let _0x2c2226 = objectDef.gridH * a;
+          const _0x5bcd81 = objectDef.sub || {
             10: "gravity_flip",
             11: "gravity_normal",
             12: "cube",
@@ -1379,8 +1379,8 @@ class us {
             1331: "spider",
             286: "dual_on",
             287: "dual_off",
-          }[_0x1b937f.id];
-          if (_0x1b937f.id === 111) {
+          }[levelObj.id];
+          if (levelObj.id === 111) {
           }
           const _0x25452a = {
             gravity_flip: "portal_gravity_down",
@@ -1400,47 +1400,47 @@ class us {
             dual_on: "portal_dual_on",
             dual_off: "portal_dual_off",
           }[_0x5bcd81] || null;
-          if (_0x1b937f.id === 111) {
+          if (levelObj.id === 111) {
             console.log("res - _0x5bcd81: " + _0x5bcd81 + ", _0x25452a: " + _0x25452a);
           }
           if (!_0x25452a) {
-            console.warn("unknown portal sub-type: id=" + _0x1b937f.id + " sub=" + _0x24471f.sub);
+            console.warn("unknown portal sub-type: id=" + levelObj.id + " sub=" + objectDef.sub);
           }
           if (_0x25452a) {
-            let _0x4bd7bc = new Collider(_0x25452a, _0x173c58, _0x7ab528, _0xad0974, _0x2c2226, _0x1b937f.rot || 0);
-            _0x4bd7bc.portalY = _0x7ab528;
+            let _0x4bd7bc = new Collider(_0x25452a, worldX, worldY, _0xad0974, _0x2c2226, levelObj.rot || 0);
+            _0x4bd7bc.portalY = worldY;
             _registerCollider(_0x4bd7bc);
             this.objects.push(_0x4bd7bc);
             this._addCollisionToSection(_0x4bd7bc);
-            console.log("portal collision created: type=" + _0x25452a + " id=" + _0x1b937f.id + " x=" + _0x173c58 + " y=" + _0x7ab528 + " w=" + _0xad0974 + " h=" + _0x2c2226);
+            console.log("portal collision created: type=" + _0x25452a + " id=" + levelObj.id + " x=" + worldX + " y=" + worldY + " w=" + _0xad0974 + " h=" + _0x2c2226);
           } else {
-            console.warn("portal ID " + _0x1b937f.id + " has no matching sub-type (sub=" + _0x24471f.sub + ")");
+            console.warn("portal ID " + levelObj.id + " has no matching sub-type (sub=" + objectDef.sub + ")");
           }
-        } else if (_0x24471f.type === padType) {
-          let padW = _0x24471f.gridW * a;
-          let padH = _0x24471f.gridH * a;
-          let padObj = new Collider(jumpPadType, _0x173c58, _0x7ab528, padW, padH, _0x1b937f.rot || 0);
-          padObj.padId = _0x1b937f.id;
+        } else if (objectDef.type === padType) {
+          let padW = objectDef.gridW * a;
+          let padH = objectDef.gridH * a;
+          let padObj = new Collider(jumpPadType, worldX, worldY, padW, padH, levelObj.rot || 0);
+          padObj.padId = levelObj.id;
           _registerCollider(padObj);
           this.objects.push(padObj);
           this._addCollisionToSection(padObj);
-          console.log("pad collision created: id=" + _0x1b937f.id + " x=" + _0x173c58 + " y=" + _0x7ab528);
-        } else if (_0x24471f.type === ringType) {
-          let orbW = _0x24471f.gridW * a;
-          let orbH = _0x24471f.gridH * a;
-          let orbObj = new Collider(jumpRingType, _0x173c58, _0x7ab528, orbW, orbH, _0x1b937f.rot || 0);
-          orbObj.orbId = _0x1b937f.id;
-          orbObj.orbRotation = _0x1b937f.rot || 0;
+          console.log("pad collision created: id=" + levelObj.id + " x=" + worldX + " y=" + worldY);
+        } else if (objectDef.type === ringType) {
+          let orbW = objectDef.gridW * a;
+          let orbH = objectDef.gridH * a;
+          let orbObj = new Collider(jumpRingType, worldX, worldY, orbW, orbH, levelObj.rot || 0);
+          orbObj.orbId = levelObj.id;
+          orbObj.orbRotation = levelObj.rot || 0;
           orbObj._dashHoldTicks = 0;
           _registerCollider(orbObj);
           this.objects.push(orbObj);
           this._addCollisionToSection(orbObj);
-          console.log("orb collision created: id=" + _0x1b937f.id + " x=" + _0x173c58 + " y=" + _0x7ab528);
-        } else if (_0x24471f.type === coinType) {
-          let coinW = (_0x24471f.gridW || 1) * a;
-          let coinH = (_0x24471f.gridH || 1) * a;
-          let coinObj = new Collider(coinType, _0x173c58, _0x7ab528, coinW, coinH, _0x1b937f.rot || 0);
-          coinObj.coinId = _0x1b937f.id;
+          console.log("orb collision created: id=" + levelObj.id + " x=" + worldX + " y=" + worldY);
+        } else if (objectDef.type === coinType) {
+          let coinW = (objectDef.gridW || 1) * a;
+          let coinH = (objectDef.gridH || 1) * a;
+          let coinObj = new Collider(coinType, worldX, worldY, coinW, coinH, levelObj.rot || 0);
+          coinObj.coinId = levelObj.id;
           _registerCollider(coinObj);
           this.objects.push(coinObj);
           this._addCollisionToSection(coinObj);
@@ -1556,13 +1556,13 @@ class us {
   resetColorTriggers() {
     this._colorTriggerIdx = 0;
   }
-  _addToSection(_0x4413d3) {
-    const _0x4ac40a = Math.max(0, Math.floor(_0x4413d3._eeWorldX / 400));
+  _addToSection(sliderWidth) {
+    const _0x4ac40a = Math.max(0, Math.floor(sliderWidth._eeWorldX / 400));
     this._sections[_0x4ac40a] ||= [];
-    this._sections[_0x4ac40a].push(_0x4413d3);
-    const _0x14d5f7 = _0x4413d3._eeLayer !== undefined ? _0x4413d3._eeLayer : 1;
+    this._sections[_0x4ac40a].push(sliderWidth);
+    const _0x14d5f7 = sliderWidth._eeLayer !== undefined ? sliderWidth._eeLayer : 1;
     if (_0x14d5f7 === 2) {
-      this.topContainer.add(_0x4413d3);
+      this.topContainer.add(sliderWidth);
       return;
     }
     if (!this._sectionContainers[_0x4ac40a]) {
@@ -1576,11 +1576,11 @@ class us {
     }
     const _0x2157d3 = this._sectionContainers[_0x4ac40a];
     if (_0x14d5f7 === 0) {
-      _0x2157d3.additive.add(_0x4413d3);
-    } else if (_0x4413d3._eeBehindParent) {
-      _0x2157d3.normal.addAt(_0x4413d3, 0);
+      _0x2157d3.additive.add(sliderWidth);
+    } else if (sliderWidth._eeBehindParent) {
+      _0x2157d3.normal.addAt(sliderWidth, 0);
     } else {
-      _0x2157d3.normal.add(_0x4413d3);
+      _0x2157d3.normal.add(sliderWidth);
     }
   }
   _addCollisionToSection(_0x3dce4b) {
@@ -1600,41 +1600,41 @@ class us {
     if (_0x1dce22 < 0) {
       return;
     }
-    const _0x5b29dd = Math.max(0, Math.floor((_0xa5f1e1 - 200) / 400));
-    const _0x3b33db = Math.min(_0x1dce22, Math.floor((_0xa5f1e1 + screenWidth + 200) / 400));
+    const particleScale = Math.max(0, Math.floor((_0xa5f1e1 - 200) / 400));
+    const sliderHeight = Math.min(_0x1dce22, Math.floor((_0xa5f1e1 + screenWidth + 200) / 400));
     const _0x1800fc = this._visMinSec;
     const _0xc31046 = this._visMaxSec;
     if (_0x1800fc < 0) {
       for (let _0x47dbe1 = 0; _0x47dbe1 <= _0x1dce22; _0x47dbe1++) {
-        this._setSectionVisible(_0x47dbe1, _0x47dbe1 >= _0x5b29dd && _0x47dbe1 <= _0x3b33db);
+        this._setSectionVisible(_0x47dbe1, _0x47dbe1 >= particleScale && _0x47dbe1 <= sliderHeight);
       }
-      this._visMinSec = _0x5b29dd;
-      this._visMaxSec = _0x3b33db;
+      this._visMinSec = particleScale;
+      this._visMaxSec = sliderHeight;
       return;
     }
-    if (_0x5b29dd !== _0x1800fc || _0x3b33db !== _0xc31046) {
-      if (_0x5b29dd > _0x1800fc) {
-        for (let _0x7da5df = _0x1800fc; _0x7da5df <= Math.min(_0x5b29dd - 1, _0xc31046); _0x7da5df++) {
+    if (particleScale !== _0x1800fc || sliderHeight !== _0xc31046) {
+      if (particleScale > _0x1800fc) {
+        for (let _0x7da5df = _0x1800fc; _0x7da5df <= Math.min(particleScale - 1, _0xc31046); _0x7da5df++) {
           this._setSectionVisible(_0x7da5df, false);
         }
       }
-      if (_0x3b33db < _0xc31046) {
-        for (let _0x5b2d47 = Math.max(_0x3b33db + 1, _0x1800fc); _0x5b2d47 <= _0xc31046; _0x5b2d47++) {
+      if (sliderHeight < _0xc31046) {
+        for (let _0x5b2d47 = Math.max(sliderHeight + 1, _0x1800fc); _0x5b2d47 <= _0xc31046; _0x5b2d47++) {
           this._setSectionVisible(_0x5b2d47, false);
         }
       }
-      if (_0x5b29dd < _0x1800fc) {
-        for (let _0x3caab6 = _0x5b29dd; _0x3caab6 <= Math.min(_0x1800fc - 1, _0x3b33db); _0x3caab6++) {
+      if (particleScale < _0x1800fc) {
+        for (let _0x3caab6 = particleScale; _0x3caab6 <= Math.min(_0x1800fc - 1, sliderHeight); _0x3caab6++) {
           this._setSectionVisible(_0x3caab6, true);
         }
       }
-      if (_0x3b33db > _0xc31046) {
-        for (let _0x347412 = Math.max(_0xc31046 + 1, _0x5b29dd); _0x347412 <= _0x3b33db; _0x347412++) {
+      if (sliderHeight > _0xc31046) {
+        for (let _0x347412 = Math.max(_0xc31046 + 1, particleScale); _0x347412 <= sliderHeight; _0x347412++) {
           this._setSectionVisible(_0x347412, true);
         }
       }
-      this._visMinSec = _0x5b29dd;
-      this._visMaxSec = _0x3b33db;
+      this._visMinSec = particleScale;
+      this._visMaxSec = sliderHeight;
     }
   }
   getNearbySectionObjects(_0x2e85c7) {
@@ -1713,6 +1713,12 @@ class us {
             spr.y = spr._origBaseY + off.y;
             spr._eeWorldX = spr.x;
             spr._eeBaseY  = spr.y;
+            if (spr._coinWorldX !== undefined) {
+              spr._coinWorldX = (spr._origWorldX + off.x) / 2;
+            }
+            if (spr._coinWorldY !== undefined) {
+              spr._coinWorldY = (460 - (spr._origBaseY + off.y)) / 2;
+            }
           }
         }
         if (colliders) {
@@ -1765,15 +1771,15 @@ class us {
       const _0x14a035 = this._sections[_0x17a21d];
       if (_0x14a035) {
         for (let _0x13e116 = 0; _0x13e116 < _0x14a035.length; _0x13e116++) {
-          const _0x1e8f9f = _0x14a035[_0x13e116];
-          _0x1e8f9f._eeActive = false;
-          _0x1e8f9f.visible = true;
-          _0x1e8f9f.x = _0x1e8f9f._eeWorldX;
-          _0x1e8f9f.y = _0x1e8f9f._eeBaseY;
-          if (!_0x1e8f9f._eeAudioScale) {
-            _0x1e8f9f.setScale(1);
+          const visMinSection = _0x14a035[_0x13e116];
+          visMinSection._eeActive = false;
+          visMinSection.visible = true;
+          visMinSection.x = visMinSection._eeWorldX;
+          visMinSection.y = visMinSection._eeBaseY;
+          if (!visMinSection._eeAudioScale) {
+            visMinSection.setScale(1);
           }
-          _0x1e8f9f.setAlpha(1);
+          visMinSection.setAlpha(1);
         }
       }
     }
@@ -1795,78 +1801,78 @@ class us {
       const _0x20a3bb = _0x1bd44f * _0x221c93;
       const _0x8f9d56 = _0x20a3bb >= _0x29a51b + _0xa24372 && _0x20a3bb + _0x221c93 <= _0x548004 - _0xa24372;
       for (let _0x54aba7 = 0; _0x54aba7 < _0x2cff29.length; _0x54aba7++) {
-        const _0x2ae6ed = _0x2cff29[_0x54aba7];
+        const effectSprite = _0x2cff29[_0x54aba7];
         if (_0x8f9d56) {
-          if (_0x2ae6ed._eeActive) {
-            _0x2ae6ed._eeActive = false;
-            _0x2ae6ed.y = _0x2ae6ed._eeBaseY;
-            _0x2ae6ed.x = _0x2ae6ed._eeWorldX;
-            if (!_0x2ae6ed._eeAudioScale) {
-              _0x2ae6ed.setScale(1);
+          if (effectSprite._eeActive) {
+            effectSprite._eeActive = false;
+            effectSprite.y = effectSprite._eeBaseY;
+            effectSprite.x = effectSprite._eeWorldX;
+            if (!effectSprite._eeAudioScale) {
+              effectSprite.setScale(1);
             }
-            _0x2ae6ed.setAlpha(1);
+            effectSprite.setAlpha(1);
           }
           continue;
         }
-        const _0xeded99 = _0x2ae6ed._eeWorldX;
+        const _0xeded99 = effectSprite._eeWorldX;
         const _0x1b2883 = _0xeded99 > _0x49c6d8;
         let _0x289aa2;
         _0x289aa2 = _0x1b2883 ? Math.max(0, Math.min(1, (_0x548004 - _0xeded99) / _0xa24372)) : Math.max(0, Math.min(1, (_0xeded99 - _0x29a51b) / _0xa24372));
         if (_0x289aa2 >= 1) {
-          if (_0x2ae6ed._eeActive) {
-            _0x2ae6ed._eeActive = false;
-            _0x2ae6ed.y = _0x2ae6ed._eeBaseY;
-            _0x2ae6ed.x = _0x2ae6ed._eeWorldX;
-            if (!_0x2ae6ed._eeAudioScale) {
-              _0x2ae6ed.setScale(1);
+          if (effectSprite._eeActive) {
+            effectSprite._eeActive = false;
+            effectSprite.y = effectSprite._eeBaseY;
+            effectSprite.x = effectSprite._eeWorldX;
+            if (!effectSprite._eeAudioScale) {
+              effectSprite.setScale(1);
             }
-            _0x2ae6ed.setAlpha(1);
+            effectSprite.setAlpha(1);
           }
           continue;
         }
-        _0x2ae6ed._eeActive = true;
+        effectSprite._eeActive = true;
         const _0x453353 = _0x1b2883 ? this._activeEnterEffect : this._activeExitEffect;
         const _0x20804e = 1 - _0x289aa2;
-        let _0x50e6d9 = _0x2ae6ed._eeBaseY;
-        let _0x17437c = _0x2ae6ed._eeWorldX;
+        let _0x50e6d9 = effectSprite._eeBaseY;
+        let _0x17437c = effectSprite._eeWorldX;
         let _0x2128bf = _0x289aa2;
         let _0x127ace = 1;
         switch (_0x453353) {
           case 0:
             break;
           case 1:
-            _0x50e6d9 = _0x2ae6ed._eeBaseY + _0x5e9f2a * _0x20804e;
+            _0x50e6d9 = effectSprite._eeBaseY + _0x5e9f2a * _0x20804e;
             break;
           case 2:
-            _0x50e6d9 = _0x2ae6ed._eeBaseY - _0x5e9f2a * _0x20804e;
+            _0x50e6d9 = effectSprite._eeBaseY - _0x5e9f2a * _0x20804e;
             break;
           case 3:
-            _0x17437c = _0x2ae6ed._eeWorldX - _0x5e9f2a * _0x20804e;
+            _0x17437c = effectSprite._eeWorldX - _0x5e9f2a * _0x20804e;
             break;
           case 4:
-            _0x17437c = _0x2ae6ed._eeWorldX + _0x5e9f2a * _0x20804e;
+            _0x17437c = effectSprite._eeWorldX + _0x5e9f2a * _0x20804e;
             break;
           case 5:
-            if (!_0x2ae6ed._eeAudioScale) {
+            if (!effectSprite._eeAudioScale) {
               _0x127ace = _0x289aa2;
             }
             break;
           case 6:
-            if (!_0x2ae6ed._eeAudioScale) {
+            if (!effectSprite._eeAudioScale) {
               _0x127ace = 1 + _0x20804e * 0.75;
             }
         }
-        if (_0x2ae6ed.x !== _0x17437c) {
-          _0x2ae6ed.x = _0x17437c;
+        if (effectSprite.x !== _0x17437c) {
+          effectSprite.x = _0x17437c;
         }
-        if (_0x2ae6ed.y !== _0x50e6d9) {
-          _0x2ae6ed.y = _0x50e6d9;
+        if (effectSprite.y !== _0x50e6d9) {
+          effectSprite.y = _0x50e6d9;
         }
-        if (_0x2ae6ed.alpha !== _0x2128bf) {
-          _0x2ae6ed.alpha = _0x2128bf;
+        if (effectSprite.alpha !== _0x2128bf) {
+          effectSprite.alpha = _0x2128bf;
         }
-        if (!_0x2ae6ed._eeAudioScale && _0x2ae6ed.scaleX !== _0x127ace) {
-          _0x2ae6ed.setScale(_0x127ace);
+        if (!effectSprite._eeAudioScale && effectSprite.scaleX !== _0x127ace) {
+          effectSprite.setScale(_0x127ace);
         }
       }
     }
@@ -2196,13 +2202,13 @@ class ps {
     scene.events.on("shutdown", () => this._cleanupExplosion());
   }
   _createSprites() {
-    const _0x1872a7 = this._scene;
-    const _0x28689a = b(this.p.y);
-    const _0xf42f36 = centerX;
-    this._playerGlowLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentPlayer}_glow_001.png`, 9, false);
-    this._playerSpriteLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentPlayer}_001.png`, 10, true);
-    this._playerOverlayLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentPlayer}_2_001.png`, 8, true);
-    this._playerExtraLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentPlayer}_extra_001.png`, 12, true);
+    const spriteY = this._scene;
+    const spriteX = b(this.p.y);
+    const particleY = centerX;
+    this._playerGlowLayer = ds(spriteY, particleY, spriteX, `${window.currentPlayer}_glow_001.png`, 9, false);
+    this._playerSpriteLayer = ds(spriteY, particleY, spriteX, `${window.currentPlayer}_001.png`, 10, true);
+    this._playerOverlayLayer = ds(spriteY, particleY, spriteX, `${window.currentPlayer}_2_001.png`, 8, true);
+    this._playerExtraLayer = ds(spriteY, particleY, spriteX, `${window.currentPlayer}_extra_001.png`, 12, true);
     if (this._playerGlowLayer) {
       this._playerGlowLayer.sprite.setTint(window.secondaryColor);
       this._playerGlowLayer.sprite._glowEnabled = false;
@@ -2210,7 +2216,7 @@ class ps {
     if (this._playerSpriteLayer) {
       this._playerSpriteLayer.sprite.setTint(window.mainColor);
     } else {
-      let _0x3aecd9 = _0x1872a7.add.rectangle(_0xf42f36, _0x28689a, g, g, window.mainColor);
+      let _0x3aecd9 = spriteY.add.rectangle(particleY, spriteX, g, g, window.mainColor);
       _0x3aecd9.setDepth(10);
       this._playerSpriteLayer = {
         sprite: _0x3aecd9
@@ -2219,10 +2225,10 @@ class ps {
     if (this._playerOverlayLayer) {
       this._playerOverlayLayer.sprite.setTint(window.secondaryColor);
     }
-    this._shipGlowLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentShip}_glow_001.png`, 9, false);
-    this._shipSpriteLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentShip}_001.png`, 10, false);
-    this._shipOverlayLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentShip}_2_001.png`, 8, false);
-    this._shipExtraLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentShip}_extra_001.png`, 12, false);
+    this._shipGlowLayer = ds(spriteY, particleY, spriteX, `${window.currentShip}_glow_001.png`, 9, false);
+    this._shipSpriteLayer = ds(spriteY, particleY, spriteX, `${window.currentShip}_001.png`, 10, false);
+    this._shipOverlayLayer = ds(spriteY, particleY, spriteX, `${window.currentShip}_2_001.png`, 8, false);
+    this._shipExtraLayer = ds(spriteY, particleY, spriteX, `${window.currentShip}_extra_001.png`, 12, false);
     if (this._shipGlowLayer) {
       this._shipGlowLayer.sprite.setTint(window.secondaryColor);
       this._shipGlowLayer.sprite._glowEnabled = false;
@@ -2230,7 +2236,7 @@ class ps {
     if (this._shipSpriteLayer) {
       this._shipSpriteLayer.sprite.setTint(window.mainColor);
     } else {
-      let _0x100643 = _0x1872a7.add.polygon(_0xf42f36, _0x28689a, [{
+      let _0x100643 = spriteY.add.polygon(particleY, spriteX, [{
         x: -72,
         y: 40
       }, {
@@ -2251,9 +2257,9 @@ class ps {
     if (this._shipOverlayLayer) {
       this._shipOverlayLayer.sprite.setTint(window.secondaryColor);
     }
-    this._ballGlowLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentBall}_glow_001.png`, 9, false);
-    this._ballSpriteLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentBall}_001.png`, 10, false);
-    this._ballOverlayLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentBall}_2_001.png`, 8, false);
+    this._ballGlowLayer = ds(spriteY, particleY, spriteX, `${window.currentBall}_glow_001.png`, 9, false);
+    this._ballSpriteLayer = ds(spriteY, particleY, spriteX, `${window.currentBall}_001.png`, 10, false);
+    this._ballOverlayLayer = ds(spriteY, particleY, spriteX, `${window.currentBall}_2_001.png`, 8, false);
     if (this._ballGlowLayer) {
       this._ballGlowLayer.sprite.setTint(window.secondaryColor);
       this._ballGlowLayer.sprite._glowEnabled = false;
@@ -2264,10 +2270,10 @@ class ps {
     if (this._ballOverlayLayer) {
       this._ballOverlayLayer.sprite.setTint(window.secondaryColor);
     }
-    this._waveGlowLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, "player_dart_00_glow_001.png", 9, false);
-    this._waveOverlayLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, "player_dart_00_2_001.png", 8, false);
+    this._waveGlowLayer = ds(spriteY, particleY, spriteX, "player_dart_00_glow_001.png", 9, false);
+    this._waveOverlayLayer = ds(spriteY, particleY, spriteX, "player_dart_00_2_001.png", 8, false);
     this._waveExtraLayer = null;
-    this._waveSpriteLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, "player_dart_00_001.png", 10, false);
+    this._waveSpriteLayer = ds(spriteY, particleY, spriteX, "player_dart_00_001.png", 10, false);
     if (this._waveGlowLayer) {
       this._waveGlowLayer.sprite.setTint(window.secondaryColor);
       this._waveGlowLayer.sprite._glowEnabled = false;
@@ -2288,18 +2294,18 @@ class ps {
     this._ballLayers = [this._ballSpriteLayer, this._ballGlowLayer, this._ballOverlayLayer].filter(_0x37ad93 => !!_0x37ad93);
     this._waveLayers = [this._waveSpriteLayer, this._waveOverlayLayer, this._waveExtraLayer, this._waveGlowLayer].filter(_0x37ad93 => !!_0x37ad93);
     const _spiderBase = `${window.currentSpider}_01`;
-    this._spiderSpriteLayer  = ds(_0x1872a7, _0xf42f36, _0x28689a, `${_spiderBase}_001.png`,       10, false);
-    this._spiderGlowLayer    = ds(_0x1872a7, _0xf42f36, _0x28689a, `${_spiderBase}_glow_001.png`,  9,  false);
-    this._spiderOverlayLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${_spiderBase}_2_001.png`,     8,  false);
-    this._spiderExtraLayer   = ds(_0x1872a7, _0xf42f36, _0x28689a, `${_spiderBase}_extra_001.png`, 12, false);
+    this._spiderSpriteLayer  = ds(spriteY, particleY, spriteX, `${_spiderBase}_001.png`,       10, false);
+    this._spiderGlowLayer    = ds(spriteY, particleY, spriteX, `${_spiderBase}_glow_001.png`,  9,  false);
+    this._spiderOverlayLayer = ds(spriteY, particleY, spriteX, `${_spiderBase}_2_001.png`,     8,  false);
+    this._spiderExtraLayer   = ds(spriteY, particleY, spriteX, `${_spiderBase}_extra_001.png`, 12, false);
     if (this._spiderSpriteLayer)  this._spiderSpriteLayer.sprite.setTint(window.mainColor);
     if (this._spiderOverlayLayer) this._spiderOverlayLayer.sprite.setTint(window.secondaryColor);
     if (this._spiderGlowLayer)    { this._spiderGlowLayer.sprite.setTint(window.secondaryColor); this._spiderGlowLayer.sprite._glowEnabled = false; }
     this._spiderLayers = [this._spiderSpriteLayer, this._spiderGlowLayer, this._spiderOverlayLayer, this._spiderExtraLayer].filter(x => !!x);
-    this._birdSpriteLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentBird}_001.png`, 10, false);
-    this._birdGlowLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentBird}_2_001.png`, 9, false);
-    this._birdOverlayLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentBird}_3_001.png`, 8, false);
-    this._birdExtraLayer = ds(_0x1872a7, _0xf42f36, _0x28689a, `${window.currentBird}_extra_001.png`, 12, false);
+    this._birdSpriteLayer = ds(spriteY, particleY, spriteX, `${window.currentBird}_001.png`, 10, false);
+    this._birdGlowLayer = ds(spriteY, particleY, spriteX, `${window.currentBird}_2_001.png`, 9, false);
+    this._birdOverlayLayer = ds(spriteY, particleY, spriteX, `${window.currentBird}_3_001.png`, 8, false);
+    this._birdExtraLayer = ds(spriteY, particleY, spriteX, `${window.currentBird}_extra_001.png`, 12, false);
     if (this._birdSpriteLayer) {
       this._birdSpriteLayer.sprite.setTint(window.mainColor);
     }
@@ -2314,7 +2320,7 @@ class ps {
 
     this._allLayers = [...this._playerLayers, ...this._ballLayers, ...this._waveLayers, ...this._shipLayers, ...this._spiderLayers, ...this._birdLayers];
     
-    this._dashAnimationSprite = _0x1872a7.add.image(_0xf42f36, _0x28689a, "GJ_GameSheetGlow", "playerDash2_001.png");
+    this._dashAnimationSprite = spriteY.add.image(particleY, spriteX, "GJ_GameSheetGlow", "playerDash2_001.png");
     this._dashAnimationSprite.setDepth(7);
     this._dashAnimationSprite.setVisible(false);
     this._dashAnimationSprite.setTint(0xffffff);
@@ -2657,7 +2663,7 @@ class ps {
     }
     const _0x7f0705 = mirrorOffset !== undefined ? mirrorOffset : centerX;
     const _0x1a433c = b(this.p.y) + cameraY;
-    const _0x2907d3 = this._rotation;
+    const playerRotation = this._rotation;
     this._lastCameraX = cameraX;
     this._lastCameraY = cameraY;
     this._aboveContainer.x = -cameraX;
@@ -2665,102 +2671,102 @@ class ps {
 if (this.p.isFlying || this.p.isUfo) {
       const _0x3904f8 = 10;
       const playerOffset = this.p.gravityFlipped ? -30 : 10; 
-      const _0x285611 = Math.cos(_0x2907d3);
-      const _0x501bf9 = Math.sin(_0x2907d3);
+      const _0x285611 = Math.cos(playerRotation);
+      const _0x501bf9 = Math.sin(playerRotation);
       const _0x1b1d28 = -_0x3904f8 * _0x501bf9;
       const _0x185f91 = _0x3904f8 * _0x285611; 
       const _0x562424 = playerOffset * _0x501bf9;
       const _0x3011c9 = -playerOffset * _0x285611;
       const _ufoMode = this.p.isUfo && !this.p.isFlying;
       if (this.p.isFlying) {
-        for (const _0x5dc75c of this._shipLayers) {
-          if (_0x5dc75c) {
-            _0x5dc75c.sprite.x = _0x7f0705 + _0x1b1d28;
-            _0x5dc75c.sprite.y = _0x1a433c + _0x185f91 + (this.p.gravityFlipped ? -20 : 0);
-            _0x5dc75c.sprite.rotation = this.p.mirrored ? -_0x2907d3 : _0x2907d3;
+        for (const layer of this._shipLayers) {
+          if (layer) {
+            layer.sprite.x = _0x7f0705 + _0x1b1d28;
+            layer.sprite.y = _0x1a433c + _0x185f91 + (this.p.gravityFlipped ? -20 : 0);
+            layer.sprite.rotation = this.p.mirrored ? -playerRotation : playerRotation;
             const _miniS = this.p.isMini ? 0.6 : 1;
-            _0x5dc75c.sprite.scaleY = this.p.gravityFlipped ? -_miniS : _miniS;
-            _0x5dc75c.sprite.scaleX = this.p.mirrored ? -_miniS : _miniS;
+            layer.sprite.scaleY = this.p.gravityFlipped ? -_miniS : _miniS;
+            layer.sprite.scaleX = this.p.mirrored ? -_miniS : _miniS;
           }
         }
       }
 	if (this.p.isUfo && !this.p.isDead) {
-        for (const _0x5dc75c of this._birdLayers) {
-          if (_0x5dc75c) {
-            _0x5dc75c.sprite.setVisible(true);
-            _0x5dc75c.sprite.x = _0x7f0705 + _0x1b1d28;
-            _0x5dc75c.sprite.y = _0x1a433c + _0x185f91 + (this.p.gravityFlipped ? -15 : 5);
-            _0x5dc75c.sprite.rotation = this.p.mirrored ? -_0x2907d3 : _0x2907d3;
+        for (const layer of this._birdLayers) {
+          if (layer) {
+            layer.sprite.setVisible(true);
+            layer.sprite.x = _0x7f0705 + _0x1b1d28;
+            layer.sprite.y = _0x1a433c + _0x185f91 + (this.p.gravityFlipped ? -15 : 5);
+            layer.sprite.rotation = this.p.mirrored ? -playerRotation : playerRotation;
             const _miniS = this.p.isMini ? 0.6 : 1;
-            _0x5dc75c.sprite.scaleY = this.p.gravityFlipped ? -_miniS : _miniS;
-            _0x5dc75c.sprite.scaleX = this.p.mirrored ? -_miniS : _miniS;
+            layer.sprite.scaleY = this.p.gravityFlipped ? -_miniS : _miniS;
+            layer.sprite.scaleX = this.p.mirrored ? -_miniS : _miniS;
           }
         }
       }
       
-      for (const _0x536f40 of this._playerLayers) {
-        if (_0x536f40) {
-          _0x536f40.sprite.x = _0x7f0705 + _0x562424;
-          _0x536f40.sprite.y = (_0x1a433c + _0x3011c9)+(this.p.isMini?8:0) + (this.p.gravityFlipped ? -20 : 0);
-          _0x536f40.sprite.rotation = this.p.mirrored ? -_0x2907d3 : _0x2907d3;
+      for (const playerLayerItem of this._playerLayers) {
+        if (playerLayerItem) {
+          playerLayerItem.sprite.x = _0x7f0705 + _0x562424;
+          playerLayerItem.sprite.y = (_0x1a433c + _0x3011c9)+(this.p.isMini?8:0) + (this.p.gravityFlipped ? -20 : 0);
+          playerLayerItem.sprite.rotation = this.p.mirrored ? -playerRotation : playerRotation;
           const _miniS = this.p.isMini ? 0.6 : 1;
           const _shipCubeS = _miniS * 0.55;
-          _0x536f40.sprite.scaleY = this.p.gravityFlipped ? -_shipCubeS : _shipCubeS;
-          _0x536f40.sprite.scaleX = this.p.mirrored ? -_shipCubeS : _shipCubeS;
+          playerLayerItem.sprite.scaleY = this.p.gravityFlipped ? -_shipCubeS : _shipCubeS;
+          playerLayerItem.sprite.scaleX = this.p.mirrored ? -_shipCubeS : _shipCubeS;
         }
       }
       if (_ufoMode) {
         const _ufoTilt = Math.max(-0.05, Math.min(0.05, -(this.p.y - this.p.lastY) * 0.008));
-        for (const _0x5dc75c of this._birdLayers) {
-          if (_0x5dc75c) {
-            _0x5dc75c.sprite.rotation = this.p.mirrored ? -_ufoTilt : _ufoTilt;
+        for (const layer of this._birdLayers) {
+          if (layer) {
+            layer.sprite.rotation = this.p.mirrored ? -_ufoTilt : _ufoTilt;
           }
         }
-		  for (const _0x536f40 of this._playerLayers) {
-          if (_0x536f40) {
-            _0x536f40.sprite.rotation = this.p.mirrored ? -_ufoTilt : _ufoTilt;
+		  for (const playerLayerItem of this._playerLayers) {
+          if (playerLayerItem) {
+            playerLayerItem.sprite.rotation = this.p.mirrored ? -_ufoTilt : _ufoTilt;
           }
         }
       }
     } else {
-      for (const _0x5dc75c of this._spiderLayers) {
-        if (_0x5dc75c) {
-          _0x5dc75c.sprite.setVisible(false);
+      for (const layer of this._spiderLayers) {
+        if (layer) {
+          layer.sprite.setVisible(false);
         }
       }
       
-      for (const _0x2c61a1 of this._allLayers) {
-        if (_0x2c61a1) {
-            _0x2c61a1.sprite.x = _0x7f0705;
-            _0x2c61a1.sprite.y = _0x1a433c;
-            const isBallLayer = this._ballLayers.includes(_0x2c61a1);
-            _0x2c61a1.sprite.rotation = isBallLayer ? _0x2907d3 : (this.p.mirrored ? -_0x2907d3 : _0x2907d3);
+      for (const playerLayer of this._allLayers) {
+        if (playerLayer) {
+            playerLayer.sprite.x = _0x7f0705;
+            playerLayer.sprite.y = _0x1a433c;
+            const isBallLayer = this._ballLayers.includes(playerLayer);
+            playerLayer.sprite.rotation = isBallLayer ? playerRotation : (this.p.mirrored ? -playerRotation : playerRotation);
             let _miniS = this.p.isMini ? 0.6 : 1;
-            if (this.p.isWave && this._waveLayers.includes(_0x2c61a1)) {
+            if (this.p.isWave && this._waveLayers.includes(playerLayer)) {
               _miniS *= 0.42; //fix wave size
             }
-            _0x2c61a1.sprite.scaleY = (this.p.gravityFlipped ? -_miniS : _miniS);
-            _0x2c61a1.sprite.scaleX = (this.p.mirrored ? -_miniS : _miniS);
+            playerLayer.sprite.scaleY = (this.p.gravityFlipped ? -_miniS : _miniS);
+            playerLayer.sprite.scaleX = (this.p.mirrored ? -_miniS : _miniS);
         }
       }
-      for (const _0x5dc75c of this._spiderLayers) {
-        if (_0x5dc75c) {
-          _0x5dc75c.sprite.setVisible(false);
+      for (const layer of this._spiderLayers) {
+        if (layer) {
+          layer.sprite.setVisible(false);
         }
       }
       
-      for (const _0x2c61a1 of this._allLayers) {
-        if (_0x2c61a1) {
-            _0x2c61a1.sprite.x = _0x7f0705;
-            _0x2c61a1.sprite.y = _0x1a433c;
-            const isBallLayer = this._ballLayers.includes(_0x2c61a1);
-            _0x2c61a1.sprite.rotation = isBallLayer ? _0x2907d3 : (this.p.mirrored ? -_0x2907d3 : _0x2907d3);
+      for (const playerLayer of this._allLayers) {
+        if (playerLayer) {
+            playerLayer.sprite.x = _0x7f0705;
+            playerLayer.sprite.y = _0x1a433c;
+            const isBallLayer = this._ballLayers.includes(playerLayer);
+            playerLayer.sprite.rotation = isBallLayer ? playerRotation : (this.p.mirrored ? -playerRotation : playerRotation);
             let _miniS = this.p.isMini ? 0.6 : 1;
-            if (this.p.isWave && this._waveLayers.includes(_0x2c61a1)) {
+            if (this.p.isWave && this._waveLayers.includes(playerLayer)) {
               _miniS *= 0.42; //fix wave size
             }
-            _0x2c61a1.sprite.scaleY = (this.p.gravityFlipped ? -_miniS : _miniS);
-            _0x2c61a1.sprite.scaleX = (this.p.mirrored ? -_miniS : _miniS);
+            playerLayer.sprite.scaleY = (this.p.gravityFlipped ? -_miniS : _miniS);
+            playerLayer.sprite.scaleX = (this.p.mirrored ? -_miniS : _miniS);
         }
       }
     }
@@ -3140,12 +3146,12 @@ hitGround() {
   _createExplosionPieces(_0x49be85, _0x13b56e, _0x349a09) {
     const _0x44acaf = this._scene;
     const _0x4a9f23 = _0x349a09 * 40;
-    const _0x24dcea = Math.round(_0x4a9f23 * 2);
+    const sliderBar = Math.round(_0x4a9f23 * 2);
     const _0x26dcbd = _0x44acaf.make.renderTexture({
       x: 0,
       y: 0,
-      width: _0x24dcea,
-      height: _0x24dcea,
+      width: sliderBar,
+      height: sliderBar,
       add: false
     });
     const _0x5c571a = [this._playerGlowLayer, this._playerOverlayLayer, this._ballGlowLayer, this._ballOverlayLayer, this._waveGlowLayer, this._waveOverlayLayer, this._waveExtraLayer, this._shipGlowLayer, this._shipOverlayLayer, this._playerSpriteLayer, this._playerExtraLayer, this._ballSpriteLayer, this._waveSpriteLayer, this._shipSpriteLayer, this._shipExtraLayer, this._birdSpriteLayer, this._birdGlowLayer, this._birdOverlayLayer, this._birdExtraLayer];
@@ -3157,7 +3163,7 @@ hitGround() {
         continue;
       }
       const _0x53102a = _0x1f09e3.sprite;
-      _0x26dcbd.draw(_0x53102a, _0x24dcea / 2 + (_0x53102a.x - _0x49be85), _0x24dcea / 2 + (_0x53102a.y - _0x13b56e));
+      _0x26dcbd.draw(_0x53102a, sliderBar / 2 + (_0x53102a.x - _0x49be85), sliderBar / 2 + (_0x53102a.y - _0x13b56e));
     }
     const _0xd0201e = "__deathRT_" + Date.now();
     _0x26dcbd.saveTexture(_0xd0201e);
@@ -3174,8 +3180,8 @@ hitGround() {
     const _0x422587 = _0x1e8c09 * 0.5;
     const _0x1e87b0 = _0x1e8c09 * 1;
     const _0x4dd9c4 = 0.45;
-    const _0x5e8097 = _0x24dcea / _0x28c600;
-    const _0x5af9d3 = _0x24dcea / _0x247253;
+    const _0x5e8097 = sliderBar / _0x28c600;
+    const _0x5af9d3 = sliderBar / _0x247253;
     const _0xe9c860 = [];
     const _0x3215fa = [];
     const _0x416e63 = [0];
@@ -3188,14 +3194,14 @@ hitGround() {
       _0x44e1e1 += _0x5b2c12;
       _0x416e63.push(_0x44e1e1);
     }
-    _0xe9c860.push(_0x24dcea - _0x44e1e1);
+    _0xe9c860.push(sliderBar - _0x44e1e1);
     for (let _0x325ce1 = 0; _0x325ce1 < _0x247253 - 1; _0x325ce1++) {
       const _0x37f0ad = Math.round(_0x5af9d3 * (0.55 + Math.random() * _0x4dd9c4 * 2));
       _0x3215fa.push(_0x37f0ad);
       _0x38011e += _0x37f0ad;
       _0x57d0dc.push(_0x38011e);
     }
-    _0x3215fa.push(_0x24dcea - _0x38011e);
+    _0x3215fa.push(sliderBar - _0x38011e);
     this._explosionPieces = [];
     this._explosionContainer = _0x44acaf.add.container(_0x49be85, _0x13b56e).setDepth(16);
     let _0x156c8b = 0;
@@ -3212,8 +3218,8 @@ hitGround() {
         const _0x526d03 = "piece_" + _0x4cd06e + "_" + _0x5b14cf;
         _0x5a2621.add(_0x526d03, 0, _0x43a4e9, _0x20396e, _0x5c6aa9, _0x20847a);
         const _0xba83f5 = _0x44acaf.add.image(0, 0, _0xd0201e, _0x526d03);
-        _0xba83f5.x = _0x43a4e9 + _0x5c6aa9 / 2 - _0x24dcea / 2;
-        _0xba83f5.y = -(_0x20396e + _0x20847a / 2 - _0x24dcea / 2);
+        _0xba83f5.x = _0x43a4e9 + _0x5c6aa9 / 2 - sliderBar / 2;
+        _0xba83f5.y = -(_0x20396e + _0x20847a / 2 - sliderBar / 2);
         this._explosionContainer.add(_0xba83f5);
         let _0x298d34 = null;
         if (_0x156c8b % 2 == 0) {
@@ -3270,40 +3276,40 @@ hitGround() {
     const _0x5a7549 = this._explosionGroundSY - this._explosionContainer.y;
     let _0x4284b0 = 0;
     while (_0x4284b0 < this._explosionPieces.length) {
-      const _0x3fac01 = this._explosionPieces[_0x4284b0];
-      _0x3fac01.timer -= _0x1ed0a8;
-      if (_0x3fac01.timer > 0) {
+      const particleX = this._explosionPieces[_0x4284b0];
+      particleX.timer -= _0x1ed0a8;
+      if (particleX.timer > 0) {
         {
-          _0x3fac01.yVel += _0x59eafe;
-          _0x3fac01.xVel *= 0.98 + (1 - _0x3e389c) * 0.02;
-          let _0x57034b = _0x3fac01.spr.x + _0x3fac01.xVel * _0x3e389c;
-          let _0x4c0481 = _0x3fac01.spr.y + _0x3fac01.yVel * _0x3e389c;
-          const _0x3f6377 = _0x5a7549 - _0x3fac01.halfSize;
-          if (_0x4c0481 > _0x3f6377 && _0x3fac01.yVel > 0) {
+          particleX.yVel += _0x59eafe;
+          particleX.xVel *= 0.98 + (1 - _0x3e389c) * 0.02;
+          let _0x57034b = particleX.spr.x + particleX.xVel * _0x3e389c;
+          let _0x4c0481 = particleX.spr.y + particleX.yVel * _0x3e389c;
+          const _0x3f6377 = _0x5a7549 - particleX.halfSize;
+          if (_0x4c0481 > _0x3f6377 && particleX.yVel > 0) {
             _0x4c0481 = _0x3f6377;
-            _0x3fac01.yVel *= -0.8;
-            if (Math.abs(_0x3fac01.yVel) < 3) {
-              _0x3fac01.yVel = -3;
+            particleX.yVel *= -0.8;
+            if (Math.abs(particleX.yVel) < 3) {
+              particleX.yVel = -3;
             }
           }
-          _0x3fac01.spr.x = _0x57034b;
-          _0x3fac01.spr.y = _0x4c0481;
-          _0x3fac01.spr.angle += _0x3fac01.rotDelta * _0x3e389c;
-          if (_0x3fac01.timer < _0x3fac01.fadeTime) {
-            const _0x2d8b5f = _0x3fac01.timer / _0x3fac01.fadeTime;
-            _0x3fac01.spr.setAlpha(_0x2d8b5f);
-            if (_0x3fac01.particle) {
-              _0x3fac01.particle.setAlpha(_0x2d8b5f);
+          particleX.spr.x = _0x57034b;
+          particleX.spr.y = _0x4c0481;
+          particleX.spr.angle += particleX.rotDelta * _0x3e389c;
+          if (particleX.timer < particleX.fadeTime) {
+            const _0x2d8b5f = particleX.timer / particleX.fadeTime;
+            particleX.spr.setAlpha(_0x2d8b5f);
+            if (particleX.particle) {
+              particleX.particle.setAlpha(_0x2d8b5f);
             }
           }
         }
         _0x4284b0++;
       } else {
-        if (_0x3fac01.particle) {
-          _0x3fac01.particle.stop();
-          _0x3fac01.particle.destroy();
+        if (particleX.particle) {
+          particleX.particle.stop();
+          particleX.particle.destroy();
         }
-        _0x3fac01.spr.destroy();
+        particleX.spr.destroy();
         this._explosionPieces.splice(_0x4284b0, 1);
       }
     }
@@ -3348,13 +3354,13 @@ hitGround() {
       if (!_0x4bfe30) {
         continue;
       }
-      const _0x34645e = _0x4ed8ff.add.image(_0xf31b0d, _0x3824c0, _0x4bfe30.atlas, _0x4bfe30.frame);
-      _0x34645e.setBlendMode(S);
-      _0x34645e.setAlpha(0);
-      _0x34645e.angle = _0x49e81f.rotationDegrees;
-      _0x5d636a[_0x34fd8c].add(_0x34645e);
+      const pieceSize = _0x4ed8ff.add.image(_0xf31b0d, _0x3824c0, _0x4bfe30.atlas, _0x4bfe30.frame);
+      pieceSize.setBlendMode(S);
+      pieceSize.setAlpha(0);
+      pieceSize.angle = _0x49e81f.rotationDegrees;
+      _0x5d636a[_0x34fd8c].add(pieceSize);
       _0x4ed8ff.tweens.add({
-        targets: _0x34645e,
+        targets: pieceSize,
         alpha: {
           from: 0,
           to: 1
@@ -3362,10 +3368,10 @@ hitGround() {
         duration: 50,
         onComplete: () => {
           _0x4ed8ff.tweens.add({
-            targets: _0x34645e,
+            targets: pieceSize,
             alpha: 0,
             duration: 400,
-            onComplete: () => _0x34645e.destroy()
+            onComplete: () => pieceSize.destroy()
           });
         }
       });
@@ -3752,7 +3758,7 @@ _updateBallJump(_0x2fe319) {
   checkCollisions(_0x2f5078) {
     const playerSize = this.p.isMini ? 18 : 30;
     const waveHitSize = this.p.isMini ? 6 : 9;
-    const _0x3c691e = _0x2f5078 + centerX;
+    const pieceWidth = _0x2f5078 + centerX;
     const _0x8e0d28 = this.p.y;
     const _0x37040a = this.p.lastY;
     const _0x11ee2f = this.p.isFlying || this.p.isWave || this.p.isUfo ? 12 : 20;
@@ -3761,7 +3767,7 @@ _updateBallJump(_0x2fe319) {
     this.p.onCeiling = false;
     let _0x30410f = false;
     let _boostedThisStep = false;
-    const _0x198534 = this._gameLayer.getNearbySectionObjects(_0x3c691e);
+    const _0x198534 = this._gameLayer.getNearbySectionObjects(pieceWidth);
     for (let gameObj of _0x198534) {
       if (gameObj.type === "hazard") {
         if (window.noClip) {
@@ -3784,7 +3790,7 @@ _updateBallJump(_0x2fe319) {
       let rotatedTop = gameObj.y - rotatedHalfHeight;
       let rotatedBottom = gameObj.y + rotatedHalfHeight;
       const _broadSize = this.p.isWave ? waveHitSize : playerSize;
-      if (!(_0x3c691e + _broadSize <= rotatedLeft) && !(_0x3c691e - _broadSize >= rotatedRight) && !(_0x8e0d28 + _broadSize <= rotatedTop) && !(_0x8e0d28 - _broadSize >= rotatedBottom)) {
+      if (!(pieceWidth + _broadSize <= rotatedLeft) && !(pieceWidth - _broadSize >= rotatedRight) && !(_0x8e0d28 + _broadSize <= rotatedTop) && !(_0x8e0d28 - _broadSize >= rotatedBottom)) {
         const _colType = gameObj.type;
         if (_colType === "portal_fly") {
           if (!gameObj.activated) {
@@ -4140,7 +4146,7 @@ _updateBallJump(_0x2fe319) {
           let _0x3e7199 = _0x8e0d28 + playerSize - _0x11ee2f;
           let _0x135a9d = _0x37040a + playerSize - _0x11ee2f;
           const _0x55559d = 9;
-          const _0x3c1654 = _0x3c691e + _0x55559d > left && _0x3c691e - _0x55559d < right && _0x8e0d28 + _0x55559d > top && _0x8e0d28 - _0x55559d < bottom;
+          const _0x3c1654 = pieceWidth + _0x55559d > left && pieceWidth - _0x55559d < right && _0x8e0d28 + _0x55559d > top && _0x8e0d28 - _0x55559d < bottom;
           const _0xLandBot = (this.p.yVelocity <= 0 || this.p.onGround) && (_0x146a97 >= bottom || _0x869e42 >= bottom);
           const _0xLandTop = (this.p.yVelocity >= 0 || this.p.onGround) && (_0x3e7199 <= top || _0x135a9d <= top);
           const _0x2841ea = this.p.gravityFlipped ? _0xLandTop : _0xLandBot;
@@ -4150,7 +4156,7 @@ _updateBallJump(_0x2fe319) {
             }
             return;
           }
-          if (_0x3c691e + playerSize - 5 > left && _0x3c691e - playerSize + 5 < right) {
+          if (pieceWidth + playerSize - 5 > left && pieceWidth - playerSize + 5 < right) {
             if (!this.p.gravityFlipped && (_0x146a97 >= bottom || _0x869e42 >= bottom) && (this.p.yVelocity <= 0 || this.p.onGround)) {
               this.p.y = bottom + playerSize;
               this.hitGround();
@@ -4371,12 +4377,12 @@ _updateBallJump(_0x2fe319) {
       duration: 1000,
       ease: _0x23df59 => Math.pow(_0x23df59, 1.2),
       onUpdate: () => {
-        const _0x3eda1c = _0x51c4a8.val;
-        const _0x2478d6 = (1 - _0x3eda1c) ** 3 * _0x1295ea + (1 - _0x3eda1c) ** 2 * 3 * _0x3eda1c * _0x1295ea + (1 - _0x3eda1c) * 3 * _0x3eda1c ** 2 * _0x1f2e19 + _0x3eda1c ** 3 * _0x457676;
-        const _0x148e69 = (1 - _0x3eda1c) ** 3 * _0x47ae60 + (1 - _0x3eda1c) ** 2 * 3 * _0x3eda1c * _0x47ae60 + (1 - _0x3eda1c) * 3 * _0x3eda1c ** 2 * _0x8bc9f4 + _0x3eda1c ** 3 * _0x3ade39;
+        const spriteWidth = _0x51c4a8.val;
+        const _0x2478d6 = (1 - spriteWidth) ** 3 * _0x1295ea + (1 - spriteWidth) ** 2 * 3 * spriteWidth * _0x1295ea + (1 - spriteWidth) * 3 * spriteWidth ** 2 * _0x1f2e19 + spriteWidth ** 3 * _0x457676;
+        const _0x148e69 = (1 - spriteWidth) ** 3 * _0x47ae60 + (1 - spriteWidth) ** 2 * 3 * spriteWidth * _0x47ae60 + (1 - spriteWidth) * 3 * spriteWidth ** 2 * _0x8bc9f4 + spriteWidth ** 3 * _0x3ade39;
         const _0x3d0365 = _0x2478d6 - _0x3729ef._cameraX;
         const _0x3790a9 = b(_0x148e69) + _0x3729ef._cameraY;
-        const _0x1cb4d3 = 1 - _0x3eda1c * _0x3eda1c;
+        const _0x1cb4d3 = 1 - spriteWidth * spriteWidth;
         const _0x1d2e2f = _0x3fc5a5[0].spr.rotation;
         const _0xd3cb2a = Math.cos(_0x1d2e2f);
         const _0x2f86c2 = Math.sin(_0x1d2e2f);
@@ -6274,40 +6280,40 @@ this._escKey.on("down", () => {
   }
   _createPauseToggleButton(_0x5376fd, _0x3b6200, _0x2b25c8, _0xe203c3, _0x268e2b, _0x2d04c4) {
     const _0x4864cc = this.add.container(_0x3b6200, _0x2b25c8);
-    const _0x3ae5dd = this.add.image(0, 0, "GJ_GameSheet03", _0x268e2b ? "GJ_checkOn_001.png" : "GJ_checkOff_001.png").setScale(0.7).setInteractive();
+    const pieceHeight = this.add.image(0, 0, "GJ_GameSheet03", _0x268e2b ? "GJ_checkOn_001.png" : "GJ_checkOff_001.png").setScale(0.7).setInteractive();
     const _0x15c0df = this.add.bitmapText(25 + 10, 0, "bigFont", _0xe203c3, 32).setOrigin(0, 0.5);
-    _0x4864cc.add([_0x3ae5dd, _0x15c0df]);
+    _0x4864cc.add([pieceHeight, _0x15c0df]);
     _0x5376fd.add(_0x4864cc);
     const _0x232e51 = _0x1dce15 => {
-      _0x3ae5dd.setTexture("GJ_GameSheet03", _0x1dce15 ? "GJ_checkOn_001.png" : "GJ_checkOff_001.png");
-      this._expandHitArea(_0x3ae5dd, 2);
+      pieceHeight.setTexture("GJ_GameSheet03", _0x1dce15 ? "GJ_checkOn_001.png" : "GJ_checkOff_001.png");
+      this._expandHitArea(pieceHeight, 2);
       _0x2d04c4(_0x1dce15);
     };
-    this._expandHitArea(_0x3ae5dd, 2);
-    this._makeBouncyButton(_0x3ae5dd, 0.7, () => {
-      _0x232e51(_0x3ae5dd.frame.name === "GJ_checkOff_001.png");
+    this._expandHitArea(pieceHeight, 2);
+    this._makeBouncyButton(pieceHeight, 0.7, () => {
+      _0x232e51(pieceHeight.frame.name === "GJ_checkOff_001.png");
     }, () => this._paused && !!this._pauseContainer);
     _0x15c0df.setInteractive();
     _0x15c0df.on("pointerdown", () => {
       if (this._paused && this._pauseContainer) {
-        _0x232e51(_0x3ae5dd.frame.name === "GJ_checkOff_001.png");
+        _0x232e51(pieceHeight.frame.name === "GJ_checkOff_001.png");
       }
     });
     return _0x4864cc;
   }
   _buildPauseOverlay() {
-    const _0x13af33 = screenWidth / 2;
+    const textureY = screenWidth / 2;
     const _0xf70e04 = 320;
     const _0x4eb71b = screenWidth - 40;
     this._pauseContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(100);
-    const _0x505665 = this.add.rectangle(_0x13af33, _0xf70e04, screenWidth, screenHeight, 0, 75 / 255);
+    const _0x505665 = this.add.rectangle(textureY, _0xf70e04, screenWidth, screenHeight, 0, 75 / 255);
     _0x505665.setInteractive();
     this._pauseContainer.add(_0x505665);
     const _0x103191 = this.textures.get("square04_001").source[0].width * 0.325;
-    const _0x954813 = this._drawScale9(_0x13af33, _0xf70e04, _0x4eb71b, 600, "square04_001", _0x103191, 0, 150 / 255);
+    const _0x954813 = this._drawScale9(textureY, _0xf70e04, _0x4eb71b, 600, "square04_001", _0x103191, 0, 150 / 255);
     this._pauseContainer.add(_0x954813);
     const _0x3874ed = this.scale.isFullscreen;
-    const _0x426993 = this.add.image(_0x13af33 - _0x4eb71b / 2 + 40, 60, "GJ_WebSheet", _0x3874ed ? "toggleFullscreenOff_001.png" : "toggleFullscreenOn_001.png").setScale(0.64).setInteractive();
+    const _0x426993 = this.add.image(textureY - _0x4eb71b / 2 + 40, 60, "GJ_WebSheet", _0x3874ed ? "toggleFullscreenOff_001.png" : "toggleFullscreenOn_001.png").setScale(0.64).setInteractive();
     this._expandHitArea(_0x426993, 2.5);
     this._pauseContainer.add(_0x426993);
     this._makeBouncyButton(_0x426993, 0.64, () => {
@@ -6316,20 +6322,20 @@ this._escKey.on("down", () => {
       this._expandHitArea(_0x426993, 2.5);
       this._toggleFullscreen();
     });
-    this._pauseContainer.add(this.add.bitmapText(_0x13af33, 65, "bigFont", window.currentlevel[1], 40).setOrigin(0.5, 0.5));
+    this._pauseContainer.add(this.add.bitmapText(textureY, 65, "bigFont", window.currentlevel[1], 40).setOrigin(0.5, 0.5));
     const _0x21dacf = 170;
     const _0x46bab2 = this._bestPercent || 0;
-    const _0x38b8d1 = this.add.image(_0x13af33, _0x21dacf, "GJ_WebSheet", "GJ_progressBar_001.png").setTint(0).setAlpha(125 / 255);
+    const _0x38b8d1 = this.add.image(textureY, _0x21dacf, "GJ_WebSheet", "GJ_progressBar_001.png").setTint(0).setAlpha(125 / 255);
     this._pauseContainer.add(_0x38b8d1);
     const _0x1d49a9 = this.textures.getFrame("GJ_WebSheet", "GJ_progressBar_001.png");
     const _0xb5ab6f = _0x1d49a9 ? _0x1d49a9.width : 680;
     const _0x1e6502 = _0x1d49a9 ? _0x1d49a9.height : 40;
     const _0x3782ca = Math.max(1, Math.floor(_0xb5ab6f * (_0x46bab2 / 100)));
     const _0x3d0987 = this.add.image(0, 0, "GJ_WebSheet", "GJ_progressBar_001.png").setTint(65280).setScale(0.992, 0.86).setOrigin(0, 0.5).setCrop(0, 0, _0x3782ca, _0x1e6502);
-    _0x3d0987.setPosition(_0x13af33 - _0xb5ab6f * 0.992 / 2, _0x21dacf);
+    _0x3d0987.setPosition(textureY - _0xb5ab6f * 0.992 / 2, _0x21dacf);
     this._pauseContainer.add(_0x3d0987);
-    this._pauseContainer.add(this.add.bitmapText(_0x13af33, _0x21dacf, "bigFont", _0x46bab2 + "%", 30).setOrigin(0.5, 0.5).setScale(0.7));
-    this._pauseContainer.add(this.add.bitmapText(_0x13af33, 130, "bigFont", "Normal Mode", 30).setOrigin(0.5, 0.5).setScale(0.78));
+    this._pauseContainer.add(this.add.bitmapText(textureY, _0x21dacf, "bigFont", _0x46bab2 + "%", 30).setOrigin(0.5, 0.5).setScale(0.7));
+    this._pauseContainer.add(this.add.bitmapText(textureY, 130, "bigFont", "Normal Mode", 30).setOrigin(0.5, 0.5).setScale(0.78));
     const _0x4791ac = [{
       frame: "GJ_replayBtn_001.png",
       action: () => {
@@ -6356,7 +6362,7 @@ this._escKey.on("down", () => {
         return 246;
       }
     });
-    let _0x599a9b = _0x13af33 - (_0x25aa59.reduce((_0x53adf8, _0x10ae31) => _0x53adf8 + _0x10ae31, 0) + (_0x4791ac.length - 1) * 40) / 2;
+    let _0x599a9b = textureY - (_0x25aa59.reduce((_0x53adf8, _0x10ae31) => _0x53adf8 + _0x10ae31, 0) + (_0x4791ac.length - 1) * 40) / 2;
     for (let _0x18feee = 0; _0x18feee < _0x4791ac.length; _0x18feee++) {
       const _0x17809c = _0x4791ac[_0x18feee];
       const _0x228482 = _0x25aa59[_0x18feee];
@@ -6379,44 +6385,44 @@ this._escKey.on("down", () => {
       const _0x4de88c = this.add.image(_0x422be3, _0x1008ae, "GJ_WebSheet", "slidergroove.png").setScale(_0x22b43a);
       this._pauseContainer.add(_0x4de88c);
       const _0x106f98 = _0x34d1c1 + _0xaaab25 * _0x51c57b;
-      const _0x441360 = this.add.image(_0x106f98, _0x1008ae, "GJ_WebSheet", "sliderthumb.png").setScale(_0x22b43a).setInteractive({
+      const sliderThumb = this.add.image(_0x106f98, _0x1008ae, "GJ_WebSheet", "sliderthumb.png").setScale(_0x22b43a).setInteractive({
         draggable: true,
         useHandCursor: true
       });
-      this._pauseContainer.add(_0x441360);
-      _0x441360.on("pointerdown", () => _0x441360.setTexture("GJ_WebSheet", "sliderthumbsel.png"));
-      _0x441360.on("pointerup", () => _0x441360.setTexture("GJ_WebSheet", "sliderthumb.png"));
-      _0x441360.on("pointerout", () => _0x441360.setTexture("GJ_WebSheet", "sliderthumb.png"));
-      _0x441360.on("drag", (_0x1ac7f7, _0x35b64c) => {
-        _0x441360.x = Math.max(_0x34d1c1, Math.min(_0x34d1c1 + _0x51c57b, _0x35b64c));
-        const _0x4a1663 = (_0x441360.x - _0x34d1c1) / _0x51c57b;
+      this._pauseContainer.add(sliderThumb);
+      sliderThumb.on("pointerdown", () => sliderThumb.setTexture("GJ_WebSheet", "sliderthumbsel.png"));
+      sliderThumb.on("pointerup", () => sliderThumb.setTexture("GJ_WebSheet", "sliderthumb.png"));
+      sliderThumb.on("pointerout", () => sliderThumb.setTexture("GJ_WebSheet", "sliderthumb.png"));
+      sliderThumb.on("drag", (_0x1ac7f7, _0x35b64c) => {
+        sliderThumb.x = Math.max(_0x34d1c1, Math.min(_0x34d1c1 + _0x51c57b, _0x35b64c));
+        const _0x4a1663 = (sliderThumb.x - _0x34d1c1) / _0x51c57b;
         const _0x2bc46f = _0x4a1663 < 0.03 ? 0 : _0x4a1663;
         _0x43dbf4.width = Math.max(1, _0x2bc46f * _0x51c57b);
         _0x43dbf4.setVisible(_0x2bc46f > 0);
         _0x169b87(_0x2bc46f);
       });
     };
-    _0xe34699(_0x13af33 - 200, "gj_songIcon_001.png", this._audio.getUserMusicVolume(), _0x3ebce2 => this._audio.setUserMusicVolume(_0x3ebce2));
-    _0xe34699(_0x13af33 + 200, "GJ_sfxIcon_001.png", this._sfxVolume, _0x3224fb => {
+    _0xe34699(textureY - 200, "gj_songIcon_001.png", this._audio.getUserMusicVolume(), _0x3ebce2 => this._audio.setUserMusicVolume(_0x3ebce2));
+    _0xe34699(textureY + 200, "GJ_sfxIcon_001.png", this._sfxVolume, _0x3224fb => {
       this._sfxVolume = _0x3224fb;
       localStorage.setItem("userSfxVol", _0x3224fb);
     });
 
-    this._noclipCheckbox = this._createPauseToggleButton(this._pauseContainer, _0x13af33 - 300, 570, "Noclip", window.noClip, value => {
+    this._noclipCheckbox = this._createPauseToggleButton(this._pauseContainer, textureY - 300, 570, "Noclip", window.noClip, value => {
       window.noClip = value;
     });
 
-    this._showHitboxesCheckbox = this._createPauseToggleButton(this._pauseContainer, _0x13af33 - 100, 570, "Hitbox", window.showHitboxes, value => {
+    this._showHitboxesCheckbox = this._createPauseToggleButton(this._pauseContainer, textureY - 100, 570, "Hitbox", window.showHitboxes, value => {
       window.showHitboxes = value;
       this._player.setShowHitboxes(value);
     });
 
-    this._showPercentageCheckbox = this._createPauseToggleButton(this._pauseContainer, _0x13af33 + 100, 570, "%", window.showPercentage, value => {
+    this._showPercentageCheckbox = this._createPauseToggleButton(this._pauseContainer, textureY + 100, 570, "%", window.showPercentage, value => {
       window.showPercentage = value;
       this._percentageLabel.setVisible(value);
     });
 
-    this._solidWaveCheckbox = this._createPauseToggleButton(this._pauseContainer, _0x13af33 + 250, 570, "Solid", window.solidWave, value => {
+    this._solidWaveCheckbox = this._createPauseToggleButton(this._pauseContainer, textureY + 250, 570, "Solid", window.solidWave, value => {
       window.solidWave = value;
     });
   }
@@ -6505,21 +6511,20 @@ this._escKey.on("down", () => {
     bounceContainer.add(scrollFrameBg);
     const contentContainer = this.add.container(0, scrollAreaY - scrollAreaH / 2 + 8);
     bounceContainer.add(contentContainer);
+    /* colors for reference
+      0xff6666
+      0xff9944
+      0xaaddff - fun messages from me :)
+      0xff00ff - pink dev entries
+    */
     const updateEntries = [
-      { text: "4/17/26 - Update Log", scale: 0.85, font: "goldFont" },
-      { text: "Cache-manager added to speed up load time.", scale: 0.5 },
-	    { text: "Fixed UFO not disappearing on death.", scale: 0.6 },
-      { text: "Added UFO, Spider and Wave trail.", scale: 0.65 },
-      { text: "(ALL IN BETA, BUGS ARE NORMAL).", scale: 0.65, color: 0xff9944 },
-      { text: "Spider is very broken.", scale: 0.65, color: 0xff6666 },
-      { text: "Several QOL and bug fixes.", scale: 0.65 },
-      { text: "Added all 248 existing cubes.", scale: 0.65 },
-      { text: "Some cubes are broken.", scale: 0.65, color: 0xff6666 },
-      { text: "Headhitting in ship is fixed.", scale: 0.65 },
-      { text: "Added UFO and Wave icons.", scale: 0.65 },
-      { text: "(WAVE ICONS ARE NOT FUNCTIONAL.)", scale: 0.65, color: 0xff6666 },
-      { text: "(IT IS MEANT FOR A FUTURE UPD.)", scale: 0.65, color: 0xff9944 },
-      { text: "Added this dandy lil menu ;)", scale: 0.65 },
+      { text: "4/18/26 - Update Log", scale: 0.85, font: "goldFont" },
+      { text: "Correct Wave hitboxes.", scale: 0.65 },
+      { text: "Move triggers now move orbs and etc.", scale: 0.65 },
+      // { text: "Added slopes. - PinkDev", scale: 0.65, color: 0xff00ff }, (soon)
+      { text: "Bug fixes.", scale: 0.65 },
+      // message of the update day (from me :P)
+      { text: "I love this menu :)", scale: 0.65, color: 0xaaddff },
       { text: "- rohanis0000", scale: 0.6, color: 0xaaddff },
     ];
     
@@ -6614,41 +6619,41 @@ this._escKey.on("down", () => {
     const _0x3f88a1 = _0x43b461 * (_0x37180a - 1) / 2;
     _0x122213.input.hitArea.setTo(-_0x960250, -_0x3f88a1, _0x46ea45 + _0x960250 * 2, _0x43b461 + _0x3f88a1 * 2);
   }
-  _makeBouncyButton(_0x4b8c6e, _0x57b645, _0x2f13d0, _0xda0c21) {
+  _makeBouncyButton(textureX, _0x57b645, _0x2f13d0, _0xda0c21) {
     const _0x396ca0 = _0x57b645 * 1.26;
-    _0x4b8c6e.on("pointerdown", () => {
+    textureX.on("pointerdown", () => {
       if (!_0xda0c21 || !!_0xda0c21()) {
-        _0x4b8c6e._pressed = true;
-        this.tweens.killTweensOf(_0x4b8c6e, "scale");
+        textureX._pressed = true;
+        this.tweens.killTweensOf(textureX, "scale");
         this.tweens.add({
-          targets: _0x4b8c6e,
+          targets: textureX,
           scale: _0x396ca0,
           duration: 300,
           ease: "Bounce.Out"
         });
       }
     });
-    _0x4b8c6e.on("pointerout", () => {
-      if (_0x4b8c6e._pressed) {
-        _0x4b8c6e._pressed = false;
-        this.tweens.killTweensOf(_0x4b8c6e, "scale");
+    textureX.on("pointerout", () => {
+      if (textureX._pressed) {
+        textureX._pressed = false;
+        this.tweens.killTweensOf(textureX, "scale");
         this.tweens.add({
-          targets: _0x4b8c6e,
+          targets: textureX,
           scale: _0x57b645,
           duration: 400,
           ease: "Bounce.Out"
         });
       }
     });
-    _0x4b8c6e.on("pointerup", () => {
-      if (_0x4b8c6e._pressed) {
-        _0x4b8c6e._pressed = false;
-        this.tweens.killTweensOf(_0x4b8c6e, "scale");
-        _0x4b8c6e.setScale(_0x57b645);
+    textureX.on("pointerup", () => {
+      if (textureX._pressed) {
+        textureX._pressed = false;
+        this.tweens.killTweensOf(textureX, "scale");
+        textureX.setScale(_0x57b645);
         _0x2f13d0();
       }
     });
-    return _0x4b8c6e;
+    return textureX;
   }
   _toggleFullscreen() {
     if (this.scale.isFullscreen) {
@@ -6660,103 +6665,103 @@ this._escKey.on("down", () => {
       } catch (_0x22124f) {}
     }
   }
-  _drawScale9(_0x147730, _0x4c8cbf, _0x58d136, _0x1ac13a, _0x24a44b, _0x143641, _0x590eba, _0x206735) {
+  _drawScale9(_0x147730, _0x4c8cbf, scaleWidth, scaleHeight, _0x24a44b, borderSize, _0x590eba, _0x206735) {
     const _0x4080b2 = this.add.container(_0x147730, _0x4c8cbf);
     const _0x2522df = this.textures.get(_0x24a44b);
     const _0x401ec1 = _0x2522df.source[0];
     const _0x3f82ec = _0x401ec1.width;
     const _0x294746 = _0x401ec1.height;
-    const _0x2b09f1 = _0x58d136 - _0x143641 * 2;
-    const _0x990515 = _0x1ac13a - _0x143641 * 2;
+    const _0x2b09f1 = scaleWidth - borderSize * 2;
+    const _0x990515 = scaleHeight - borderSize * 2;
     const _0x1d065e = [{
       sx: 0,
       sy: 0,
-      sw: _0x143641,
-      sh: _0x143641,
-      dx: -_0x58d136 / 2,
-      dy: -_0x1ac13a / 2,
-      dw: _0x143641,
-      dh: _0x143641
+      sw: borderSize,
+      sh: borderSize,
+      dx: -scaleWidth / 2,
+      dy: -scaleHeight / 2,
+      dw: borderSize,
+      dh: borderSize
     }, {
-      sx: _0x143641,
+      sx: borderSize,
       sy: 0,
-      sw: _0x3f82ec - _0x143641 * 2,
-      sh: _0x143641,
-      dx: -_0x58d136 / 2 + _0x143641,
-      dy: -_0x1ac13a / 2,
+      sw: _0x3f82ec - borderSize * 2,
+      sh: borderSize,
+      dx: -scaleWidth / 2 + borderSize,
+      dy: -scaleHeight / 2,
       dw: _0x2b09f1,
-      dh: _0x143641
+      dh: borderSize
     }, {
-      sx: _0x3f82ec - _0x143641,
+      sx: _0x3f82ec - borderSize,
       sy: 0,
-      sw: _0x143641,
-      sh: _0x143641,
-      dx: _0x58d136 / 2 - _0x143641,
-      dy: -_0x1ac13a / 2,
-      dw: _0x143641,
-      dh: _0x143641
+      sw: borderSize,
+      sh: borderSize,
+      dx: scaleWidth / 2 - borderSize,
+      dy: -scaleHeight / 2,
+      dw: borderSize,
+      dh: borderSize
     }, {
       sx: 0,
-      sy: _0x143641,
-      sw: _0x143641,
-      sh: _0x294746 - _0x143641 * 2,
-      dx: -_0x58d136 / 2,
-      dy: -_0x1ac13a / 2 + _0x143641,
-      dw: _0x143641,
+      sy: borderSize,
+      sw: borderSize,
+      sh: _0x294746 - borderSize * 2,
+      dx: -scaleWidth / 2,
+      dy: -scaleHeight / 2 + borderSize,
+      dw: borderSize,
       dh: _0x990515
     }, {
-      sx: _0x143641,
-      sy: _0x143641,
-      sw: _0x3f82ec - _0x143641 * 2,
-      sh: _0x294746 - _0x143641 * 2,
-      dx: -_0x58d136 / 2 + _0x143641,
-      dy: -_0x1ac13a / 2 + _0x143641,
+      sx: borderSize,
+      sy: borderSize,
+      sw: _0x3f82ec - borderSize * 2,
+      sh: _0x294746 - borderSize * 2,
+      dx: -scaleWidth / 2 + borderSize,
+      dy: -scaleHeight / 2 + borderSize,
       dw: _0x2b09f1,
       dh: _0x990515
     }, {
-      sx: _0x3f82ec - _0x143641,
-      sy: _0x143641,
-      sw: _0x143641,
-      sh: _0x294746 - _0x143641 * 2,
-      dx: _0x58d136 / 2 - _0x143641,
-      dy: -_0x1ac13a / 2 + _0x143641,
-      dw: _0x143641,
+      sx: _0x3f82ec - borderSize,
+      sy: borderSize,
+      sw: borderSize,
+      sh: _0x294746 - borderSize * 2,
+      dx: scaleWidth / 2 - borderSize,
+      dy: -scaleHeight / 2 + borderSize,
+      dw: borderSize,
       dh: _0x990515
     }, {
       sx: 0,
-      sy: _0x294746 - _0x143641,
-      sw: _0x143641,
-      sh: _0x143641,
-      dx: -_0x58d136 / 2,
-      dy: _0x1ac13a / 2 - _0x143641,
-      dw: _0x143641,
-      dh: _0x143641
+      sy: _0x294746 - borderSize,
+      sw: borderSize,
+      sh: borderSize,
+      dx: -scaleWidth / 2,
+      dy: scaleHeight / 2 - borderSize,
+      dw: borderSize,
+      dh: borderSize
     }, {
-      sx: _0x143641,
-      sy: _0x294746 - _0x143641,
-      sw: _0x3f82ec - _0x143641 * 2,
-      sh: _0x143641,
-      dx: -_0x58d136 / 2 + _0x143641,
-      dy: _0x1ac13a / 2 - _0x143641,
+      sx: borderSize,
+      sy: _0x294746 - borderSize,
+      sw: _0x3f82ec - borderSize * 2,
+      sh: borderSize,
+      dx: -scaleWidth / 2 + borderSize,
+      dy: scaleHeight / 2 - borderSize,
       dw: _0x2b09f1,
-      dh: _0x143641
+      dh: borderSize
     }, {
-      sx: _0x3f82ec - _0x143641,
-      sy: _0x294746 - _0x143641,
-      sw: _0x143641,
-      sh: _0x143641,
-      dx: _0x58d136 / 2 - _0x143641,
-      dy: _0x1ac13a / 2 - _0x143641,
-      dw: _0x143641,
-      dh: _0x143641
+      sx: _0x3f82ec - borderSize,
+      sy: _0x294746 - borderSize,
+      sw: borderSize,
+      sh: borderSize,
+      dx: scaleWidth / 2 - borderSize,
+      dy: scaleHeight / 2 - borderSize,
+      dw: borderSize,
+      dh: borderSize
     }];
     for (let _0x24f653 = 0; _0x24f653 < _0x1d065e.length; _0x24f653++) {
-      const _0x1fa377 = _0x1d065e[_0x24f653];
+      const scale9Piece = _0x1d065e[_0x24f653];
       const _0xade586 = "_s9_" + _0x24f653;
       if (!_0x2522df.has(_0xade586)) {
-        _0x2522df.add(_0xade586, 0, _0x1fa377.sx, _0x1fa377.sy, _0x1fa377.sw, _0x1fa377.sh);
+        _0x2522df.add(_0xade586, 0, scale9Piece.sx, scale9Piece.sy, scale9Piece.sw, scale9Piece.sh);
       }
-      const _0x1145e5 = this.add.image(_0x1fa377.dx, _0x1fa377.dy, _0x24a44b, _0xade586).setOrigin(0, 0).setDisplaySize(_0x1fa377.dw, _0x1fa377.dh);
+      const _0x1145e5 = this.add.image(scale9Piece.dx, scale9Piece.dy, _0x24a44b, _0xade586).setOrigin(0, 0).setDisplaySize(scale9Piece.dw, scale9Piece.dh);
       if (_0x590eba !== undefined) {
         _0x1145e5.setTint(_0x590eba);
       }
@@ -7158,15 +7163,15 @@ this._escKey.on("down", () => {
     this._bg.tilePositionY = this._bgInitY - this._cameraY * this._bgSpeedY;
   }
   _updateCameraY(_0xc7c517) {
-    let _0x29ed62 = this._cameraY;
-    let _0x1a27be = _0x29ed62;
+    let explosionPiece = this._cameraY;
+    let _0x1a27be = explosionPiece;
     if (this._level.flyCameraTarget !== null) {
       _0x1a27be = this._level.flyCameraTarget;
     } else {
       let _0x2bc8fb = this._state.y;
       let _0x259956 = 140;
       let _0x5025ec = 80;
-      let _0x1f7976 = _0x29ed62 - o + 320;
+      let _0x1f7976 = explosionPiece - o + 320;
       if (_0x2bc8fb > _0x1f7976 + _0x259956) {
         _0x1a27be = _0x2bc8fb - 320 - _0x259956 + o;
       } else if (_0x2bc8fb < _0x1f7976 - _0x5025ec) {
@@ -7177,11 +7182,11 @@ this._escKey.on("down", () => {
       _0x1a27be = 0;
     }
     if (_0xc7c517 !== 0) {
-      _0x29ed62 += (_0x1a27be - _0x29ed62) / (10 / _0xc7c517);
-      if (_0x29ed62 < 0) {
-        _0x29ed62 = 0;
+      explosionPiece += (_0x1a27be - explosionPiece) / (10 / _0xc7c517);
+      if (explosionPiece < 0) {
+        explosionPiece = 0;
       }
-      this._cameraY = _0x29ed62;
+      this._cameraY = explosionPiece;
     }
   }
   _quantizeDelta(_0x654f39) {
@@ -7315,9 +7320,9 @@ this._escKey.on("down", () => {
     if (this._levelWon) {
       this._deltaBuffer = 0;
       if (this._endCamTween) {
-        const _0x3eb8cf = this._endCamTween;
-        this._cameraX = _0x3eb8cf.fromX + (_0x3eb8cf.toX - _0x3eb8cf.fromX) * _0x3eb8cf.p;
-        this._cameraY = _0x3eb8cf.fromY + (_0x3eb8cf.toY - _0x3eb8cf.fromY) * _0x3eb8cf.p;
+        const visMaxSection = this._endCamTween;
+        this._cameraX = visMaxSection.fromX + (visMaxSection.toX - visMaxSection.fromX) * visMaxSection.p;
+        this._cameraY = visMaxSection.fromY + (visMaxSection.toY - visMaxSection.fromY) * visMaxSection.p;
       }
       this._cameraXRef._v = this._cameraX;
       this._level.additiveContainer.x = -this._cameraX;
@@ -7679,13 +7684,13 @@ _applyMirrorEffect() {
         const _0x2e9531 = _0x1c105b + _0x586720 * (Math.random() * 2 - 1);
         const _0x28e7b3 = Math.min(1, Math.max(0, _0x4da54f + _0x20decf * (Math.random() * 2 - 1)));
         const _0x34147c = _0x44369e[_0x104cbb] + _0x323ded * Math.random() + 180;
-        const _0xf33b0d = _0x3f5321.add.graphics().setScrollFactor(0).setDepth(-1).setBlendMode(S).setPosition(_0x8f5267, _0x2f1e2d).setAngle(_0x34147c).setAlpha(_0x28e7b3).setVisible(false);
+        const containerY = _0x3f5321.add.graphics().setScrollFactor(0).setDepth(-1).setBlendMode(S).setPosition(_0x8f5267, _0x2f1e2d).setAngle(_0x34147c).setAlpha(_0x28e7b3).setVisible(false);
         const _0x496d96 = {
           h: 1,
           w: _0x2cc21f
         };
         _0x3f5321.time.delayedCall(Math.max(0, _0x1a79fc), () => {
-          _0xf33b0d.setVisible(true);
+          containerY.setVisible(true);
           _0x3f5321.tweens.add({
             targets: _0x496d96,
             h: _0x232789,
@@ -7694,22 +7699,22 @@ _applyMirrorEffect() {
             ease: "Quad.Out",
             onUpdate: () => {
               const _0x2db3d7 = _0x2cc21f + (_0x496d96.w - _0x2cc21f) / 4;
-              _0xf33b0d.clear();
-              _0xf33b0d.fillStyle(_0x4b5e5b, 1);
-              _0xf33b0d.beginPath();
-              _0xf33b0d.moveTo(-_0x2db3d7 / 2, 0);
-              _0xf33b0d.lineTo(_0x2db3d7 / 2, 0);
-              _0xf33b0d.lineTo(_0x496d96.w / 2, _0x496d96.h);
-              _0xf33b0d.lineTo(-_0x496d96.w / 2, _0x496d96.h);
-              _0xf33b0d.closePath();
-              _0xf33b0d.fillPath();
+              containerY.clear();
+              containerY.fillStyle(_0x4b5e5b, 1);
+              containerY.beginPath();
+              containerY.moveTo(-_0x2db3d7 / 2, 0);
+              containerY.lineTo(_0x2db3d7 / 2, 0);
+              containerY.lineTo(_0x496d96.w / 2, _0x496d96.h);
+              containerY.lineTo(-_0x496d96.w / 2, _0x496d96.h);
+              containerY.closePath();
+              containerY.fillPath();
             }
           });
         });
         if (_0x1a79fc > _0x594d69) {
           _0x594d69 = _0x1a79fc;
         }
-        _0x116c8c.push(_0xf33b0d);
+        _0x116c8c.push(containerY);
       }
       _0x3f5321.time.delayedCall(_0x594d69 + _0x576e6f, () => {
         for (const _0x15b95e of _0x116c8c) {
@@ -7806,9 +7811,9 @@ _applyMirrorEffect() {
         duration: 300
       });
     }
-    const _0x384f9e = screenWidth / 2;
+    const containerX = screenWidth / 2;
     const _0x1aa656 = 320;
-    this._endLayerOverlay = this.add.rectangle(_0x384f9e, _0x1aa656, screenWidth, screenHeight, 0, 0).setScrollFactor(0).setDepth(200).setInteractive();
+    this._endLayerOverlay = this.add.rectangle(containerX, _0x1aa656, screenWidth, screenHeight, 0, 0).setScrollFactor(0).setDepth(200).setInteractive();
     this._endLayerInternal = this.add.container(0, -640).setScrollFactor(0).setDepth(201);
     this.tweens.add({
       targets: this._endLayerOverlay,
@@ -7840,15 +7845,15 @@ _applyMirrorEffect() {
     this._endLayerInternal.add(_0x33b564);
     this._endLayerInternal.add(this.add.image(_0x2a115c + 356, 560, "GJ_WebSheet", "GJ_table_bottom_001.png"));
     const _0x3e9c79 = _0x33b564.y - 65;
-    this._endLayerInternal.add(this.add.image(_0x384f9e - 312, _0x3e9c79, "GJ_WebSheet", "chain_01_001.png").setOrigin(0.5, 1));
-    this._endLayerInternal.add(this.add.image(_0x384f9e + 312, _0x3e9c79, "GJ_WebSheet", "chain_01_001.png").setOrigin(0.5, 1));
-    this._endLayerInternal.add(this.add.image(_0x384f9e, 170, "GJ_WebSheet", "GJ_levelComplete_001.png").setScale(0.8));
+    this._endLayerInternal.add(this.add.image(containerX - 312, _0x3e9c79, "GJ_WebSheet", "chain_01_001.png").setOrigin(0.5, 1));
+    this._endLayerInternal.add(this.add.image(containerX + 312, _0x3e9c79, "GJ_WebSheet", "chain_01_001.png").setOrigin(0.5, 1));
+    this._endLayerInternal.add(this.add.image(containerX, 170, "GJ_WebSheet", "GJ_levelComplete_001.png").setScale(0.8));
     const _0x45b6e4 = 0.8;
     let _0xe44f6d = 250;
-    const _0x2de55e = this.add.bitmapText(_0x384f9e, _0xe44f6d, "goldFont", "Attempts: " + this._attempts, 40).setOrigin(0.5, 0.5).setScale(_0x45b6e4);
+    const _0x2de55e = this.add.bitmapText(containerX, _0xe44f6d, "goldFont", "Attempts: " + this._attempts, 40).setOrigin(0.5, 0.5).setScale(_0x45b6e4);
     this._endLayerInternal.add(_0x2de55e);
     _0xe44f6d += 48;
-    this._endLayerInternal.add(this.add.bitmapText(_0x384f9e, _0xe44f6d, "goldFont", "Jumps: " + this._totalJumps, 40).setOrigin(0.5, 0.5).setScale(_0x45b6e4));
+    this._endLayerInternal.add(this.add.bitmapText(containerX, _0xe44f6d, "goldFont", "Jumps: " + this._totalJumps, 40).setOrigin(0.5, 0.5).setScale(_0x45b6e4));
     _0xe44f6d += 48;
     const _0x596450 = Math.floor(this._playTime);
     const _0x30687e = Math.floor(_0x596450 / 3600);
@@ -7857,12 +7862,12 @@ _applyMirrorEffect() {
     let _0x2be782;
     _0x2be782 = _0x30687e > 0 ? String(_0x30687e).padStart(2, "0") + ":" + String(_0x52f8ee).padStart(2, "0") + ":" + String(_0x2591d0).padStart(2, "0") : String(_0x52f8ee).padStart(2, "0") + ":" + String(_0x2591d0).padStart(2, "0");
     const _0x241209 = _0xe44f6d;
-    this._endLayerInternal.add(this.add.bitmapText(_0x384f9e, _0xe44f6d, "goldFont", "Time: " + _0x2be782, 40).setOrigin(0.5, 0.5).setScale(_0x45b6e4));
+    this._endLayerInternal.add(this.add.bitmapText(containerX, _0xe44f6d, "goldFont", "Time: " + _0x2be782, 40).setOrigin(0.5, 0.5).setScale(_0x45b6e4));
     const _0x452429 = ["Awesome!", "Good\nJob!", "Well\nDone!", "Impressive!", "Amazing!", "Incredible!", "Skillful!", "Brilliant!", "Not\nbad!", "Warp\nSpeed!", "Challenge\nBreaker!", "Reflex\nMaster!", "I am\nspeechless...", "You are...\nThe One!", "How is this\npossible!?", "You beat\nme..."];
     const _0x165c06 = _0x452429[Math.floor(Math.random() * _0x452429.length)];
     const _0x45540f = 225;
-    this._endLayerInternal.add(this.add.bitmapText(_0x384f9e + _0x45540f, _0x241209, "bigFont", _0x165c06, 40).setOrigin(0.5, 0.5).setScale(0.8).setCenterAlign());
-    this._endLayerInternal.add(this.add.image(_0x384f9e - _0x45540f, 352.5, "GJ_WebSheet", "getIt_001.png").setScale(1 / 1.5));
+    this._endLayerInternal.add(this.add.bitmapText(containerX + _0x45540f, _0x241209, "bigFont", _0x165c06, 40).setOrigin(0.5, 0.5).setScale(0.8).setCenterAlign());
+    this._endLayerInternal.add(this.add.image(containerX - _0x45540f, 352.5, "GJ_WebSheet", "getIt_001.png").setScale(1 / 1.5));
     const _0x34b1bd = [{
       key: "downloadApple_001",
       url: "https://discord.gg/TfEzAVWPSJ"
@@ -7874,12 +7879,12 @@ _applyMirrorEffect() {
       const _0xd7310b = _0x34b1bd[_0x10f8cc];
       const _0x1e3f82 = (_0x10f8cc - 1) * _0x45540f;
       const _0x55a82e = 1 / 1.5;
-      const _0x4c7fb8 = this.add.image(_0x384f9e + _0x1e3f82, 437.5, "GJ_WebSheet", _0xd7310b.key + ".png").setScale(_0x55a82e).setInteractive();
+      const _0x4c7fb8 = this.add.image(containerX + _0x1e3f82, 437.5, "GJ_WebSheet", _0xd7310b.key + ".png").setScale(_0x55a82e).setInteractive();
       this._endLayerInternal.add(_0x4c7fb8);
       this._makeBouncyButton(_0x4c7fb8, _0x55a82e, () => window.open(_0xd7310b.url, "_blank"));
     }
     _0x2de55e.width;
-    this._endStarX = _0x384f9e + _0x45540f;
+    this._endStarX = containerX + _0x45540f;
     this._endStarY = _0x241209 - 77.5;
     const _0x45fc2b = [{
       frame: "GJ_replayBtn_001.png",
@@ -7900,7 +7905,7 @@ _applyMirrorEffect() {
       }
     }];
     for (const _0x2d4335 of _0x45fc2b) {
-      const _0xdde774 = this.add.image(_0x384f9e + _0x2d4335.dx, 555, "GJ_WebSheet", _0x2d4335.frame).setInteractive();
+      const _0xdde774 = this.add.image(containerX + _0x2d4335.dx, 555, "GJ_WebSheet", _0x2d4335.frame).setInteractive();
       this._endLayerInternal.add(_0xdde774);
       this._makeBouncyButton(_0xdde774, 1, _0x2d4335.action);
     }
