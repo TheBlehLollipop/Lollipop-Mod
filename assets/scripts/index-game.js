@@ -4746,7 +4746,7 @@ class ys {
       }
     }
     if (window._onlineSongBuffer && window._onlineSongKey === window.currentlevel[0]) {
-      const startOffset = window._onlineSongOffset || 0;
+      const startOffset = window.settingsMap['kA13'] ? new Number(window.settingsMap['kA13']) : 0;
       this._playOnlineBuffer(window._onlineSongBuffer, startOffset);
       this._setupAnalyser();
       return;
@@ -4761,8 +4761,8 @@ class ys {
       volume: this._effectiveVolume()
     });
     this._music.play();
-    if (window._onlineSongOffset) {
-      this._music.seek = window._onlineSongOffset;
+    if (window.settingsMap && window.settingsMap['kA13']) {
+      this._music.seek = new Number(window.settingsMap['kA13']);
     }
     this._setupAnalyser();
   }
