@@ -656,21 +656,6 @@ const cubePortal = "cube";
 const portalWaveType = "portal_wave";
 const portalUfoType = "portal_ufo";
 const allObjects = window.allobjects();
-if (!allObjects[1331]) {
-  allObjects[1331] = {
-    "can_color": false,
-    "default_base_color_channel": 0,
-    "frame": "portal_17_front_001.png",
-    "glow_frame": "portal_17_front_glow_001.png",
-    "gridH": 2.866666555404663,
-    "gridW": 1.1333333253860474,
-    "spritesheet": "GJ_GameSheet02-uhd",
-    "type": "portal",
-    "z": 10,
-    "portalParticle": true,
-    "portalParticleColor": 0x00ffff
-  };
-}
 
 const objsWithGlow = [1, 2, 3, 4, 6, 7, 83, 8, 39, 103, 392, 35, 36, 40, 140, 141, 62, 65, 66, 68, 195, 196, 1022, 1594];
 for (let obj of objsWithGlow) {

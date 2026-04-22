@@ -6523,7 +6523,9 @@ window.allobjects = function() {
         "gridW": 1.1333333253860474,
         "spritesheet": "GJ_GameSheet02-uhd",
         "type": "portal",
-        "z": 10
+        "z": 10,
+        "portalParticle": true,
+        "portalParticleColor": 0x00ffff
     },
     1332: {
         "can_color": false,
