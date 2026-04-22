@@ -5207,8 +5207,8 @@ class xs extends Phaser.Scene {
         .setScrollFactor(0).setDepth(103).setOrigin(0, 1).setFlipX(true).setFlipY(true);
 
       const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_03_001.png")
-        .setScrollFactor(0).setDepth(104).setFlipX(true)
-        .setScale(1, -1).setRotation(Math.PI).setInteractive();
+        .setScrollFactor(0).setDepth(104).setFlipX(true).setFlipY(true)
+        .setRotation(Math.PI).setInteractive();
       this._makeBouncyButton(backBtn, 1, () => this._closeCreatorMenu());
 
       this._creatorOverlayObjects = [overlay, blocker, cornerTL, cornerBL, backBtn];
@@ -5287,8 +5287,8 @@ class xs extends Phaser.Scene {
       this._searchOverlay = overlay;
       const blocker = this.add.zone(sw / 2, sh / 2, sw, sh).setScrollFactor(0).setDepth(101).setInteractive();
       const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_03_001.png")
-        .setScrollFactor(0).setDepth(104).setFlipX(true)
-        .setScale(1, -1).setRotation(Math.PI).setInteractive();
+        .setScrollFactor(0).setDepth(104).setFlipX(true).setFlipY(true)
+        .setRotation(Math.PI).setInteractive();
       this._makeBouncyButton(backBtn, 1, () => this._closeSearchMenu());
       const inputW = 320;
       const inputH = 44;
