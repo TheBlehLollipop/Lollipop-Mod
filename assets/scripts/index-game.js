@@ -368,6 +368,7 @@ class PlayerState {
     this.isRobot = false;
     this.isSwing = false;
     this.isJetpack = false;
+    this.isMini = false;
     this.wasBoosted = false;
     this.pendingVelocity = null;
     this.collideTop = 0;
@@ -656,6 +657,21 @@ const cubePortal = "cube";
 const portalWaveType = "portal_wave";
 const portalUfoType = "portal_ufo";
 const allObjects = window.allobjects();
+if (!allObjects[1331]) {
+  allObjects[1331] = {
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "frame": "portal_17_front_001.png",
+    "glow_frame": "portal_17_front_glow_001.png",
+    "gridH": 2.866666555404663,
+    "gridW": 1.1333333253860474,
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "type": "portal",
+    "z": 10,
+    "portalParticle": true,
+    "portalParticleColor": 0x00ffff
+  };
+}
 
 const objsWithGlow = [1, 2, 3, 4, 6, 7, 83, 8, 39, 103, 392, 35, 36, 40, 140, 141, 62, 65, 66, 68, 195, 196, 1022, 1594];
 for (let obj of objsWithGlow) {
@@ -827,6 +843,19 @@ class us {
     this._groundShadowR = scene.add.image(screenWidth + 1, groundY, "GJ_WebSheet", "groundSquareShadow_001.png").setOrigin(1, 0).setScrollFactor(0).setDepth(22).setAlpha(shadowAlpha).setScale(0.7, 1).setFlipX(true).setBlendMode(E);
     this._ceilingShadowL = scene.add.image(-1, groundY, "GJ_WebSheet", "groundSquareShadow_001.png").setOrigin(0, 1).setScrollFactor(0).setDepth(22).setAlpha(shadowAlpha).setScale(0.7, 1).setFlipY(true).setBlendMode(E).setVisible(false);
     this._ceilingShadowR = scene.add.image(screenWidth + 1, groundY, "GJ_WebSheet", "groundSquareShadow_001.png").setOrigin(1, 1).setScrollFactor(0).setDepth(22).setAlpha(shadowAlpha).setScale(0.7, 1).setFlipX(true).setFlipY(true).setBlendMode(E).setVisible(false);
+  }
+  applyGroundTexture() {
+    const gId = window._groundId || "01";
+    const texKey = "groundSquare_" + gId + "_001.png";
+    if (!this._scene.textures.exists(texKey)) return;
+    const groundFrame = this._scene.textures.getFrame(texKey);
+    this._tileW = groundFrame ? groundFrame.width : this._tileW;
+    for (let tile of this._groundTiles) {
+      tile.setTexture(texKey);
+    }
+    for (let tile of this._ceilingTiles) {
+      tile.setTexture(texKey);
+    }
   }
   resizeScreen() {
     var newTile;
@@ -3784,10 +3813,10 @@ _updateBallJump(_0x2fe319) {
       this.p.upKeyPressed = false;
       this.p.queuedHold = false;
       const _floorY = this._gameLayer.getFloorY();
-      const _ceilY  = this._gameLayer.getCeilingY() || f;
+      const _ceilY  = this._gameLayer.getCeilingY();
       let nearestSurfaceY;
       if (!this.p.gravityFlipped) {
-        nearestSurfaceY = _ceilY;
+        nearestSurfaceY = _ceilY !== null ? _ceilY : Infinity;
         const playerWorldX = this._scene._playerWorldX;
         const nearbyObjects = this._gameLayer.getNearbySectionObjects(playerWorldX);
         for (const obj of nearbyObjects) {
@@ -3813,13 +3842,22 @@ _updateBallJump(_0x2fe319) {
       }
       
       if (!this.p.gravityFlipped) {
-        this.p.y = nearestSurfaceY - playerSize;
-        this.flipGravity(true, 1.0);
+        if (isFinite(nearestSurfaceY)) {
+          this.p.y = nearestSurfaceY - playerSize;
+          this.flipGravity(true, 1.0);
+          this.p.yVelocity = 0;
+        } else {
+          this.p.yVelocity = c;
+        }
       } else {
-        this.p.y = nearestSurfaceY + playerSize;
-        this.flipGravity(false, 1.0);
+        if (isFinite(nearestSurfaceY)) {
+          this.p.y = nearestSurfaceY + playerSize;
+          this.flipGravity(false, 1.0);
+          this.p.yVelocity = 0;
+        } else {
+          this.p.yVelocity = -c;
+        }
       }
-      this.p.yVelocity = 0;
       this.p.onGround = false;
       this.p.canJump = false;
       this.p.isJumping = false;
@@ -4336,19 +4374,18 @@ _updateBallJump(_0x2fe319) {
       }
       if (this.p.gravityFlipped) {
         let gravCeilY = this._gameLayer.getCeilingY();
-        if (gravCeilY === null) {
-          gravCeilY = screenHeight;
-        }
-        if (this.p.y >= gravCeilY - _effectiveSize) {
-          this.p.y = gravCeilY - _effectiveSize;
-          this.hitGround();
-          this.p.onCeiling = true;
-        }
-        if (!window.noClip && this.p.y > gravCeilY + 30) {
-          this.p.y = gravCeilY - _effectiveSize;
-          this.p.yVelocity = 0;
-          this.hitGround();
-          this.p.onCeiling = true;
+        if (gravCeilY !== null) {
+          if (this.p.y >= gravCeilY - _effectiveSize) {
+            this.p.y = gravCeilY - _effectiveSize;
+            this.hitGround();
+            this.p.onCeiling = true;
+          }
+          if (!window.noClip && this.p.y > gravCeilY + 30) {
+            this.p.y = gravCeilY - _effectiveSize;
+            this.p.yVelocity = 0;
+            this.hitGround();
+            this.p.onCeiling = true;
+          }
         }
       }
     }
@@ -5023,6 +5060,14 @@ class xs extends Phaser.Scene {
     if (_0x591888) {
       this._level.loadLevel(_0x591888);
     }
+    const _bgId = window._backgroundId || "01";
+    const _bgKey = "game_bg_" + (parseInt(_bgId, 10) - 1);
+    if (this.textures.exists(_bgKey)) {
+      this._bg.setTexture(_bgKey);
+      const _newBgH = this.textures.get(_bgKey).source[0].height;
+      this._bgInitY = _newBgH - screenHeight - o;
+    }
+    this._level.applyGroundTexture();
     if (this._level._initialColors) {
       for (let chId in this._level._initialColors) {
         let col = this._level._initialColors[chId];
@@ -7945,10 +7990,18 @@ this._escKey.on("down", () => {
       let _0x259956 = 140;
       let _0x5025ec = 80;
       let _0x1f7976 = explosionPiece - o + 320;
-      if (_0x2bc8fb > _0x1f7976 + _0x259956) {
-        _0x1a27be = _0x2bc8fb - 320 - _0x259956 + o;
-      } else if (_0x2bc8fb < _0x1f7976 - _0x5025ec) {
-        _0x1a27be = _0x2bc8fb - 320 + _0x5025ec + o;
+      if (this._state.gravityFlipped) {
+        if (_0x2bc8fb > _0x1f7976 + _0x5025ec) {
+          _0x1a27be = _0x2bc8fb - 320 - _0x5025ec + o;
+        } else if (_0x2bc8fb < _0x1f7976 - _0x259956) {
+          _0x1a27be = _0x2bc8fb - 320 + _0x259956 + o;
+        }
+      } else {
+        if (_0x2bc8fb > _0x1f7976 + _0x259956) {
+          _0x1a27be = _0x2bc8fb - 320 - _0x259956 + o;
+        } else if (_0x2bc8fb < _0x1f7976 - _0x5025ec) {
+          _0x1a27be = _0x2bc8fb - 320 + _0x5025ec + o;
+        }
       }
     }
     if (_0x1a27be < 0) {
