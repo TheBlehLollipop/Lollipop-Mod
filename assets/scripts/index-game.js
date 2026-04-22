@@ -4337,7 +4337,7 @@ _updateBallJump(_0x2fe319) {
       if (this.p.gravityFlipped) {
         let gravCeilY = this._gameLayer.getCeilingY();
         if (gravCeilY === null) {
-          gravCeilY = f;
+          gravCeilY = screenHeight;
         }
         if (this.p.y >= gravCeilY - _effectiveSize) {
           this.p.y = gravCeilY - _effectiveSize;
