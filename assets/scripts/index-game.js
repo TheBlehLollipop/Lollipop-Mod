@@ -525,6 +525,27 @@ class Collider {
     this.h = height;
     this.activated = false;
     this.rotationDegrees = rotation;
+    this.slopeAngleDeg = 0;
+    this.slopeDir = 1;
+    this.slopeIsFilled = false;
+    this.slopeFlipY = false;
+  }
+  getSlopeSurfaceY(worldX) {
+    if (this.type !== slopeType) return null;
+    const halfW = this.w / 2;
+    const left = this.x - halfW;
+    const right = this.x + halfW;
+    if (worldX < left || worldX > right) return null;
+    const frac = (worldX - left) / (right - left);
+    let surfaceFrac = this.slopeDir > 0 ? frac : (1 - frac);
+    if (this.slopeFlipY) surfaceFrac = 1 - surfaceFrac;
+    return (this.y - this.h / 2) + surfaceFrac * this.h;
+  }
+  getSlopeAngleRad() {
+    let angleDeg = this.slopeAngleDeg;
+    if (this.slopeDir < 0) angleDeg = -angleDeg;
+    if (this.slopeFlipY) angleDeg = -angleDeg;
+    return angleDeg * Math.PI / 180;
   }
 }
 function parseObject(objectString) {
@@ -660,6 +681,116 @@ const padType = "pad";
 const ringType = "ring";
 const triggerType = "trigger";
 const speedType = "speed";
+const slopeType = "slope";
+// ── Slope ID registry ──
+const _SLOPE_DATA = {
+  289:{gw:1,gh:1,angle:45,sq:false},291:{gw:2,gh:1,angle:22.5,sq:false},
+  294:{gw:1,gh:1,angle:45,sq:false},295:{gw:2,gh:1,angle:22.5,sq:false},
+  296:{gw:0.367,gh:0.433,angle:45,sq:true},297:{gw:0.967,gh:0.45,angle:45,sq:true},
+  299:{gw:1,gh:1,angle:45,sq:false},301:{gw:2,gh:1,angle:22.5,sq:false},
+  309:{gw:1,gh:1,angle:45,sq:false},311:{gw:2,gh:1,angle:22.5,sq:false},
+  315:{gw:1,gh:1,angle:45,sq:false},317:{gw:2,gh:1,angle:22.5,sq:false},
+  321:{gw:1,gh:1,angle:45,sq:false},323:{gw:2,gh:1,angle:22.5,sq:false},
+  324:{gw:1,gh:1,angle:45,sq:true},325:{gw:1,gh:1,angle:45,sq:true},
+  326:{gw:1,gh:1,angle:45,sq:false},327:{gw:2,gh:1,angle:22.5,sq:false},
+  328:{gw:0.733,gh:0.733,angle:45,sq:true},329:{gw:1.433,gh:0.733,angle:22.5,sq:true},
+  331:{gw:1,gh:1,angle:45,sq:false},333:{gw:2,gh:1,angle:22.5,sq:false},
+  337:{gw:1,gh:1,angle:45,sq:false},339:{gw:2,gh:1,angle:22.5,sq:false},
+  343:{gw:1,gh:1,angle:45,sq:false},345:{gw:2,gh:1,angle:22.5,sq:false},
+  353:{gw:1,gh:1,angle:45,sq:false},355:{gw:2,gh:1,angle:22.5,sq:false},
+  358:{gw:1,gh:1,angle:45,sq:true},
+  363:{gw:1,gh:1,angle:45,sq:false},364:{gw:2,gh:1,angle:22.5,sq:false},
+  366:{gw:1,gh:1,angle:45,sq:false},367:{gw:2,gh:1,angle:22.5,sq:false},
+  371:{gw:1,gh:1,angle:45,sq:false},372:{gw:2,gh:1,angle:22.5,sq:false},
+  483:{gw:1,gh:1,angle:45,sq:false},484:{gw:2,gh:1,angle:22.5,sq:false},
+  492:{gw:1,gh:1,angle:45,sq:false},493:{gw:2,gh:1,angle:22.5,sq:false},
+  651:{gw:1,gh:1,angle:45,sq:false},652:{gw:2,gh:1,angle:22.5,sq:false},
+  665:{gw:1,gh:1,angle:45,sq:false},666:{gw:2,gh:1,angle:22.5,sq:false},
+  681:{gw:1,gh:1,angle:45,sq:false},682:{gw:2,gh:1,angle:22.5,sq:false},
+  683:{gw:1,gh:1,angle:45,sq:false},684:{gw:2,gh:1,angle:22.5,sq:false},
+  685:{gw:0.85,gh:0.85,angle:45,sq:false},686:{gw:1.85,gh:0.933,angle:22.5,sq:false},
+  687:{gw:1,gh:1,angle:45,sq:false},688:{gw:2,gh:1,angle:22.5,sq:false},
+  689:{gw:1,gh:1,angle:45,sq:false},690:{gw:2,gh:1,angle:22.5,sq:false},
+  691:{gw:1,gh:1,angle:45,sq:false},692:{gw:2,gh:1,angle:22.5,sq:false},
+  693:{gw:1,gh:1,angle:45,sq:false},694:{gw:2,gh:1,angle:22.5,sq:false},
+  695:{gw:1,gh:1,angle:45,sq:false},696:{gw:2,gh:1,angle:22.5,sq:false},
+  697:{gw:1,gh:1,angle:45,sq:false},698:{gw:2,gh:1,angle:22.5,sq:false},
+  699:{gw:0.85,gh:0.85,angle:45,sq:false},700:{gw:1.85,gh:0.933,angle:22.5,sq:false},
+  701:{gw:1,gh:1,angle:45,sq:false},702:{gw:2,gh:1,angle:22.5,sq:false},
+  703:{gw:1,gh:1,angle:45,sq:false},704:{gw:2,gh:1,angle:22.5,sq:false},
+  705:{gw:0.767,gh:0.767,angle:45,sq:false},706:{gw:1.733,gh:0.883,angle:22.5,sq:false},
+  707:{gw:1,gh:1,angle:45,sq:false},708:{gw:2,gh:1,angle:22.5,sq:false},
+  709:{gw:1,gh:1,angle:45,sq:false},710:{gw:2,gh:1,angle:22.5,sq:false},
+  711:{gw:1,gh:1,angle:45,sq:false},712:{gw:2,gh:1,angle:22.5,sq:false},
+  713:{gw:1,gh:1,angle:45,sq:false},714:{gw:2,gh:1,angle:22.5,sq:false},
+  715:{gw:1,gh:1,angle:45,sq:false},716:{gw:2,gh:1,angle:22.5,sq:false},
+  726:{gw:1,gh:1,angle:45,sq:false},727:{gw:2,gh:1,angle:22.5,sq:false},
+  728:{gw:1,gh:1,angle:45,sq:false},729:{gw:2,gh:1,angle:22.5,sq:false},
+  730:{gw:1,gh:1,angle:45,sq:false},731:{gw:2,gh:1,angle:22.5,sq:false},
+  732:{gw:1,gh:1,angle:45,sq:false},733:{gw:2,gh:1,angle:22.5,sq:false},
+  762:{gw:0.617,gh:0.583,angle:45,sq:false},763:{gw:1.283,gh:0.6,angle:22.5,sq:false},
+  764:{gw:1,gh:1,angle:45,sq:true},765:{gw:1,gh:1,angle:45,sq:true},766:{gw:1,gh:1,angle:45,sq:true},
+  771:{gw:0.617,gh:0.583,angle:45,sq:false},772:{gw:1.283,gh:0.6,angle:22.5,sq:false},
+  773:{gw:0.9,gh:0.817,angle:45,sq:true},774:{gw:1,gh:0.85,angle:45,sq:true},775:{gw:0.867,gh:0.35,angle:22.5,sq:true},
+  826:{gw:1,gh:1,angle:45,sq:false},827:{gw:1,gh:1,angle:45,sq:false},
+  828:{gw:2,gh:1,angle:22.5,sq:false},829:{gw:2,gh:1,angle:22.5,sq:false},
+  830:{gw:1,gh:1,angle:45,sq:true},831:{gw:1,gh:1,angle:45,sq:true},832:{gw:1,gh:1,angle:45,sq:true},833:{gw:1,gh:1,angle:45,sq:true},
+  877:{gw:1,gh:1,angle:45,sq:false},878:{gw:2,gh:1,angle:22.5,sq:false},
+  886:{gw:1,gh:1,angle:45,sq:false},887:{gw:2,gh:1,angle:22.5,sq:false},
+  888:{gw:1,gh:1,angle:45,sq:false},889:{gw:2,gh:1,angle:22.5,sq:false},
+  895:{gw:1,gh:1,angle:45,sq:false},896:{gw:2,gh:1,angle:22.5,sq:false},
+  960:{gw:0.617,gh:0.583,angle:45,sq:false},961:{gw:1.283,gh:0.6,angle:22.5,sq:false},
+  964:{gw:1,gh:1,angle:45,sq:true},965:{gw:1,gh:1,angle:45,sq:true},966:{gw:1,gh:1,angle:45,sq:true},
+  969:{gw:0.617,gh:0.583,angle:45,sq:false},970:{gw:1.283,gh:0.6,angle:22.5,sq:false},
+  971:{gw:0.9,gh:0.817,angle:45,sq:true},972:{gw:1,gh:0.85,angle:45,sq:true},973:{gw:0.867,gh:0.35,angle:22.5,sq:true},
+  1014:{gw:1,gh:1,angle:45,sq:false},1015:{gw:2,gh:1,angle:22.5,sq:false},
+  1016:{gw:1,gh:1,angle:45,sq:true},1017:{gw:1.008,gh:1,angle:45,sq:true},1018:{gw:1,gh:0.517,angle:22.5,sq:true},
+  1033:{gw:0.617,gh:0.583,angle:45,sq:false},1034:{gw:1.283,gh:0.6,angle:22.5,sq:false},
+  1035:{gw:1,gh:1,angle:45,sq:true},1036:{gw:1,gh:1,angle:45,sq:true},
+  1037:{gw:0.617,gh:0.583,angle:45,sq:false},1038:{gw:1.283,gh:0.6,angle:22.5,sq:false},
+  1039:{gw:1,gh:1,angle:45,sq:true},1040:{gw:1,gh:1,angle:45,sq:true},
+  1041:{gw:1,gh:1,angle:45,sq:false},1042:{gw:2,gh:1,angle:22.5,sq:false},
+  1043:{gw:1,gh:1,angle:45,sq:false},1044:{gw:2,gh:1,angle:22.5,sq:false},
+  1091:{gw:1,gh:1,angle:45,sq:false},1092:{gw:2,gh:1,angle:22.5,sq:false},
+  1093:{gw:1,gh:1,angle:45,sq:true},1094:{gw:1,gh:1,angle:45,sq:true},1108:{gw:2,gh:1,angle:22.5,sq:false},
+  1187:{gw:0.767,gh:0.767,angle:45,sq:false},1188:{gw:1.517,gh:0.767,angle:22.5,sq:false},
+  1189:{gw:1,gh:1,angle:45,sq:true},1190:{gw:1,gh:1,angle:45,sq:true},
+  1198:{gw:1,gh:1,angle:45,sq:false},1199:{gw:2,gh:1,angle:22.5,sq:false},
+  1200:{gw:0.267,gh:0.267,angle:45,sq:true},1201:{gw:0.517,gh:0.267,angle:22.5,sq:true},
+  1256:{gw:1,gh:1,angle:45,sq:false},1257:{gw:2,gh:1,angle:22.5,sq:false},
+  1258:{gw:1,gh:1,angle:45,sq:false},1259:{gw:2,gh:1,angle:22.5,sq:false},
+  1305:{gw:0.617,gh:0.583,angle:45,sq:false},1306:{gw:1.3,gh:0.6,angle:22.5,sq:false},
+  1307:{gw:0.683,gh:0.6,angle:45,sq:true},1308:{gw:1,gh:0.617,angle:45,sq:true},1309:{gw:0.267,gh:0.117,angle:22.5,sq:true},
+  1316:{gw:0.617,gh:0.583,angle:45,sq:false},1317:{gw:1.3,gh:0.6,angle:22.5,sq:false},
+  1318:{gw:0.683,gh:0.6,angle:45,sq:true},1319:{gw:1,gh:0.617,angle:45,sq:true},1320:{gw:0.267,gh:0.117,angle:22.5,sq:true},
+  1325:{gw:1,gh:1,angle:45,sq:true},1326:{gw:1,gh:1,angle:45,sq:true},
+  1338:{gw:1,gh:1,angle:45,sq:false},1339:{gw:2,gh:1,angle:22.5,sq:false},
+  1341:{gw:1,gh:1,angle:45,sq:false},1342:{gw:2,gh:1,angle:22.5,sq:false},
+  1344:{gw:1,gh:1,angle:45,sq:false},1345:{gw:2,gh:1,angle:22.5,sq:false},
+  1717:{gw:1,gh:1,angle:45,sq:false},1718:{gw:2,gh:1,angle:22.5,sq:false},
+  1723:{gw:1,gh:1,angle:45,sq:false},1724:{gw:2,gh:1,angle:22.5,sq:false},
+  1743:{gw:1,gh:1,angle:45,sq:false},1744:{gw:2,gh:1,angle:22.5,sq:false},
+  1745:{gw:1,gh:1,angle:45,sq:false},1746:{gw:2,gh:1,angle:22.5,sq:false},
+  1747:{gw:1,gh:1,angle:45,sq:false},1748:{gw:2,gh:1,angle:22.5,sq:false},
+  1749:{gw:1,gh:1,angle:45,sq:false},1750:{gw:2,gh:1,angle:22.5,sq:false},
+  1758:{gw:1,gh:1,angle:45,sq:false},1759:{gw:2,gh:1,angle:22.5,sq:false},
+  1760:{gw:1,gh:1,angle:45,sq:false},1761:{gw:2,gh:1,angle:22.5,sq:false},
+  1762:{gw:1,gh:1,angle:45,sq:false},1763:{gw:2,gh:1,angle:22.5,sq:false},
+  1773:{gw:2,gh:1,angle:22.5,sq:false},1774:{gw:2,gh:1,angle:22.5,sq:false},
+  1775:{gw:2,gh:1,angle:22.5,sq:false},1776:{gw:2,gh:1,angle:22.5,sq:false},
+  1785:{gw:2,gh:1,angle:22.5,sq:false},1786:{gw:2,gh:1,angle:22.5,sq:false},
+  1787:{gw:2,gh:1,angle:22.5,sq:false},1788:{gw:2,gh:1,angle:22.5,sq:false},
+  1789:{gw:2,gh:1,angle:22.5,sq:false},1790:{gw:2,gh:1,angle:22.5,sq:false},
+  1791:{gw:2,gh:1,angle:22.5,sq:false},1792:{gw:2,gh:1,angle:22.5,sq:false},
+  1794:{gw:2,gh:1,angle:22.5,sq:false},1796:{gw:2,gh:1,angle:22.5,sq:false},
+  1798:{gw:2,gh:1,angle:22.5,sq:false},1800:{gw:2,gh:1,angle:22.5,sq:false},
+  1802:{gw:2,gh:1,angle:22.5,sq:false},1804:{gw:2,gh:1,angle:22.5,sq:false},
+  1806:{gw:2,gh:1,angle:22.5,sq:false},1808:{gw:2,gh:1,angle:22.5,sq:false},
+  1810:{gw:2,gh:1,angle:22.5,sq:false},
+  1899:{gw:1,gh:1,angle:45,sq:false},1900:{gw:2,gh:1,angle:22.5,sq:false},
+  1901:{gw:0.367,gh:0.433,angle:45,sq:true},1902:{gw:0.967,gh:0.45,angle:45,sq:true},
+  1906:{gw:1,gh:1,angle:45,sq:false},1907:{gw:2,gh:1,angle:22.5,sq:false},
+};
 const flyPortal = "fly";
 const cubePortal = "cube";
 const portalWaveType = "portal_wave";
@@ -741,6 +872,13 @@ class us {
     this._alphaTriggers = [];
     this._alphaTriggerIdx = 0;
     this._activeAlphaTweens = [];
+    this._rotateTriggers = [];
+    this._rotateTriggerIdx = 0;
+    this._activeRotateTweens = [];
+    this._pulseTriggers = [];
+    this._pulseTriggerIdx = 0;
+    this._activePulses = [];
+    this._colorChannelSprites = {};
     this._groupSprites = {};
     this._groupOffsets = {};
     this._groupOpacity = {};
@@ -1234,6 +1372,56 @@ class us {
             targetOpacity: Math.max(0, Math.min(1, parseFloat(_raw[35] ?? 1))),
           });
         }
+        if (levelObj.id === 899) {
+          const _raw = levelObj._raw;
+          const targetChannel = parseInt(_raw[23] ?? 0, 10);
+          if (targetChannel > 0) {
+            this._colorTriggers.push({
+              x: levelObj.x * 2,
+              index: targetChannel,
+              color: {
+                r: parseInt(_raw[7] ?? 255, 10),
+                g: parseInt(_raw[8] ?? 255, 10),
+                b: parseInt(_raw[9] ?? 255, 10)
+              },
+              duration: parseFloat(_raw[10] ?? 0),
+              tintGround: _raw[14] === "1",
+              opacity: parseFloat(_raw[35] ?? 1)
+            });
+          }
+        }
+        if (levelObj.id === 1346) {
+          const _raw = levelObj._raw;
+          this._rotateTriggers.push({
+            x: levelObj.x * 2,
+            targetGroup: parseInt(_raw[51] ?? 0, 10),
+            degrees: parseFloat(_raw[68] ?? 0),
+            duration: parseFloat(_raw[10] ?? 0),
+            easingType: parseInt(_raw[30] ?? 0, 10),
+            easingRate: parseFloat(_raw[85] ?? 2),
+            lockRotation: _raw[70] === '1',
+            times360: parseInt(_raw[69] ?? 0, 10),
+            centerGroup: parseInt(_raw[71] ?? 0, 10),
+          });
+        }
+        if (levelObj.id === 1006) {
+          const _raw = levelObj._raw;
+          const targetType = parseInt(_raw[52] ?? 0, 10);
+          this._pulseTriggers.push({
+            x: levelObj.x * 2,
+            targetGroup: targetType === 1 ? parseInt(_raw[51] ?? 0, 10) : 0,
+            targetChannel: targetType === 0 ? parseInt(_raw[51] ?? 0, 10) : 0,
+            targetType: targetType,
+            color: {
+              r: parseInt(_raw[7] ?? 255, 10),
+              g: parseInt(_raw[8] ?? 255, 10),
+              b: parseInt(_raw[9] ?? 255, 10)
+            },
+            fadeIn: parseFloat(_raw[45] ?? 0),
+            hold: parseFloat(_raw[46] ?? 0),
+            fadeOut: parseFloat(_raw[47] ?? 0),
+          });
+        }
         continue;
       }
       let worldX = levelObj.x * 2;
@@ -1249,6 +1437,23 @@ class us {
         let spriteWorldX = worldX;
         let baseY = b(worldY);
         const _0x501fde = (objectDef.type === portalType || objectDef.type === speedType) && frameName.includes("_front_");
+        // compute z-depth once for all sprites of this object
+        const _zLayer = levelObj.zLayer || (objectDef.default_z_layer !== undefined ? objectDef.default_z_layer : 0);
+        const _zOrd = levelObj.zOrder || (objectDef.default_z_order !== undefined ? objectDef.default_z_order : 0);
+        const _depthBase = { '-3': -6, '-1': -3, 0: 0, 1: 3, 3: 6, 5: 9 };
+        const _objZDepth = (_depthBase[_zLayer] !== undefined ? _depthBase[_zLayer] : 0) + _zOrd * 0.01;
+        // color channel for this object
+        let _col1 = levelObj.color1 || (objectDef.default_base_color_channel !== undefined ? objectDef.default_base_color_channel : 0);
+        if (_col1 === 0 && (objectDef.type === solidType || objectDef.type === hazardType)) _col1 = 1;
+        const _col2 = levelObj.color2 || (objectDef.default_detail_color_channel !== undefined ? objectDef.default_detail_color_channel : -1);
+        const _canColor = objectDef.can_color !== false;
+        const _registerColor = (spr, ch) => {
+          if (ch > 0 && _canColor && spr && !spr._isSaw) {
+            spr._eeColorChannel = ch;
+            if (!this._colorChannelSprites[ch]) this._colorChannelSprites[ch] = [];
+            this._colorChannelSprites[ch].push(spr);
+          }
+        };
         const _objGids = levelObj.groups
           ? levelObj.groups.split('.').map(Number).filter(n => n > 0)
           : null;
@@ -1269,14 +1474,21 @@ class us {
             backSprite._eeLayer = 1;
             backSprite._eeWorldX = worldX;
             backSprite._eeBaseY = baseY;
+            backSprite._eeZDepth = _objZDepth - 0.005;
+            backSprite._eeOrigAlpha = 1;
             this._addToSection(backSprite);
             _registerToGroups(backSprite, worldX, baseY);
+            _registerColor(backSprite, _col1);
           }
         }
         let _0xOrbGlow = null;
         if (objectDef.glow) {
           _0xOrbGlow = this._addGlowSprite(scene, spriteWorldX, baseY, frameName, levelObj, worldX);
-          if (_0xOrbGlow) _registerToGroups(_0xOrbGlow, worldX, baseY);
+          if (_0xOrbGlow) {
+            _0xOrbGlow._eeZDepth = _objZDepth - 0.003;
+            _0xOrbGlow._eeOrigAlpha = 1;
+            _registerToGroups(_0xOrbGlow, worldX, baseY);
+          }
         }
         const _0x36f679 = _0x501fde ? {
           ...objectDef,
@@ -1288,6 +1500,9 @@ class us {
           this._addVisualSprite(sprite, _0x36f679);
           sprite._eeWorldX = worldX;
           sprite._eeBaseY = baseY;
+          sprite._eeZDepth = _objZDepth;
+          sprite._eeOrigAlpha = 1;
+          _registerColor(sprite, _col1);
           this._addToSection(sprite);
           if (_objGids && _objGids.length) {
             sprite._eeGroups = _objGids;
@@ -1345,6 +1560,11 @@ class us {
             this._addVisualSprite(overlaySprite);
             overlaySprite._eeWorldX = worldX;
             overlaySprite._eeBaseY = baseY;
+            overlaySprite._eeZDepth = _objZDepth + 0.002;
+            overlaySprite._eeOrigAlpha = 1;
+            let _oc2 = _col2;
+            if (_oc2 <= 0) _oc2 = 2;
+            _registerColor(overlaySprite, _oc2);
             this._addToSection(overlaySprite);
             _registerToGroups(overlaySprite, worldX, baseY);
           }
@@ -1385,6 +1605,9 @@ class us {
               }
               childSprite._eeWorldX = _childWorldX;
               childSprite._eeBaseY = _childBaseY;
+              childSprite._eeZDepth = _objZDepth + ((childDef.z !== undefined ? childDef.z : -1) < 0 ? -0.003 : 0.001);
+              childSprite._eeOrigAlpha = 1;
+              _registerColor(childSprite, _col1);
               this._addToSection(childSprite);
               _registerToGroups(childSprite, _childWorldX, _childBaseY);
               if (frameName && frameName.indexOf("sawblade") >= 0) {
@@ -1627,6 +1850,16 @@ class us {
     this._enterEffectTriggers.sort((_0x3e43f2, _0x5e3d9a) => _0x3e43f2.x - _0x5e3d9a.x);
     this._moveTriggers.sort((a, b) => a.x - b.x);
     this._alphaTriggers.sort((a, b) => a.x - b.x);
+    this._rotateTriggers.sort((a, b) => a.x - b.x);
+    this._pulseTriggers.sort((a, b) => a.x - b.x);
+    // sort all section containers by z-depth for proper layering
+    for (let si = 0; si < this._sectionContainers.length; si++) {
+      const sc = this._sectionContainers[si];
+      if (sc) {
+        if (sc.normal && sc.normal.list && sc.normal.list.length > 1) sc.normal.sort('depth');
+        if (sc.additive && sc.additive.list && sc.additive.list.length > 1) sc.additive.sort('depth');
+      }
+    }
     this.endXPos = Math.max(screenWidth + 1200, this._lastObjectX + 680);
   }
   createEndPortal(_0x41fbdb) {
@@ -1728,6 +1961,9 @@ class us {
     const _0x4ac40a = Math.max(0, Math.floor(sliderWidth._eeWorldX / 400));
     this._sections[_0x4ac40a] ||= [];
     this._sections[_0x4ac40a].push(sliderWidth);
+    if (sliderWidth._eeZDepth !== undefined) {
+      sliderWidth.depth = sliderWidth._eeZDepth;
+    }
     const _0x14d5f7 = sliderWidth._eeLayer !== undefined ? sliderWidth._eeLayer : 1;
     if (_0x14d5f7 === 2) {
       this.topContainer.add(sliderWidth);
@@ -1985,6 +2221,170 @@ class us {
         if (!spr || !spr.active) continue;
         if (spr._eeActive) continue;
         spr.setAlpha(1);
+        spr._eeOrigAlpha = 1;
+      }
+    }
+  }
+
+  checkRotateTriggers(playerX) {
+    while (this._rotateTriggerIdx < this._rotateTriggers.length) {
+      const trig = this._rotateTriggers[this._rotateTriggerIdx];
+      if (trig.x > playerX) break;
+      const totalDeg = trig.degrees + (trig.times360 * 360);
+      this._activeRotateTweens.push({
+        trig,
+        elapsed: 0,
+        prevProgress: 0,
+        totalRad: totalDeg * Math.PI / 180,
+      });
+      this._rotateTriggerIdx++;
+    }
+  }
+  stepRotateTriggers(dt) {
+    let i = 0;
+    while (i < this._activeRotateTweens.length) {
+      const anim = this._activeRotateTweens[i];
+      const { trig } = anim;
+      const dur = trig.duration > 0 ? trig.duration : 0;
+      anim.elapsed += dt;
+      const progress = dur > 0 ? Math.min(anim.elapsed / dur, 1) : 1;
+      const curSample = Easing.sample(trig.easingType, trig.easingRate, progress);
+      const prevSample = Easing.sample(trig.easingType, trig.easingRate, anim.prevProgress);
+      const deltaRot = (curSample - prevSample) * anim.totalRad;
+      anim.prevProgress = progress;
+      const sprites = this._groupSprites[trig.targetGroup];
+      const colliders = this._groupColliders[trig.targetGroup];
+      if (trig.centerGroup > 0) {
+        const centerSprites = this._groupSprites[trig.centerGroup];
+        if (centerSprites && centerSprites.length > 0) {
+          let cx = 0, cy = 0, cn = 0;
+          for (const cs of centerSprites) {
+            if (!cs || !cs.active) continue;
+            cx += cs.x; cy += cs.y; cn++;
+          }
+          if (cn > 0) {
+            cx /= cn; cy /= cn;
+            const cosD = Math.cos(deltaRot), sinD = Math.sin(deltaRot);
+            if (sprites) {
+              for (const spr of sprites) {
+                if (!spr || !spr.active) continue;
+                const dx = spr.x - cx, dy = spr.y - cy;
+                spr.x = cx + dx * cosD - dy * sinD;
+                spr.y = cy + dx * sinD + dy * cosD;
+                spr._eeWorldX = spr.x;
+                spr._eeBaseY = spr.y;
+                if (spr._origWorldX !== undefined) { spr._origWorldX = spr.x; spr._origBaseY = spr.y; }
+                if (!trig.lockRotation) spr.rotation += deltaRot;
+              }
+            }
+            if (colliders) {
+              for (const col of colliders) {
+                const dx = col.x - cx, dy = col.y - cy;
+                col.x = cx + dx * cosD - dy * sinD;
+                col.y = cy + dx * sinD + dy * cosD;
+                col._baseX = col.x; col._baseY = col.y;
+                if (col._origBaseX !== undefined) { col._origBaseX = col.x; col._origBaseY = col.y; }
+              }
+            }
+          }
+        }
+      } else {
+        if (sprites) {
+          for (const spr of sprites) {
+            if (!spr || !spr.active) continue;
+            spr.rotation += deltaRot;
+          }
+        }
+      }
+      if (progress >= 1) { this._activeRotateTweens.splice(i, 1); } else { i++; }
+    }
+  }
+  resetRotateTriggers() {
+    this._rotateTriggerIdx = 0;
+    this._activeRotateTweens = [];
+  }
+
+  checkPulseTriggers(playerX) {
+    while (this._pulseTriggerIdx < this._pulseTriggers.length) {
+      const trig = this._pulseTriggers[this._pulseTriggerIdx];
+      if (trig.x > playerX) break;
+      const totalDur = trig.fadeIn + trig.hold + trig.fadeOut;
+      this._activePulses.push({ trig, elapsed: 0, totalDuration: totalDur > 0 ? totalDur : 0.01 });
+      this._pulseTriggerIdx++;
+    }
+  }
+  stepPulseTriggers(dt, colorManager) {
+    let i = 0;
+    while (i < this._activePulses.length) {
+      const pulse = this._activePulses[i];
+      const { trig } = pulse;
+      pulse.elapsed += dt;
+      const { fadeIn, hold, fadeOut } = trig;
+      let intensity = 0;
+      const t = pulse.elapsed;
+      if (t < fadeIn) { intensity = fadeIn > 0 ? t / fadeIn : 1; }
+      else if (t < fadeIn + hold) { intensity = 1; }
+      else if (t < fadeIn + hold + fadeOut) { intensity = fadeOut > 0 ? 1 - (t - fadeIn - hold) / fadeOut : 0; }
+      if (trig.targetType === 1 && trig.targetGroup > 0) {
+        const sprites = this._groupSprites[trig.targetGroup];
+        if (sprites) {
+          const pr = Math.round(trig.color.r * intensity);
+          const pg = Math.round(trig.color.g * intensity);
+          const pb = Math.round(trig.color.b * intensity);
+          const pulseHex = (pr << 16) | (pg << 8) | pb;
+          for (const spr of sprites) {
+            if (!spr || !spr.active) continue;
+            if (intensity > 0.01) { spr.setTint(pulseHex); spr._eePulsed = true; }
+            else { spr.clearTint(); spr._eePulsed = false; }
+          }
+        }
+      } else if (trig.targetType === 0 && trig.targetChannel > 0 && colorManager) {
+        if (intensity > 0.01) {
+          const baseColor = colorManager.getColor(trig.targetChannel);
+          const pulsed = {
+            r: Math.min(255, Math.round(baseColor.r + (trig.color.r - baseColor.r) * intensity)),
+            g: Math.min(255, Math.round(baseColor.g + (trig.color.g - baseColor.g) * intensity)),
+            b: Math.min(255, Math.round(baseColor.b + (trig.color.b - baseColor.b) * intensity)),
+          };
+          const pulseHex = (pulsed.r << 16) | (pulsed.g << 8) | pulsed.b;
+          const chSprites = this._colorChannelSprites[trig.targetChannel];
+          if (chSprites) {
+            for (const spr of chSprites) {
+              if (!spr || !spr.active) continue;
+              spr.setTint(pulseHex); spr._eePulsed = true;
+            }
+          }
+        }
+      }
+      if (pulse.elapsed >= pulse.totalDuration) {
+        if (trig.targetType === 1 && trig.targetGroup > 0) {
+          const sprites = this._groupSprites[trig.targetGroup];
+          if (sprites) for (const spr of sprites) { if (spr && spr.active) { spr.clearTint(); spr._eePulsed = false; } }
+        }
+        if (trig.targetType === 0 && trig.targetChannel > 0) {
+          const chSprites = this._colorChannelSprites[trig.targetChannel];
+          if (chSprites) for (const spr of chSprites) { if (spr && spr.active) spr._eePulsed = false; }
+        }
+        this._activePulses.splice(i, 1);
+      } else { i++; }
+    }
+  }
+  resetPulseTriggers() {
+    this._pulseTriggerIdx = 0;
+    this._activePulses = [];
+  }
+
+  applyColorChannels(colorManager) {
+    for (const chId in this._colorChannelSprites) {
+      const sprites = this._colorChannelSprites[chId];
+      if (!sprites || !sprites.length) continue;
+      const hex = colorManager.getHex(parseInt(chId, 10));
+      for (const spr of sprites) {
+        if (!spr || !spr.active) continue;
+        if (spr._eePulsed) continue;
+        if (spr._isSaw) continue;
+        if (spr._eeAudioScale) continue;
+        spr.setTint(hex);
       }
     }
   }
@@ -3082,10 +3482,10 @@ if (this.p.isFlying || this.p.isUfo) {
       this._streak.stop();
       this._streak.reset();
       this.setShipVisible(false);
-      this.setCubeVisible(!this.p.isBall && !this.p.isWave && !this.p.isSpider);
+      this.setCubeVisible(!this.p.isBall && !this.p.isWave);
       this.setBallVisible(this.p.isBall);
       this.setWaveVisible(this.p.isWave);
-      this.setSpiderVisible(this.p.isSpider);
+      this.setSpiderVisible(false);
       for (const _0xe1b715 of this._playerLayers) {
         if (_0xe1b715) {
           _0xe1b715.sprite.setScale(1);
@@ -3126,7 +3526,7 @@ if (this.p.isFlying || this.p.isUfo) {
     this._rotation = 0;
     this.setBallVisible(false);
     this.setWaveVisible(false);
-    this.setCubeVisible(!this.p.isSpider);
+    this.setCubeVisible(true);
     this._gameLayer.setFlyMode(false, 0);
   }
   enterWaveMode(_0x5a10cc = null) {
@@ -3172,10 +3572,10 @@ if (this.p.isFlying || this.p.isUfo) {
     this._waveTrail.stop();
     this._waveTrail.reset();
     this.setWaveVisible(false);
-    this.setCubeVisible(!this.p.isBall && !this.p.isFlying && !this.p.isSpider);
+    this.setCubeVisible(!this.p.isBall && !this.p.isFlying);
     this.setBallVisible(this.p.isBall);
     this.setShipVisible(this.p.isFlying);
-    this.setSpiderVisible(this.p.isSpider);
+    this.setSpiderVisible(false);
     this._gameLayer.setFlyMode(false, 0);
   }
   enterSpiderMode(portal = null) {
@@ -3191,11 +3591,12 @@ if (this.p.isFlying || this.p.isUfo) {
     this.p._spiderTeleportPending = false;
     this.stopRotation();
     this._rotation = 0;
-    this.setCubeVisible(false);
+    // use cube icon for spider mode (spider icon not ready yet)
+    this.setCubeVisible(true);
     this.setBallVisible(false);
     this.setShipVisible(false);
     this.setWaveVisible(false);
-    this.setSpiderVisible(true);
+    this.setSpiderVisible(false);
     let _y = this.p.y;
     if (portal) _y = portal.portalY !== undefined ? portal.portalY : portal.y;
     this._gameLayer.setFlyMode(true, _y + a, f - a * 2, true);
@@ -3258,12 +3659,12 @@ if (this.p.isFlying || this.p.isUfo) {
     this.stopRotation();
     this._rotation = 0;
     this._flyParticleEmitter.stop();
-    this.setCubeVisible(!this.p.isBall && !this.p.isFlying && !this.p.isSpider);
+    this.setCubeVisible(!this.p.isBall && !this.p.isFlying);
     this.setBallVisible(this.p.isBall);
     this.setShipVisible(this.p.isFlying);
     this.setWaveVisible(this.p.isWave);
     this.setBirdVisible(false);
-    this.setSpiderVisible(this.p.isSpider);
+    this.setSpiderVisible(false);
     for (const _0xe1b715 of this._playerLayers) {
       if (_0xe1b715) {
         _0xe1b715.sprite.setScale(1);
@@ -3683,6 +4084,10 @@ hitGround() {
     this.rotateActionDuration = (0.39 / d) * _miniDurScale;
     this.rotateActionStart = this._rotation;
     this.rotateActionTotal = Math.PI * this.flipMod();
+  }
+  updateDashRotation(dt) {
+    const spinSpeed = Math.PI * 6.0 * this.flipMod();
+    this._rotation += spinSpeed * dt;
   }
   stopRotation() {
     this.rotateActionActive = false;
@@ -7257,12 +7662,9 @@ this._escKey.on("down", () => {
     const _0x3cdf70c = this.add.bitmapText(xPos, yPos, "goldFont", "AntiMatter, breadbb, bog, aloaf", 40).setOrigin(0.5, 0.5).setScale(0.6);
     this._infoPopup.add(_0x3cdf70c);
     yPos += 35;
-    const _0x3cdf70b = this.add.bitmapText(xPos, yPos, "goldFont", "PinkDev, t0nchi7, arbstro", 40).setOrigin(0.5, 0.5).setScale(0.6);
+    const _0x3cdf70b = this.add.bitmapText(xPos, yPos, "goldFont", "PinkDev, rohanis0000, arbstro", 40).setOrigin(0.5, 0.5).setScale(0.6);
     this._infoPopup.add(_0x3cdf70b);
     yPos += 35;
-    const _0x3cdf70d = this.add.bitmapText(xPos, yPos, "goldFont", " and rohanis0000", 40).setOrigin(0.5, 0.5).setScale(0.6);
-    this._infoPopup.add(_0x3cdf70d);
-    yPos += 30;
     const _0x97b2a9 = this.add.text(xPos, 463, "© 2026 RobTop Games. All rights reserved.", {
       fontSize: "12px",
       color: "#000000",
@@ -7905,6 +8307,8 @@ this._escKey.on("down", () => {
     this._level.resetGroundState();
     this._level.resetColorTriggers();
     this._level.resetAlphaTriggers();
+    this._level.resetRotateTriggers();
+    this._level.resetPulseTriggers();
     this._level.resetEnterEffectTriggers();
     this._level.resetMoveTriggers();
     this._level.resetVisibility();
@@ -8038,6 +8442,8 @@ this._escKey.on("down", () => {
     }
     this._level.resetColorTriggers();
     this._level.resetAlphaTriggers();
+    this._level.resetRotateTriggers();
+    this._level.resetPulseTriggers();
     this._level.resetEnterEffectTriggers();
     this._level.resetMoveTriggers();
     this._level.resetVisibility();
@@ -8426,7 +8832,7 @@ if (!this._state.isFlying && !this._state.isWave && !this._state.isUfo) {
   } else if (this._player.rotateActionActive) {
     this._player.updateRotateAction(u);
   } else if (this._state.isDashing) {
-    this._player.runRotateAction();
+    this._player.updateDashRotation(u);
   }
 }
     }
@@ -8487,7 +8893,12 @@ if (!this._state.isFlying && !this._state.isWave && !this._state.isUfo) {
     this._level.stepMoveTriggers(deltaTime / 1000);
     this._level.checkAlphaTriggers(playerX);
     this._level.stepAlphaTriggers(deltaTime / 1000);
+    this._level.checkRotateTriggers(playerX);
+    this._level.stepRotateTriggers(deltaTime / 1000);
+    this._level.checkPulseTriggers(playerX);
+    this._level.stepPulseTriggers(deltaTime / 1000, this._colorManager);
     this._colorManager.step(deltaTime / 1000);
+    this._level.applyColorChannels(this._colorManager);
     this._bg.setTint(this._colorManager.getHex(fs));
     this._level.setGroundColor(this._colorManager.getHex(gs));
     this._level.updateVisibility(this._cameraX);
