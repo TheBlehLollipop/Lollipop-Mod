@@ -72874,42 +72874,68 @@ return {
     portalParticle: true,
     portalParticleColor: 16711935
   },
-  200: {
-        "can_color": false,
-        "default_base_color_channel": 0,
-        "frame": "boost_01_001.png",
-        "glow_frame": "boost_01_glow_001.png",
-        "gridH": 1.4666666984558105,
-        "gridW": 1.1666666269302368,
-        "spritesheet": "GJ_GameSheet02-uhd",
-        "type": "deco",
-        "z": -6
+  "200": {
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "frame": "boost_01_001.png",
+    "glow_frame": "boost_01_glow_001.png",
+    "gridH": 1.4666666984558105,
+    "gridW": 1.1666666269302368,
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "type": "deco",
+    "z": -6,
+    "default_detail_color_channel": -1,
+    "default_z_layer": 4,
+    "default_z_order": -6
   },
-  201: {
-    type: "speed",
-    frame: "portal_10_front_001.png",
-    gridW: 1,
-    gridH: 3,
-    sub: "normal"
+  "201": {
+    "type": "speed",
+    "frame": "portal_10_front_001.png",
+    "gridW": 1,
+    "gridH": 3,
+    "sub": "normal",
+    "default_detail_color_channel": -1,
+    "default_z_layer": 4,
+    "default_z_order": -6
   },
-  202: {
-    type: "speed",
-    frame: "portal_08_front_001.png",
-    gridW: 1,
-    gridH: 3,
-    sub: "fast"
+  "202": {
+    "type": "speed",
+    "frame": "portal_08_front_001.png",
+    "gridW": 1,
+    "gridH": 3,
+    "sub": "fast",
+    "default_detail_color_channel": -1,
+    "default_z_layer": 4,
+    "default_z_order": -6
   },
-      203: {
-        "can_color": false,
-        "default_base_color_channel": 0,
-        "frame": "boost_04_001.png",
-        "glow_frame": "boost_04_glow_001.png",
-        "gridH": 1.8666666746139526,
-        "gridW": 2.1666667461395264,
-        "spritesheet": "GJ_GameSheet02-uhd",
-        "type": "deco",
-        "z": -6
-    },
+  "203": {
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "frame": "boost_04_001.png",
+    "glow_frame": "boost_04_glow_001.png",
+    "gridH": 1.8666666746139526,
+    "gridW": 2.1666667461395264,
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "type": "deco",
+    "z": -6,
+    "default_detail_color_channel": -1,
+    "default_z_layer": 4,
+    "default_z_order": -6
+  },
+  "1334": {
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "frame": "boost_05_001.png",
+    "glow_frame": "boost_05_glow_001.png",
+    "gridH": 1.8666666746139526,
+    "gridW": 2.299999952316284,
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "type": "deco",
+    "z": -6,
+    "default_detail_color_channel": -1,
+    "default_z_layer": 4,
+    "default_z_order": -6
+  },
   35: {
     type: "pad",
     frame: "bump_01_001.png",

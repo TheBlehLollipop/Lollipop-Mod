@@ -46,7 +46,14 @@ function l(screenWidth) {
   centerX = screenWidth / 2 - 150;
 }
 const u = 1 / 240;
-const c = 11.540004;
+let playerSpeed = SpeedPortal.ONE_TIMES;
+const SpeedPortal = {
+  HALF: 9.30222544655,
+  ONE_TIMES: 11.540004,
+  TWO_TIMES: 14.3488938625,
+  THREE_TIMES: 17.3333393414,
+  FOUR_TIMES: 21.3333407279
+}
 const d = 0.9;
 const p = 1.916398;
 const f = 600;
@@ -443,6 +450,7 @@ class PracticeMode {
       ceilingStartScreenY: scene._level._ceilingStartScreenY,
       groundY: scene._level._groundY,
       ceilingY: scene._level._ceilingY,
+      speed: playerSpeed,
       timestamp: Date.now()
     };
     this.checkpoints.push(checkpoint);
@@ -671,6 +679,16 @@ if (!allObjects[1331]) {
     "portalParticle": true,
     "portalParticleColor": 0x00ffff
   };
+}
+
+const _speedPortalIds = [200, 201, 202, 203, 1334];
+for (const _spId of _speedPortalIds) {
+  if (!allObjects[_spId] || allObjects[_spId].type !== "speed") {
+    allObjects[_spId] = Object.assign({
+      gridW: 1,
+      gridH: 1,
+    }, allObjects[_spId] || {}, { type: "speed" });
+  }
 }
 
 const objsWithGlow = [1, 2, 3, 4, 6, 7, 83, 8, 39, 103, 392, 35, 36, 40, 140, 141, 62, 65, 66, 68, 195, 196, 1022, 1594];
@@ -1575,6 +1593,24 @@ class us {
           _registerCollider(coinObj);
           this.objects.push(coinObj);
           this._addCollisionToSection(coinObj);
+        } else if (objectDef.type === speedType) {
+          let speedW = (objectDef.gridW || 1) * a;
+          let speedH = (objectDef.gridH || 1) * a;
+          let speedobject = new Collider(speedType, worldX, worldY, speedW, speedH, levelObj.rot || 0);
+          speedobject.portalY = worldY;
+          const speedMap = {
+            200: SpeedPortal.HALF,
+            201: SpeedPortal.ONE_TIMES,
+            202: SpeedPortal.TWO_TIMES,
+            203: SpeedPortal.THREE_TIMES,
+            1334: SpeedPortal.FOUR_TIMES,
+          };
+          speedobject.speedValue = speedMap[levelObj.id] ?? SpeedPortal.ONE_TIMES;
+          speedobject.speedId = levelObj.id;
+          _registerCollider(speedobject);
+          this.objects.push(speedobject);
+          this._addCollisionToSection(speedobject);
+          console.log("speed portal collision created: id=" + levelObj.id + " x=" + worldX + " y=" + worldY + " speed=" + speedobject.speedValue);
         }
       }
     }
@@ -3932,7 +3968,7 @@ _updateBallJump(_0x2fe319) {
           this.flipGravity(true, 1.0);
           this.p.yVelocity = 0;
         } else {
-          this.p.yVelocity = c;
+          this.p.yVelocity = playerSpeed;
         }
       } else {
         if (isFinite(nearestSurfaceY)) {
@@ -3940,7 +3976,7 @@ _updateBallJump(_0x2fe319) {
           this.flipGravity(false, 1.0);
           this.p.yVelocity = 0;
         } else {
-          this.p.yVelocity = -c;
+          this.p.yVelocity = -playerSpeed;
         }
       }
       this.p.onGround = false;
@@ -4115,10 +4151,8 @@ _updateBallJump(_0x2fe319) {
           if (!gameObj.activated) {
             gameObj.activated = true;
             this._playPortalShine(gameObj);
-            if (gameObj.sub === "fast") {
-              this.p.xVelocity = this.p.mirrored ? -15 : 15;
-            } else {
-              this.p.xVelocity = this.p.mirrored ? -10 : 10;
+            if (typeof gameObj.speedValue === "number") {
+              playerSpeed = gameObj.speedValue;
             }
           }
         } else if (_colType === jumpPadType) {
@@ -7865,6 +7899,7 @@ this._escKey.on("down", () => {
     this._player2.setBallVisible(false);
     this._player2.setWaveVisible(false);
     this._glitterEmitter.stop();
+    playerSpeed = SpeedPortal.ONE_TIMES;
     this._level.resetObjects();
     this._level.shiftGroundTiles(this._cameraX - _0x2ba78a);
     this._level.resetGroundState();
@@ -7996,6 +8031,11 @@ this._escKey.on("down", () => {
       - (checkpoint.cameraY || 0) + this._cameraY;
     this._level._groundY = checkpoint.groundY;
     this._level._ceilingY = checkpoint.ceilingY;
+    if (typeof checkpoint.speed === "number") {
+      playerSpeed = checkpoint.speed;
+    } else {
+      playerSpeed = SpeedPortal.ONE_TIMES;
+    }
     this._level.resetColorTriggers();
     this._level.resetAlphaTriggers();
     this._level.resetEnterEffectTriggers();
@@ -8155,7 +8195,7 @@ this._escKey.on("down", () => {
       this._spaceWasDown = this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown;
       const menuDelta = Math.min(deltaTime / 1000 * 60, 2);
       const menuSpeed = 0.25;
-      this._menuCameraX = (this._menuCameraX || 0) + menuDelta * c * d * menuSpeed;
+      this._menuCameraX = (this._menuCameraX || 0) + menuDelta * playerSpeed * d * menuSpeed;
       const _0x38afac = this._cameraX;
       this._cameraX = this._menuCameraX;
       this._updateBackground();
@@ -8168,9 +8208,9 @@ this._escKey.on("down", () => {
     }
     if (this._slideIn) {
       const slideDelta = this._quantizeDelta(deltaTime);
-      this._playerWorldX += slideDelta * c * d;
+      this._playerWorldX += slideDelta * playerSpeed * d;
       const slideGroundSpeed = 0.25;
-      this._slideGroundX = (this._slideGroundX || this._cameraX) + slideDelta * c * d * slideGroundSpeed;
+      this._slideGroundX = (this._slideGroundX || this._cameraX) + slideDelta * playerSpeed * d * slideGroundSpeed;
       this._cameraXRef._v = this._slideGroundX;
       const slidePlayerScreenX = this._playerWorldX - this._cameraX;
       this._player.updateGroundRotation(slideDelta * d);
@@ -8357,7 +8397,7 @@ this._escKey.on("down", () => {
     }
     let subStepDelta = subSteps > 0 ? quantizedDelta / subSteps : 0;
     let verticalDelta = subStepDelta * d;
-    let horizontalDelta = subStepDelta * c * d;
+    let horizontalDelta = subStepDelta * playerSpeed * d;
     const initialY = this._state.y;
     for (let i = 0; i < subSteps; i++) {
       this._state.lastY = this._state.y;
