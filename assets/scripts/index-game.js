@@ -46,7 +46,6 @@ function l(screenWidth) {
   centerX = screenWidth / 2 - 150;
 }
 const u = 1 / 240;
-let playerSpeed = SpeedPortal.ONE_TIMES;
 const SpeedPortal = {
   HALF: 9.30222544655,
   ONE_TIMES: 11.540004,
@@ -54,6 +53,7 @@ const SpeedPortal = {
   THREE_TIMES: 17.3333393414,
   FOUR_TIMES: 21.3333407279
 }
+let playerSpeed = SpeedPortal.ONE_TIMES;
 const d = 0.9;
 const p = 1.916398;
 const f = 600;
