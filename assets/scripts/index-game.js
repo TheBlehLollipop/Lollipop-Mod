@@ -18,13 +18,14 @@ window.currentlevel = [
 	"level_1",        // level id in assets/levels
 	["RobTop", "Forever Bound"]   // person who made the song
 ];
-window.showHitboxes = false;
-window.noClip = false; // experimental
-window.solidWave = false;
 window.orbClickScale = 2.0;
 window.orbClickShrinkTime = 250;
 window.orbParticleSize = 3.5;
-window.showPercentage = true;
+
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.has('id')) {
+  window.levelID = urlParams.get('id');
+}
 
 // -------------------------------
 
@@ -552,7 +553,7 @@ function parseObject(objectString) {
   let objectParts = objectString.split(",");
   let objectData = {};
   for (let index = 0; index + 1 < objectParts.length; index += 2) {
-    let key = parseInt(objectParts[index], 10);
+    let key = objectParts[index];
     let value = objectParts[index + 1];
     objectData[key] = value;
   }
@@ -573,6 +574,12 @@ function parseObject(objectString) {
       groups: objectData[57] || "",
       color1: parseInt(objectData[21] || "0", 10),
       color2: parseInt(objectData[22] || "0", 10),
+      // Following are for startpos
+      gameMode: parseInt(objectData['kA2'] ?? '0', 10),
+      miniMode: parseInt(objectData['kA3'] ?? '0', 10),
+      speed: parseInt(objectData['kA4'] ?? '0', 10),
+      mirrored: parseInt(objectData['kA28'] ?? '0', 10),
+      flipGravity: '1' === (objectData['kA11'] ?? '0'),
       _raw: objectData
     };
   }
@@ -891,7 +898,24 @@ class us {
     this._visMaxSec = -1;
     this._groundStartScreenY = b(0);
     this._ceilingStartScreenY = 0;
+    this._activeStartPosIndex = -1; 
+    this._startPositions = [];
     this._buildGround();
+  }
+  getStartPositions() {
+      return this._startPositions.slice().sort((a, b) => a.x - b.x);
+  }
+
+  fastForwardTriggers(targetX, colorManager) {
+    const triggers = this._colorTriggers.sort((a, b) => a.x - b.x);
+
+    for (let trigger of triggers) {
+      if (trigger.x <= targetX) {
+        colorManager.triggerColor(trigger.index, trigger.color, 0);
+      } else {
+        break;
+      }
+    }
   }
   loadLevel(levelData) {
     let {
@@ -1420,6 +1444,17 @@ class us {
             fadeIn: parseFloat(_raw[45] ?? 0),
             hold: parseFloat(_raw[46] ?? 0),
             fadeOut: parseFloat(_raw[47] ?? 0),
+          });
+        }
+        if (levelObj.id === 31) {
+          this._startPositions.push({
+            x: 2 * levelObj.x,
+            y: 2 * levelObj.y,
+            gameMode: levelObj.gameMode,
+            miniMode: levelObj.miniMode,
+            speed: levelObj.speed,
+            mirrored: levelObj.mirrored,
+            gravityFlipped: levelObj.flipGravity
           });
         }
         continue;
@@ -2827,7 +2862,6 @@ class ps {
     this.rotateActionDuration = 0;
     this.rotateActionStart = 0;
     this.rotateActionTotal = 0;
-    this._showHitboxes = !!window.showHitboxes;
     this._lastLandObject = null;
     this._lastXOffset = 0;
     this._lastCameraX = 0;
@@ -3425,10 +3459,12 @@ if (this.p.isFlying || this.p.isUfo) {
       this._dashAnimationSprite.scaleX = _miniS;
     }
     
-    if (this._showHitboxes) {
-      this.drawHitboxes(this._hitboxGraphics, cameraX, cameraY);
-    } else if (this._hitboxGraphics) {
-      this._hitboxGraphics.clear();
+    if (!this._scene._slideIn){
+      if (window.showHitboxes) {
+        this.drawHitboxes(this._hitboxGraphics, cameraX, cameraY);
+      } else if (this._hitboxGraphics) {
+        this._hitboxGraphics.clear();
+      }
     }
   }
   enterShipMode(_0xeb37c6 = null) {
@@ -4167,6 +4203,18 @@ hitGround() {
     }
   }
   updateJump(_0x3d1c6f) {
+    const objectsUnderPointer = this._scene.input.manager.hitTest(
+      this._scene.input.activePointer, 
+      this._scene._startPosGui.list,
+      this._scene.cameras.main
+    );
+    const isOverUI = objectsUnderPointer.length > 0;
+
+    if (isOverUI){
+      this.p.upKeyDown = false;
+      this.p.upKeyPressed = false;
+    }
+
     if (this.p.pendingVelocity !== null) {
       this.p.yVelocity = this.p.pendingVelocity;
       this.p.pendingVelocity = null;
@@ -4190,7 +4238,7 @@ hitGround() {
       this._updateUfoJump(_0x3d1c6f);
     } else if (this.p.isSpider) {
       this._updateSpiderJump(_0x3d1c6f);
-    } else if (this.p.upKeyDown && this.p.canJump) {
+    } else if (this.p.upKeyDown && this.p.canJump && !isOverUI) {
       this.p.isJumping = true;
       this.p.onGround = false;
       this.p.canJump = false;
@@ -4284,7 +4332,7 @@ _updateBallJump(_0x2fe319) {
     }
   }
   _updateWaveJump() {
-    const _0x1a4d8f = this.p.isMini ? 22.7720072 : 11.3860036;
+    const _0x1a4d8f = (this.p.isMini ? 22.7720072 : 11.3860036) * (playerSpeed / 11.540004);
     let _0x312a7f = (this.p.upKeyDown ? 1 : -1) * this.flipMod() * _0x1a4d8f;
     if (this.p.onGround) {
       const _0x41866f = this.p.onCeiling ? _0x312a7f < 0 : _0x312a7f > 0;
@@ -4980,6 +5028,33 @@ _updateBallJump(_0x2fe319) {
       graphics.closePath();
       graphics.strokePath();
     }
+
+    if (window.showHitboxTrail) {
+      if (!this._hitboxTrail) this._hitboxTrail = [];
+      
+      if (!this.p.isDead) {
+          this._hitboxTrail.push({ x: this._scene._playerWorldX, y: this.p.y });
+          if (this._hitboxTrail.length > 100) this._hitboxTrail.shift();
+      }
+
+      this._hitboxTrail.forEach((pos, index) => {
+          const trailX = pos.x - camX;
+          const trailY = b(pos.y) + camY;
+
+          // 1. Outer box (red)
+          graphics.lineStyle(1, hexToHexadecimal("ff0000"), 0.5);
+          graphics.strokeRect(trailX - playerSize, trailY - playerSize, hitboxsize, hitboxsize);
+
+          // 2. Inner circle (dark red)
+          graphics.lineStyle(1, hexToHexadecimal("b30001"), 0.5);
+          graphics.strokeCircle((trailX - playerSize) + hitboxsize / 2, (trailY - playerSize) + hitboxsize / 2, hitboxsize / 2);
+
+          // 3. Inner hitbox (blue square)
+          graphics.lineStyle(1, hexToHexadecimal("0000ff"), 1);
+          graphics.strokeRect(trailX - 9, trailY - 9, 18, 18);
+      });
+    }
+
     const _0x1e788a = b(playerY) + camY;
     // comments so its easier for other people to read ts
     // outer box (red)
@@ -4994,14 +5069,10 @@ _updateBallJump(_0x2fe319) {
     graphics.lineStyle(2, hexToHexadecimal("0000ff"), 1);
     graphics.strokeRect(centerX - 9, _0x1e788a - 9, 18, 18);
   }
-  setShowHitboxes(_0x2133d2) {
-    this._showHitboxes = !!_0x2133d2;
-    if (!this._showHitboxes && this._hitboxGraphics) {
-      this._hitboxGraphics.clear();
-    }
-  }
   playEndAnimation(_0x24408e, _0x281588, _0x54bbf4) {
     this._endAnimating = true;
+    this._hitboxTrail = [];
+    this._hitboxGraphics.clear();
     const _0x3729ef = this._scene;
     const _0x568b25 = _0x54bbf4 || 240;
     const _0x4a45d7 = _0x3729ef._playerWorldX;
@@ -5013,6 +5084,7 @@ _updateBallJump(_0x2fe319) {
     const _0x1f2e19 = _0x4a45d7 + 80;
     const _0x8bc9f4 = _0x568b25 + 300;
     const _0x11b580 = [this._playerSpriteLayer, this._playerGlowLayer, this._playerOverlayLayer, this._playerExtraLayer, this._ballSpriteLayer, this._ballGlowLayer, this._ballOverlayLayer, this._waveSpriteLayer, this._waveOverlayLayer, this._waveExtraLayer, this._waveGlowLayer, this._shipSpriteLayer, this._shipGlowLayer, this._shipOverlayLayer, this._shipExtraLayer].filter(_0x3e9c62 => _0x3e9c62 && _0x3e9c62.sprite.visible).map(_0x5cedeb => _0x5cedeb.sprite);
+    this._startPercent = (this._scene._playerWorldX / this._scene._level.endXPos) * 100;
     this._particleEmitter.stop();
     this._flyParticleEmitter.stop();
     this._flyParticle2Emitter.stop();
@@ -5055,6 +5127,7 @@ _updateBallJump(_0x2fe319) {
         const _0x1d2e2f = _0x3fc5a5[0].spr.rotation;
         const _0xd3cb2a = Math.cos(_0x1d2e2f);
         const _0x2f86c2 = Math.sin(_0x1d2e2f);
+        this._scene._interpolatedPercent = this._startPercent + (100 - this._startPercent) * spriteWidth;
         for (const _0x2b394a of _0x3fc5a5) {
           const _0xbd4f26 = -_0x2b394a.localY * _0x2f86c2;
           const _0x5b67fe = _0x2b394a.localY * _0xd3cb2a;
@@ -5065,6 +5138,7 @@ _updateBallJump(_0x2fe319) {
         _0x3e35e7.update(_0x3729ef.game.loop.delta / 1000);
       },
       onComplete: () => {
+        this._scene._interpolatedPercent = 100;
         for (const _0x4fce42 of _0x3fc5a5) {
           _0x4fce42.spr.setVisible(false);
         }
@@ -5242,7 +5316,7 @@ class ys {
   _effectiveVolume() {
     return this._userMusicVol * 0.8;
   }
-  startMusic() {
+  startMusic(StartPosOffset = 0) {
     let savedPosition = 0;
     let savedKey = null;
     if (this._music && this._music.isPlaying) {
@@ -5271,7 +5345,7 @@ class ys {
     }
     if (window._onlineSongBuffer && window._onlineSongKey === window.currentlevel[0]) {
       const startOffset = window.settingsMap['kA13'] ? new Number(window.settingsMap['kA13']) : 0;
-      this._playOnlineBuffer(window._onlineSongBuffer, startOffset);
+      this._playOnlineBuffer(window._onlineSongBuffer, startOffset + StartPosOffset);
       this._setupAnalyser();
       return;
     }
@@ -5285,9 +5359,8 @@ class ys {
       volume: this._effectiveVolume()
     });
     this._music.play();
-    if (window.settingsMap && window.settingsMap['kA13']) {
-      this._music.seek = new Number(window.settingsMap['kA13']);
-    }
+    const startOffset = window.settingsMap['kA13'] ? new Number(window.settingsMap['kA13']) : 0;
+    this._music.seek = startOffset + StartPosOffset;
     this._setupAnalyser();
   }
   _playOnlineBuffer(audioBuffer, startOffset = 0) {
@@ -5484,7 +5557,8 @@ class ys {
     const isPracticeMode = this._scene._practicedMode && this._scene._practicedMode.practiceMode;
     const expectedSongKey = isPracticeMode ? "StayInsideMe" : window.currentlevel[0];
     if (this._music.key !== expectedSongKey) {
-      this.startMusic();
+      const offset = this._scene._getStartPosMusicOffset();
+      this.startMusic(offset);
     }
   }
   update(_0x34aeef) {
@@ -5818,6 +5892,7 @@ class xs extends Phaser.Scene {
       if (this._searchOverlay) return;
       const sw = screenWidth;
       const sh = screenHeight;
+
       const fadeIn = this.add.graphics().setScrollFactor(0).setDepth(200);
       fadeIn.fillStyle(0x000000, 1);
       fadeIn.fillRect(0, 0, sw, sh);
@@ -6038,6 +6113,20 @@ class xs extends Phaser.Scene {
           });
         });
       };
+      this._searchOverlayObjects = [
+        overlay, blocker, backBtn, inputBg, statusText, placeholderLabel, typedLabel
+      ];
+      if (window.levelID) { // if there's an ID parameter, load it directly
+        htmlInput.remove();
+        const loadingBg = this.add.graphics().setScrollFactor(0).setDepth(1000);
+        loadingBg.fillStyle(0x000000, 1);
+        loadingBg.fillRect(0, 0, sw, sh);
+        const loadingText = this.add.bitmapText(sw / 2, sh / 2, "bigFont", "Loading level...", 30)
+          .setScrollFactor(0).setDepth(1001).setOrigin(0.5);
+        this._searchOverlayObjects.push(loadingBg, loadingText);
+        statusText.setDepth(1002).setY(sh / 2 + 50).setAlpha(1);
+        _doSearchInner(window.levelID);
+      }
       htmlInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") _doSearch();
         e.stopPropagation();
@@ -6046,9 +6135,6 @@ class xs extends Phaser.Scene {
       htmlInput.addEventListener("keypress", (e) => e.stopPropagation());
       this._searchHtmlInput = htmlInput;
       this._searchInputResizeFn = _repositionInput;
-      this._searchOverlayObjects = [
-        overlay, blocker, backBtn, inputBg, statusText, placeholderLabel, typedLabel
-      ];
     };
     this._closeSearchMenu = (silent = false) => {
       if (!this._searchOverlay) return;
@@ -6783,7 +6869,27 @@ class xs extends Phaser.Scene {
     this._aKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
     this._dKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
 
-    this._percentageLabel = this.add.bitmapText(screenWidth / 2, 20, "bigFont", "0.00%", 30).setOrigin(0.5, 0.5).setVisible(false).setDepth(100);
+    this._startPosIndex = -1;
+
+    this.input.keyboard.on('keydown-Q', () => {
+      if (!window.startPosSwitcher) return;
+      this.changeStartPos(-1);
+    });
+
+    this.input.keyboard.on('keydown-E', () => {
+      if (!window.startPosSwitcher) return;
+      this.changeStartPos(1);
+    });
+
+    this._percentageLabel = this.add.bitmapText(screenWidth / 2, 20, "bigFont", "0%", 30).setOrigin(0.5, 0.5);
+    this._percentageLabel.setVisible(false);
+    this._percentageLabel.setDepth(100);
+
+    this._noclipIndicator = this.add.bitmapText(10, 10, "bigFont", "Noclip", 20)
+      .setOrigin(0, 0)
+      .setAlpha(0.4)
+      .setDepth(100)
+      .setVisible(false);
 
     this._updatePracticeHUDBar = () => {};
 
@@ -6793,30 +6899,37 @@ class xs extends Phaser.Scene {
     this._pauseBtn.on("pointerdown", () => this._pauseGame());
     this._escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this._escKey.on("down", () => {
-    if (this._levelSelectOverlay) {
-      this._closeLevelSelect();
-      return;
-    }
-    if (this._iconOverlay) {
-  this._closeIconSelector();
-  return;
-}
-    if (this._updateLogPopup) {
-      this._closeUpdateLogPopup();
-      return;
-    } });
-this._escKey.on("down", () => {
-    if (this._searchOverlay) {
-      this._closeSearchMenu(true);
-      this._openCreatorMenu();
-      return;
-    }
-    if (this._creatorOverlay) {
-  this._closeCreatorMenu();
-  return;
-}
-    });
-    this._escKey.on("down", () => {
+      if (this._levelSelectOverlay) {
+        this._closeLevelSelect();
+        return;
+      }
+      if (this._iconOverlay) {
+        this._closeIconSelector();
+        return;
+      }
+      if (this._updateLogPopup) {
+        this._closeUpdateLogPopup();
+        return;
+      } 
+      if (this._searchOverlay) {
+        this._closeSearchMenu(true);
+        this._openCreatorMenu();
+        return;
+      }
+      if (this._creatorOverlay) {
+        this._closeCreatorMenu();
+        return;
+      }
+      if (this._settingsPopup) {
+        this._settingsPopup.destroy();
+        this._settingsPopup = null;
+        return;
+      }
+      if (this._infoPopup) {
+        this._infoPopup.destroy();
+        this._infoPopup = null;
+        return;
+      }
       if (this._paused) {
         this._audio.playEffect("quitSound_01");
         this._audio.stopMusic();
@@ -6828,7 +6941,7 @@ this._escKey.on("down", () => {
     });
     this._restartKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
     this._restartKey.on("down", () => {
-      if (!this._menuActive && !this._slideIn) {
+      if (!this._menuActive && !this._slideIn && !this._levelWon && !this._menuActive) {
         this._restartLevel();
       }
     });
@@ -6876,7 +6989,11 @@ this._escKey.on("down", () => {
     window.addEventListener("touchend", () => this._releaseButton());
     this.scale.on("enterfullscreen", () => this._onFullscreenChange(true));
     this.scale.on("leavefullscreen", () => this._onFullscreenChange(false));
+
     this._buildHUD();
+    this._createStartPosGui();
+    this._loadSettings();
+
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
         this._audio.pauseMusic();
@@ -6920,12 +7037,15 @@ this._escKey.on("down", () => {
       this._buildUpdateLogPopup();
       window.updateLogShown = true;
     }
+    if (window.levelID) {
+        console.log("URL ID detected:", window.levelID);
+        this._openSearchMenu();
+    }
     if (this.game.registry.get("autoStartGame")) {
       this.game.registry.remove("autoStartGame");
       this._levelLabel.setVisible(false);
       this._leftBtn.setVisible(false);
       this._rightBtn.setVisible(false);
-      this._percentageLabel.setVisible(window.showPercentage);
       if (this._practiceModeBarContainer) {
         this._practiceModeBarContainer.setVisible(this._practicedMode && this._practicedMode.practiceMode);
       }
@@ -7387,14 +7507,66 @@ this._escKey.on("down", () => {
     this._checkpointBtnContainer.add([this._checkpointBtn, this._clearCheckpointBtn]);
     this._fpsText = this.add.text(screenWidth - 20, 10, "", {
       fontSize: "28px",
-      fill: "#ff0000",
+      fill: "#ffffff",
       fontFamily: "Arial"
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(999).setVisible(false);
     this._fpsAccum = 0;
     this._fpsFrames = 0;
     this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H).on("down", () => {
-      this._fpsText.setVisible(!this._fpsText.visible);
+      if (!this._settingsPopup){
+        this._fpsText.setVisible(!this._fpsText.visible);
+      }
     });
+  }
+  _createStartPosGui() {
+        const centerX = screenWidth / 2;
+        const bottomY = screenHeight - 60;
+
+        this._startPosGui = this.add.container(centerX, bottomY).setScrollFactor(0).setDepth(100);
+        this._startPosGui.setVisible(false);
+
+        const leftArrow = this.add.image(-90, 0, "GJ_GameSheet03", "GJ_arrow_01_001.png")
+            .setScale(0.6)
+            .setInteractive();
+        
+        const rightArrow = this.add.image(90, 0, "GJ_GameSheet03", "GJ_arrow_01_001.png")
+            .setScale(0.6)
+            .setFlipX(true)
+            .setInteractive();
+
+        const positions = this._level.getStartPositions();
+        const total = positions.length;
+
+        this._startPosText = this.add.bitmapText(0, 0, "bigFont", `0/${total}`, 40).setOrigin(0.5);
+
+        this._startPosGui.add([leftArrow, rightArrow, this._startPosText]);
+
+        this._makeBouncyButton(leftArrow, 0.6, () => this.changeStartPos(-1));
+        this._makeBouncyButton(rightArrow, 0.6, () => this.changeStartPos(1));
+  }
+  changeStartPos(direction) {
+        if (this._paused || this._levelWon || this._menuActive || this._slideIn) return;
+        
+        const positions = this._level.getStartPositions();
+        const totalPositions = positions.length;
+        
+        if (totalPositions === 0) return;
+
+        this._startPosIndex += direction;
+
+        if (this._startPosIndex < -1) {
+            this._startPosIndex = totalPositions - 1;
+        } else if (this._startPosIndex >= totalPositions) {
+            this._startPosIndex = -1;
+        }
+
+        if (this._startPosText) {
+            const currentId = this._startPosIndex === -1 ? 0 : (this._startPosIndex + 1);
+            this._startPosText.setText(`${currentId}/${totalPositions}`);
+        }
+
+        this._practicedMode.clearCheckpoints();
+        this._restartLevel();
   }
   toggleGlitter(_0x34c21a) {
     if (_0x34c21a) {
@@ -7438,8 +7610,6 @@ this._escKey.on("down", () => {
         this._pauseContainer.destroy();
         this._pauseContainer = null;
       }
-      this._noclipCheckbox = null;
-      this._showHitboxesCheckbox = null;
     }
   }
   _createPauseToggleButton(_0x5376fd, _0x3b6200, _0x2b25c8, _0xe203c3, _0x268e2b, _0x2d04c4) {
@@ -7465,17 +7635,20 @@ this._escKey.on("down", () => {
     });
     return _0x4864cc;
   }
-  _buildPauseOverlay() {
+_buildPauseOverlay() {
     const textureY = screenWidth / 2;
     const _0xf70e04 = 320;
     const _0x4eb71b = screenWidth - 40;
     this._pauseContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(100);
+    
     const _0x505665 = this.add.rectangle(textureY, _0xf70e04, screenWidth, screenHeight, 0, 75 / 255);
     _0x505665.setInteractive();
     this._pauseContainer.add(_0x505665);
+    
     const _0x103191 = this.textures.get("square04_001").source[0].width * 0.325;
-    const _0x954813 = this._drawScale9(textureY, _0xf70e04, _0x4eb71b, 650, "square04_001", _0x103191, 0, 150 / 255);
+    const _0x954813 = this._drawScale9(textureY, _0xf70e04, _0x4eb71b, 600, "square04_001", _0x103191, 0, 150 / 255);
     this._pauseContainer.add(_0x954813);
+
     const _0x3874ed = this.scale.isFullscreen;
     const _0x426993 = this.add.image(textureY - _0x4eb71b / 2 + 40, 60, "GJ_WebSheet", _0x3874ed ? "toggleFullscreenOff_001.png" : "toggleFullscreenOn_001.png").setScale(0.64).setInteractive();
     this._expandHitArea(_0x426993, 2.5);
@@ -7486,7 +7659,14 @@ this._escKey.on("down", () => {
       this._expandHitArea(_0x426993, 2.5);
       this._toggleFullscreen();
     });
+
+    const settingsBtn = this.add.image(textureY + _0x4eb71b / 2 - 60, 80, 'GJ_GameSheet03', "GJ_optionsBtn_001.png").setAngle(90).setFlipY(true).setScale(0.64).setInteractive();
+    this._expandHitArea(settingsBtn, 2.5);
+    this._pauseContainer.add(settingsBtn);
+    this._makeBouncyButton(settingsBtn, 0.64, () => this._buildSettingsPopup());
+
     this._pauseContainer.add(this.add.bitmapText(textureY, 65, "bigFont", window.currentlevel[1], 40).setOrigin(0.5, 0.5));
+
     const _0x21dacf = 170;
     const _0x46bab2 = this._bestPercent || 0;
     const _0x38b8d1 = this.add.image(textureY, _0x21dacf, "GJ_WebSheet", "GJ_progressBar_001.png").setTint(0).setAlpha(125 / 255);
@@ -7500,8 +7680,9 @@ this._escKey.on("down", () => {
     this._pauseContainer.add(_0x3d0987);
     this._pauseContainer.add(this.add.bitmapText(textureY, _0x21dacf, "bigFont", _0x46bab2 + "%", 30).setOrigin(0.5, 0.5).setScale(0.7));
     this._pauseContainer.add(this.add.bitmapText(textureY, 130, "bigFont", "Normal Mode", 30).setOrigin(0.5, 0.5).setScale(0.78));
+
     const _pausePractPct = this._practiceBestPercent || 0;
-    const _pausePractBarY = 245;
+    const _pausePractBarY = 255;
     const _pausePractBarImg = this.add.image(textureY, _pausePractBarY, "GJ_WebSheet", "GJ_progressBar_001.png").setTint(0).setAlpha(125 / 255);
     this._pauseContainer.add(_pausePractBarImg);
     const _pausePractFrame = this.textures.getFrame("GJ_WebSheet", "GJ_progressBar_001.png");
@@ -7513,123 +7694,215 @@ this._escKey.on("down", () => {
     this._pauseContainer.add(_pausePractFg);
     this._pauseContainer.add(this.add.bitmapText(textureY, _pausePractBarY, "bigFont", _pausePractPct + "%", 30).setOrigin(0.5, 0.5).setScale(0.7));
     this._pauseContainer.add(this.add.bitmapText(textureY, _pausePractBarY - 40, "bigFont", "Practice Mode", 30).setOrigin(0.5, 0.5).setScale(0.78));
-    const _0x4791ac = [{
-      frame: "GJ_replayBtn_001.png",
-      atlas: "GJ_WebSheet",
-      action: () => {
-        this._resumeGame();
-        this._restartLevel();
-      }
-    }, {
-      frame: "GJ_playBtn2_001.png",
-      atlas: "GJ_WebSheet",
-      action: () => this._resumeGame()
-    }, {
-      frame: this._practicedMode.practiceMode ? "GJ_normalBtn_001.png" : "GJ_practiceBtn_001.png",
-      atlas: "GJ_GameSheet03",
-      action: null
-    }, {
-      frame: "GJ_menuBtn_001.png",
-      atlas: "GJ_WebSheet",
-      action: () => {
-        this._audio.playEffect("quitSound_01");
-        this._audio.stopMusic();
-        this._resumeGame();
-        this.scene.restart();
-      }
-    }];
-    const _0x25aa59 = _0x4791ac.map(_0x120c08 => {
-      const _0x44c01c = this.textures.getFrame(_0x120c08.atlas, _0x120c08.frame);
-      if (_0x44c01c) {
-        return _0x44c01c.width;
-      } else {
-        return 123;
-      }
-    });
-    let _0x599a9b = textureY - (_0x25aa59.reduce((_0x53adf8, _0x10ae31) => _0x53adf8 + _0x10ae31, 0) + (_0x4791ac.length - 1) * 40) / 2;
-    for (let _0x18feee = 0; _0x18feee < _0x4791ac.length; _0x18feee++) {
-      const _0x17809c = _0x4791ac[_0x18feee];
-      const _0x228482 = _0x25aa59[_0x18feee];
-      const _0x7f0786 = this.add.image(_0x599a9b + _0x228482 / 2, 390, _0x17809c.atlas, _0x17809c.frame).setInteractive();
-      if (_0x17809c.action === null) {
-        this._pausePracticeBtn = _0x7f0786;
-        _0x7f0786.setAngle(90).setFlipY(true);
-        this._makeBouncyButton(_0x7f0786, 1, () => {
-          const isPracticeMode = this._practicedMode.togglePracticeMode();
-          _0x7f0786.setTexture("GJ_GameSheet03", isPracticeMode ? "GJ_normalBtn_001.png" : "GJ_practiceBtn_001.png");
-          _0x7f0786.setAngle(90).setFlipY(true);
-          if (this._checkpointBtnContainer) {
-            this._checkpointBtnContainer.setVisible(isPracticeMode);
-          }
-          if (this._practiceModeBarContainer) {
-            this._practiceModeBarContainer.setVisible(isPracticeMode);
-          }
-          if (!isPracticeMode && !this._menuActive) {
+
+    const _0x4791ac = [
+        { frame: this._practicedMode.practiceMode ? "GJ_normalBtn_001.png" : "GJ_practiceBtn_001.png", atlas: "GJ_GameSheet03", action: null },
+        { frame: "GJ_playBtn2_001.png", atlas: "GJ_WebSheet", action: () => this._resumeGame() },
+        { frame: "GJ_menuBtn_001.png", atlas: "GJ_WebSheet", action: () => {
+            this._audio.playEffect("quitSound_01");
+            this._audio.stopMusic();
             this._resumeGame();
-            this._practicedMode.clearCheckpoints();
+            this.scene.restart();
+        }},
+        { frame: "GJ_replayBtn_001.png", atlas: "GJ_WebSheet", action: () => {
+            this._resumeGame();
             this._restartLevel();
-          }
-        });
-      } else {
-        this._makeBouncyButton(_0x7f0786, 1, _0x17809c.action);
-      }
-      this._pauseContainer.add(_0x7f0786);
-      _0x599a9b += _0x228482 + 40;
+        }}
+    ];
+
+    const _0x25aa59 = _0x4791ac.map(btn => this.textures.getFrame(btn.atlas, btn.frame)?.width || 123);
+    let _0x599a9b = textureY - (_0x25aa59.reduce((a, b) => a + b, 0) + (_0x4791ac.length - 1) * 40) / 2;
+
+    for (let i = 0; i < _0x4791ac.length; i++) {
+        const item = _0x4791ac[i];
+        const width = _0x25aa59[i];
+        const btn = this.add.image(_0x599a9b + width / 2, 390, item.atlas, item.frame).setInteractive();
+        
+        if (item.action === null) {
+            this._pausePracticeBtn = btn;
+            btn.setAngle(90).setFlipY(true);
+            this._makeBouncyButton(btn, 1, () => {
+                const isPracticeMode = this._practicedMode.togglePracticeMode();
+                btn.setTexture("GJ_GameSheet03", isPracticeMode ? "GJ_normalBtn_001.png" : "GJ_practiceBtn_001.png");
+                btn.setAngle(90).setFlipY(true);
+                if (this._checkpointBtnContainer) this._checkpointBtnContainer.setVisible(isPracticeMode);
+                this._resumeGame();
+                if (!isPracticeMode) {
+                    this._practicedMode.clearCheckpoints();
+                    this._restartLevel();
+                }
+            });
+        } else {
+            this._makeBouncyButton(btn, 1, item.action);
+        }
+        this._pauseContainer.add(btn);
+        _0x599a9b += width + 40;
     }
+
     const _0x1008ae = 530;
     const _0x22b43a = 0.7;
     const _0x41925a = this.textures.getFrame("GJ_WebSheet", "slidergroove.png");
     const _0x372782 = _0x41925a ? _0x41925a.width : 420;
-    const _0xe34699 = (_0x422be3, _0x4b32e0, _0xaaab25, _0x169b87) => {
-      this._pauseContainer.add(this.add.image(_0x422be3 - 180 - 5, _0x1008ae, "GJ_WebSheet", _0x4b32e0).setScale(1.2));
-      const _0x51c57b = (_0x372782 - 8) * _0x22b43a;
-      const _0x34d1c1 = _0x422be3 - _0x372782 * _0x22b43a / 2 + 2.8;
-      const _0xe86505 = _0xaaab25 * _0x51c57b;
-      const _0x43dbf4 = this.add.tileSprite(_0x34d1c1, _0x1008ae, _0xe86505 > 0 ? _0xe86505 : 1, 11.2, "sliderBar").setOrigin(0, 0.5).setVisible(_0xe86505 > 0);
-      this._pauseContainer.add(_0x43dbf4);
-      const _0x4de88c = this.add.image(_0x422be3, _0x1008ae, "GJ_WebSheet", "slidergroove.png").setScale(_0x22b43a);
-      this._pauseContainer.add(_0x4de88c);
-      const _0x106f98 = _0x34d1c1 + _0xaaab25 * _0x51c57b;
-      const sliderThumb = this.add.image(_0x106f98, _0x1008ae, "GJ_WebSheet", "sliderthumb.png").setScale(_0x22b43a).setInteractive({
-        draggable: true,
-        useHandCursor: true
-      });
-      this._pauseContainer.add(sliderThumb);
-      sliderThumb.on("pointerdown", () => sliderThumb.setTexture("GJ_WebSheet", "sliderthumbsel.png"));
-      sliderThumb.on("pointerup", () => sliderThumb.setTexture("GJ_WebSheet", "sliderthumb.png"));
-      sliderThumb.on("pointerout", () => sliderThumb.setTexture("GJ_WebSheet", "sliderthumb.png"));
-      sliderThumb.on("drag", (_0x1ac7f7, _0x35b64c) => {
-        sliderThumb.x = Math.max(_0x34d1c1, Math.min(_0x34d1c1 + _0x51c57b, _0x35b64c));
-        const _0x4a1663 = (sliderThumb.x - _0x34d1c1) / _0x51c57b;
-        const _0x2bc46f = _0x4a1663 < 0.03 ? 0 : _0x4a1663;
-        _0x43dbf4.width = Math.max(1, _0x2bc46f * _0x51c57b);
-        _0x43dbf4.setVisible(_0x2bc46f > 0);
-        _0x169b87(_0x2bc46f);
-      });
+
+    const createSlider = (posX, iconFrame, initialVal, setter) => {
+        this._pauseContainer.add(this.add.image(posX - 180 - 5, _0x1008ae, "GJ_WebSheet", iconFrame).setScale(1.2));
+        const barMaxW = (_0x372782 - 8) * _0x22b43a;
+        const barStartX = posX - _0x372782 * _0x22b43a / 2 + 2.8;
+        const fillW = initialVal * barMaxW;
+        const fillBar = this.add.tileSprite(barStartX, _0x1008ae, fillW > 0 ? fillW : 1, 11.2, "sliderBar").setOrigin(0, 0.5);
+        this._pauseContainer.add(fillBar);
+        this._pauseContainer.add(this.add.image(posX, _0x1008ae, "GJ_WebSheet", "slidergroove.png").setScale(_0x22b43a));
+        
+        const thumb = this.add.image(barStartX + fillW, _0x1008ae, "GJ_WebSheet", "sliderthumb.png").setScale(_0x22b43a).setInteractive({ draggable: true });
+        this._pauseContainer.add(thumb);
+        thumb.on("drag", (p, dragX) => {
+            thumb.x = Math.max(barStartX, Math.min(barStartX + barMaxW, dragX));
+            const pct = (thumb.x - barStartX) / barMaxW;
+            fillBar.width = Math.max(1, pct * barMaxW);
+            setter(pct < 0.03 ? 0 : pct);
+        });
     };
-    _0xe34699(textureY - 200, "gj_songIcon_001.png", this._audio.getUserMusicVolume(), _0x3ebce2 => this._audio.setUserMusicVolume(_0x3ebce2));
-    _0xe34699(textureY + 200, "GJ_sfxIcon_001.png", this._sfxVolume, _0x3224fb => {
-      this._sfxVolume = _0x3224fb;
-      localStorage.setItem("userSfxVol", _0x3224fb);
+
+    createSlider(textureY - 200, "gj_songIcon_001.png", this._audio.getUserMusicVolume(), v => this._audio.setUserMusicVolume(v));
+    createSlider(textureY + 200, "GJ_sfxIcon_001.png", this._sfxVolume, v => {
+        this._sfxVolume = v;
+        localStorage.setItem("userSfxVol", v);
+    });
+ }
+_buildSettingsPopup() {
+    if (this._settingsPopup) return;
+
+    const centerX = screenWidth / 2,
+        centerY = 320,
+        panelWidth = 800,
+        panelHeight = 550;
+
+    this._settingsPopup = this.add.container(0, 0).setScrollFactor(0).setDepth(250);
+
+    const dim = this.add.rectangle(centerX, centerY, screenWidth, screenHeight, 0, 150 / 255).setInteractive();
+    this._settingsPopup.add(dim);
+
+    const corner = 0.325 * this.textures.get("GJ_square02").source[0].width;
+    const panel = this._drawScale9(centerX, centerY, panelWidth, panelHeight, 'GJ_square02', corner, 16777215, 1);
+    this._settingsPopup.add(panel);
+
+    this._settingsPopup.add(this.add.bitmapText(centerX, centerY - (panelHeight / 2) + 45, "bigFont", "Settings", 40).setOrigin(0.5));
+
+    const closeBtn = this.add.image(centerX - (panelWidth / 2) + 20, centerY - (panelHeight / 2) + 20, 'GJ_WebSheet', "GJ_closeBtn_001.png").setScale(0.8).setInteractive();
+    this._settingsPopup.add(closeBtn);
+    this._makeBouncyButton(closeBtn, 0.8, () => {
+        this._settingsPopup.destroy();
+        this._settingsPopup = null;
     });
 
-    this._noclipCheckbox = this._createPauseToggleButton(this._pauseContainer, textureY - 300, 600, "Noclip", window.noClip, value => {
-      window.noClip = value;
-    });
+    const column1X = centerX - 200;
+    const column2X = centerX + 200;
+    const checkOffset = -120;
+    const textOffset = -70;
+    const spacingY = 70;
+    const startY = centerY - 150;
 
-    this._showHitboxesCheckbox = this._createPauseToggleButton(this._pauseContainer, textureY - 100, 600, "Hitbox", window.showHitboxes, value => {
-      window.showHitboxes = value;
-      this._player.setShowHitboxes(value);
-    });
+    const createToggle = (x, y, label, getVal, setVal, callback = null) => {
+        const getTex = () => getVal() ? "GJ_checkOn_001.png" : "GJ_checkOff_001.png";
+        const check = this.add.image(x + checkOffset, y, "GJ_GameSheet03", getTex()).setScale(0.8).setInteractive();
+        const txt = this.add.bitmapText(x + textOffset, y, "bigFont", label, 25).setOrigin(0, 0.5);
+        this._settingsPopup.add([check, txt]);
 
-    this._showPercentageCheckbox = this._createPauseToggleButton(this._pauseContainer, textureY + 100, 600, "%", window.showPercentage, value => {
-      window.showPercentage = value;
-      this._percentageLabel.setVisible(value);
-    });
+        this._makeBouncyButton(check, 0.8, () => {
+            setVal(!getVal());
+            check.setTexture("GJ_GameSheet03", getTex());
+            if (callback) callback(getVal());
+            this._saveSettings();
+        });
+    };
 
-    this._solidWaveCheckbox = this._createPauseToggleButton(this._pauseContainer, textureY + 250, 600, "Solid", window.solidWave, value => {
-      window.solidWave = value;
-    });
+    createToggle(column1X, startY, "Show Percentage", 
+        () => window.showPercentage, 
+        (v) => window.showPercentage = v,
+        (v) => { if (this._percentageLabel) this._percentageLabel.setVisible(v); }
+    );
+
+    createToggle(column1X, startY + spacingY, "Percentage Decimals", 
+        () => window.percentageDecimals, 
+        (v) => window.percentageDecimals = v
+    );
+
+    createToggle(column1X, startY + (spacingY * 2), "StartPos Switcher", 
+        () => window.startPosSwitcher, 
+        (v) => window.startPosSwitcher = v,
+        (v) => {
+            if (!v) this._startPosIndex = -1;
+            if (this._startPosGui) this._startPosGui.setVisible(v);
+            const total = this._level.getStartPositions().length;
+            if (this._startPosText) this._startPosText.setText(`0/${total}`);
+        }
+    );
+
+    createToggle(column1X, startY + (spacingY * 3), "Noclip", 
+        () => window.noClip, 
+        (v) => window.noClip = v,
+        (v) => { if (this._noclipIndicator) this._noclipIndicator.setVisible(v); }
+    );
+
+    createToggle(column1X, startY + (spacingY * 4), "Show Hitboxes", 
+        () => window.showHitboxes, 
+        (v) => window.showHitboxes = v,
+        (v) => { if (!v && this._player._hitboxGraphics) this._player._hitboxGraphics.clear(); }
+    );
+
+    createToggle(column1X, startY + (spacingY * 5), "Hitbox Trail", 
+        () => window.showHitboxTrail, 
+        (v) => window.showHitboxTrail = v,
+        (v) => { if (!v) this._hitboxTrail = []; }
+    );
+
+    createToggle(column2X, startY, "Show FPS", 
+        () => this._fpsText.visible, 
+        (v) => this._fpsText.visible = v,
+        (v) => { if (this._fpsText) this._fpsText.setVisible(v); }
+    );
+
+    createToggle(column2X, startY + spacingY, "Solid Wave Trail", 
+        () => window.solidWave, 
+        (v) => window.solidWave = v
+    );
+  }
+  _saveSettings() {
+    const settings = {
+        noclip: window.noClip,
+        showPercentage: window.showPercentage,
+        percentDecimals: window.percentageDecimals,
+        showHitboxes: window.showHitboxes,
+        startPosSwitcher: window.startPosSwitcher,
+        hitboxTrail: window.showHitboxTrail,
+        showFPS: this._fpsText.visible,
+        solidWaveTrail: window.solidWave
+    };
+    localStorage.setItem("gd_settings", JSON.stringify(settings));
+  }
+  _loadSettings() {
+    const saved = localStorage.getItem("gd_settings");
+    const defaults = {
+        noclip: false,
+        showPercentage: true,
+        percentDecimals: false,
+        showHitboxes: false,
+        startPosSwitcher: false,
+        hitboxTrail: false,
+        showFPS: false,
+        solidWaveTrail: false
+    };
+
+    const data = saved ? JSON.parse(saved) : defaults;
+
+    window.noClip = data.noclip;
+    window.showPercentage = data.showPercentage;
+    window.percentageDecimals = data.percentDecimals;
+    window.showHitboxes = data.showHitboxes;
+    window.startPosSwitcher = data.startPosSwitcher;
+    window.showHitboxTrail = data.hitboxTrail;
+    this._fpsText.visible = data.showFPS;
+    window.solidWave = data.solidWaveTrail;
   }
   _buildInfoPopup() {
     if (this._infoPopup) {
@@ -7659,11 +7932,14 @@ this._escKey.on("down", () => {
     const _0x3cdf70a = this.add.bitmapText(xPos, yPos, "goldFont", "Modded by:", 40).setOrigin(0.5, 0.5).setScale(0.6);
     this._infoPopup.add(_0x3cdf70a);
     yPos += 35;
-    const _0x3cdf70c = this.add.bitmapText(xPos, yPos, "goldFont", "AntiMatter, breadbb, bog, aloaf", 40).setOrigin(0.5, 0.5).setScale(0.6);
+    const _0x3cdf70b = this.add.bitmapText(xPos, yPos, "goldFont", "AntiMatter, breadbb, bog, aloaf", 40).setOrigin(0.5, 0.5).setScale(0.6);
+    this._infoPopup.add(_0x3cdf70b);
+    yPos += 35;
+    const _0x3cdf70c = this.add.bitmapText(xPos, yPos, "goldFont", "PinkDev, rohanis0000, arbstro", 40).setOrigin(0.5, 0.5).setScale(0.6);
     this._infoPopup.add(_0x3cdf70c);
     yPos += 35;
-    const _0x3cdf70b = this.add.bitmapText(xPos, yPos, "goldFont", "PinkDev, rohanis0000, arbstro", 40).setOrigin(0.5, 0.5).setScale(0.6);
-    this._infoPopup.add(_0x3cdf70b);
+    const _0x3cdf70d = this.add.bitmapText(xPos, yPos, "goldFont", "Lasokar", 40).setOrigin(0.5, 0.5).setScale(0.6);
+    this._infoPopup.add(_0x3cdf70d);
     yPos += 35;
     const _0x97b2a9 = this.add.text(xPos, 463, "© 2026 RobTop Games. All rights reserved.", {
       fontSize: "12px",
@@ -7679,7 +7955,7 @@ this._escKey.on("down", () => {
     }
   }
   _buildUpdateLogPopup() {
-    if (this._updateLogPopup) {
+    if (this._updateLogPopup || window.levelID) {
       return;
     }
     const xPos = screenWidth / 2;
@@ -8314,15 +8590,47 @@ this._escKey.on("down", () => {
     this._level.resetVisibility();
     if (this._orbGfx) { this._orbGfx.clear(); }
     this._colorManager.reset();
+
+    const musicOffset = this._getStartPosMusicOffset();
+    const startPositions = this._level.getStartPositions();
+
+    if (this._startPosIndex !== -1 && startPositions[this._startPosIndex]) {
+      const pos = startPositions[this._startPosIndex];
+
+      this._playerWorldX = pos.x;
+      this._state.y = pos.y;
+      if (pos.gameMode == 1) {
+        this._player.enterShipMode();
+      } else if (pos.gameMode == 2) {
+        this._state.y = 30;
+        this._player.enterBallMode({ y: 30 });
+      } else if (pos.gameMode == 3) {
+        this._player.enterUfoMode();
+      } else if (pos.gameMode == 4) {
+        this._player.enterWaveMode();
+      } else if (pos.gameMode == 6) {
+        this._player.enterSpiderMode();
+      }
+      this._state.gravityFlipped = pos.gravityFlipped;
+      this._state.isMini = pos.miniMode;
+      playerSpeed = [
+        SpeedPortal.ONE_TIMES,
+        SpeedPortal.HALF,
+        SpeedPortal.TWO_TIMES,
+        SpeedPortal.THREE_TIMES, 
+        SpeedPortal.FOUR_TIMES
+      ][pos.speed];
+      this._state.mirrored = pos.mirrored;
+      this._level.fastForwardTriggers(pos.x, this._colorManager);
+    }
+
     this._audio.reset();
-    this._audio.startMusic();
+    this._audio.startMusic(musicOffset);
     this._paused = false;
     if (this._pauseContainer) {
       this._pauseContainer.destroy();
       this._pauseContainer = null;
     }
-    this._noclipCheckbox = null;
-    this._showHitboxesCheckbox = null;
     this._pauseBtn.setVisible(true).setAlpha(75 / 255);
     if (this._practiceModeBarContainer) {
       this._practiceModeBarContainer.setVisible(this._practicedMode && this._practicedMode.practiceMode);
@@ -8340,7 +8648,21 @@ this._escKey.on("down", () => {
       this._player.enterUfoMode();
     } else if (gamemode == 4) {
       this._player.enterWaveMode();
+    } else if (gamemode == 6) {
+      this._player.enterSpiderMode();
     }
+
+    if (this._player && this._player._hitboxTrail) {
+      this._player._hitboxTrail = [];
+    }
+  }
+  _getStartPosMusicOffset(){
+    const startPositions = this._level.getStartPositions();
+    let musicOffset = 0;
+    if (this._startPosIndex !== -1 && startPositions[this._startPosIndex]) {
+      musicOffset = startPositions[this._startPosIndex].x / 623.16; 
+    }
+    return musicOffset;
   }
   _respawnFromCheckpoint() {
     const checkpoint = this._practicedMode.loadLastCheckpoint();
@@ -8459,6 +8781,10 @@ this._escKey.on("down", () => {
     if (!this._audio.musicPlaying) {
       this._audio.startMusic();
     }
+
+    if (this._player && this._player._hitboxTrail) {
+      this._player._hitboxTrail = [];
+    }
   }
   _onFullscreenChange(_0x310c5b) {
     if (!_0x310c5b) {
@@ -8481,8 +8807,6 @@ this._escKey.on("down", () => {
     if (this._paused && this._pauseContainer) {
       this._pauseContainer.destroy();
       this._pauseContainer = null;
-      this._noclipCheckbox = null;
-      this._showHitboxesCheckbox = null;
       this._buildPauseOverlay();
     }
     this._level.resizeScreen();
@@ -8559,6 +8883,27 @@ this._escKey.on("down", () => {
     return _0xd8019e * 60;
   }
   update(_0x54fa47, deltaTime) {
+
+    let rawPercent = (this._playerWorldX / this._level.endXPos) * 100;
+    rawPercent = Math.min(100, Math.max(0, rawPercent));
+    let displayValue;
+    if (this._levelWon) {
+      const p = this._interpolatedPercent || 0;
+      if (window.percentageDecimals) {
+        displayValue = p.toFixed(2) + "%";
+      } else {
+        displayValue = Math.floor(p) + "%";
+      }
+    } else if (window.percentageDecimals) {
+        displayValue = rawPercent.toFixed(2) + "%";
+    } else {
+        displayValue = Math.floor(rawPercent) + "%";
+    }
+    this._percentageLabel.setText(displayValue);
+    this._percentageLabel.setVisible(window.showPercentage && !this._menuActive);
+    this._startPosGui.setVisible(window.startPosSwitcher && !this._menuActive);
+    this._noclipIndicator.setVisible(window.noClip && !this._menuActive);
+
     this._fpsAccum += deltaTime;
     this._fpsFrames++;
     if (this._fpsAccum >= 250) {
@@ -8567,7 +8912,7 @@ this._escKey.on("down", () => {
       this._fpsFrames = 0;
     }
     if (this._paused) {
-      if (!this._updateLogPopup && (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown) && !this._spaceWasDown) {
+      if (!this._updateLogPopup && (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown) && !this._spaceWasDown && !this._settingsPopup) {
         setTimeout(() => {
           this._resumeGame();
         }, 75);
@@ -8918,7 +9263,6 @@ if (!this._state.isFlying && !this._state.isWave && !this._state.isUfo) {
       this._player2.syncSprites(this._cameraX, this._cameraY, deltaTime / 1000, this._getMirrorXOffset(playerScreenX));
     }
     this._applyMirrorEffect();
-    this._percentageLabel.setText(`${(this._playerWorldX / (this._level.endXPos || 6000) * 100).toFixed(2)}%`)
   }
 _applyMirrorEffect() {
     const isMirrored = this._state.mirrored;
