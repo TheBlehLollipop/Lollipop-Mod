@@ -1763,8 +1763,15 @@ class us {
             _0x3f8c4f = objectDef.gridW * 12;
             _0x2a123d = objectDef.gridH * 24;
           }
+          const _hasHitboxRadius = objectDef.hitbox_radius !== undefined && objectDef.hitbox_radius !== null;
+          const _worldHitboxRadius = _hasHitboxRadius ? objectDef.hitbox_radius * 2 : 0;
+          if (_hasHitboxRadius && _0x3f8c4f === 0) {
+            _0x3f8c4f = _worldHitboxRadius * 2;
+            _0x2a123d = _worldHitboxRadius * 2;
+          }
           if (_0x3f8c4f > 0 && _0x2a123d > 0) {
             let _0x3c84ad = new Collider(hazardType, worldX, worldY, _0x3f8c4f, _0x2a123d, levelObj.rot || 0);
+            if (_hasHitboxRadius) _0x3c84ad.hitbox_radius = _worldHitboxRadius;
             _registerCollider(_0x3c84ad);
             this.objects.push(_0x3c84ad);
             this._addCollisionToSection(_0x3c84ad);
@@ -4460,9 +4467,9 @@ _updateBallJump(_0x2fe319) {
     const playerSize = this.p.isMini ? 18 : 30;
     const waveHitSize = this.p.isMini ? 6 : 9;
     const pieceWidth = _0x2f5078 + centerX;
-    const _0x8e0d28 = this.p.y;
-    const _0x37040a = this.p.lastY;
-    const _0x11ee2f = this.p.isFlying || this.p.isWave || this.p.isUfo ? 12 : 20;
+    const playersY = this.p.y;
+    const playersLastY = this.p.lastY;
+    const gamemodeAddition = this.p.isFlying || this.p.isWave || this.p.isUfo ? 12 : 20;
     this.p.collideTop = 0;
     this.p.collideBottom = 0;
     this.p.onCeiling = false;
@@ -4491,7 +4498,16 @@ _updateBallJump(_0x2fe319) {
       let rotatedTop = gameObj.y - rotatedHalfHeight;
       let rotatedBottom = gameObj.y + rotatedHalfHeight;
       const _broadSize = this.p.isWave ? waveHitSize : playerSize;
-      if (!(pieceWidth + _broadSize <= rotatedLeft) && !(pieceWidth - _broadSize >= rotatedRight) && !(_0x8e0d28 + _broadSize <= rotatedTop) && !(_0x8e0d28 - _broadSize >= rotatedBottom)) {
+      const _hasCircleHitbox = gameObj.hitbox_radius !== undefined && gameObj.hitbox_radius !== null;
+      let _broadPhaseHit;
+      if (_hasCircleHitbox) {
+        const _dx = pieceWidth - gameObj.x;
+        const _dy = playersY - gameObj.y;
+        _broadPhaseHit = (_dx * _dx + _dy * _dy) <= (gameObj.hitbox_radius + _broadSize) * (gameObj.hitbox_radius + _broadSize);
+      } else {
+        _broadPhaseHit = !(pieceWidth + _broadSize <= rotatedLeft) && !(pieceWidth - _broadSize >= rotatedRight) && !(playersY + _broadSize <= rotatedTop) && !(playersY - _broadSize >= rotatedBottom);
+      }
+      if (_broadPhaseHit) {
         const _colType = gameObj.type;
         if (_colType === "portal_fly") {
           if (!gameObj.activated) {
@@ -4836,19 +4852,39 @@ _updateBallJump(_0x2fe319) {
           }
         } else if (_colType === hazardType) {
           if (window.noClip) continue;
+          if (_hasCircleHitbox) {
+            const _hdx = pieceWidth - gameObj.x;
+            const _hdy = playersY - gameObj.y;
+            const _hDistSq = _hdx * _hdx + _hdy * _hdy;
+            const _hMinDist = gameObj.hitbox_radius + (this.p.isWave ? waveHitSize : playerSize);
+            if (_hDistSq > _hMinDist * _hMinDist) continue;
+          }
           this.killPlayer();
           return;
         } else if (_colType === solidType) {
-          let _0x146a97 = _0x8e0d28 - playerSize + _0x11ee2f;
-          let _0x869e42 = _0x37040a - playerSize + _0x11ee2f;
-          let _0x3e7199 = _0x8e0d28 + playerSize - _0x11ee2f;
-          let _0x135a9d = _0x37040a + playerSize - _0x11ee2f;
+          let _0x146a97 = playersY - playerSize + gamemodeAddition;
+          let _0x869e42 = playersLastY - playerSize + gamemodeAddition;
+          let _0x3e7199 = playersY + playerSize - gamemodeAddition;
+          let _0x135a9d = playersLastY + playerSize - gamemodeAddition;
           const _0x55559d = 9;
-          const _0x3c1654 = pieceWidth + _0x55559d > left && pieceWidth - _0x55559d < right && _0x8e0d28 + _0x55559d > top && _0x8e0d28 - _0x55559d < bottom;
+          let iscolliding;
+          if (_hasCircleHitbox) {
+            const _sdx = pieceWidth - gameObj.x;
+            const _sdy = playersY - gameObj.y;
+            const _sDistSq = _sdx * _sdx + _sdy * _sdy;
+            const _sTightRadius = gameObj.hitbox_radius + _0x55559d;
+            iscolliding = _sDistSq <= _sTightRadius * _sTightRadius;
+            left = gameObj.x - gameObj.hitbox_radius;
+            right = gameObj.x + gameObj.hitbox_radius;
+            top = gameObj.y - gameObj.hitbox_radius;
+            bottom = gameObj.y + gameObj.hitbox_radius;
+          } else {
+            iscolliding = pieceWidth + _0x55559d > left && pieceWidth - _0x55559d < right && playersY + _0x55559d > top && playersY - _0x55559d < bottom;
+          }
           const _0xLandBot = (this.p.yVelocity <= 0 || this.p.onGround) && (_0x146a97 >= bottom || _0x869e42 >= bottom);
           const _0xLandTop = (this.p.yVelocity >= 0 || this.p.onGround) && (_0x3e7199 <= top || _0x135a9d <= top);
-          const _0x2841ea = this.p.gravityFlipped ? _0xLandTop : _0xLandBot;
-          if (_0x3c1654 && !_0x2841ea) {
+          const isstandingOnAPlatform = this.p.gravityFlipped ? _0xLandTop : _0xLandBot;
+          if (iscolliding && !isstandingOnAPlatform) {
             if (window.noClip || gameObj.objid === 143) continue
             this.killPlayer();
             return;
@@ -4901,7 +4937,7 @@ _updateBallJump(_0x2fe319) {
               continue;
             }
             if (!this.p.gravityFlipped && (_0x3e7199 <= top || _0x135a9d <= top) && this.p.yVelocity >= 0) {
-              if (_0x3c1654) {
+              if (iscolliding) {
                 if (window.noClip || gameObj.objid === 143) continue;
                 this.killPlayer();
                 return;
@@ -5002,31 +5038,35 @@ _updateBallJump(_0x2fe319) {
       } else if (nearObject.type === jumpRingType) {
         hitboxColor = 16711935;
       }
-      let rot = Phaser.Math.DegToRad(nearObject.rotationDegrees);
-      let cos = Math.cos(rot);
-      let sin = Math.sin(rot);
-      let negWidth = -nearObject.w / 2;
-      let negHeight = -nearObject.h / 2;
-      let posWidth =  nearObject.w / 2;
-      let posHeight =  nearObject.h / 2;
-      let points = [
-        { x: negWidth, y: negHeight },
-        { x: posWidth, y: negHeight },
-        { x: posWidth, y: posHeight },
-        { x: negWidth, y: posHeight }
-      ];
-      let rotations = points.map(p => ({
-        x: objXCenter + p.x * cos - p.y * sin,
-        y: objYCenter + p.x * sin + p.y * cos
-      }));
       graphics.lineStyle(2, hitboxColor, 0.7);
-      graphics.beginPath();
-      graphics.moveTo(rotations[0].x, rotations[0].y);
-      graphics.lineTo(rotations[1].x, rotations[1].y);
-      graphics.lineTo(rotations[2].x, rotations[2].y);
-      graphics.lineTo(rotations[3].x, rotations[3].y);
-      graphics.closePath();
-      graphics.strokePath();
+      if (nearObject.hitbox_radius !== undefined && nearObject.hitbox_radius !== null) {
+        graphics.strokeCircle(objXCenter, objYCenter, nearObject.hitbox_radius);
+      } else {
+        let rot = Phaser.Math.DegToRad(nearObject.rotationDegrees);
+        let cos = Math.cos(rot);
+        let sin = Math.sin(rot);
+        let negWidth = -nearObject.w / 2;
+        let negHeight = -nearObject.h / 2;
+        let posWidth =  nearObject.w / 2;
+        let posHeight =  nearObject.h / 2;
+        let points = [
+          { x: negWidth, y: negHeight },
+          { x: posWidth, y: negHeight },
+          { x: posWidth, y: posHeight },
+          { x: negWidth, y: posHeight }
+        ];
+        let rotations = points.map(p => ({
+          x: objXCenter + p.x * cos - p.y * sin,
+          y: objYCenter + p.x * sin + p.y * cos
+        }));
+        graphics.beginPath();
+        graphics.moveTo(rotations[0].x, rotations[0].y);
+        graphics.lineTo(rotations[1].x, rotations[1].y);
+        graphics.lineTo(rotations[2].x, rotations[2].y);
+        graphics.lineTo(rotations[3].x, rotations[3].y);
+        graphics.closePath();
+        graphics.strokePath();
+      }
     }
 
     if (window.showHitboxTrail) {
