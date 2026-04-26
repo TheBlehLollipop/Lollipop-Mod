@@ -5016,6 +5016,7 @@ _updateBallJump(_0x2fe319) {
     graphics.clear();
     const playerSize = this.p.isMini ? 18 : 30;
     const hitboxsize = playerSize*2;
+    const isFlipped = this.p.mirrored;
     const camXCenter = camX + centerX;
     const playerY = this.p.y;
     const nearbyObjects = this._gameLayer.getNearbySectionObjects(camXCenter);
@@ -5038,9 +5039,10 @@ _updateBallJump(_0x2fe319) {
       } else if (nearObject.type === jumpRingType) {
         hitboxColor = 16711935;
       }
+      const xPos = isFlipped ? screenWidth - objXCenter : objXCenter;
       graphics.lineStyle(2, hitboxColor, 0.7);
       if (nearObject.hitbox_radius !== undefined && nearObject.hitbox_radius !== null) {
-        graphics.strokeCircle(objXCenter, objYCenter, nearObject.hitbox_radius);
+        graphics.strokeCircle(xPos, objYCenter, nearObject.hitbox_radius);
       } else {
         let rot = Phaser.Math.DegToRad(nearObject.rotationDegrees);
         let cos = Math.cos(rot);
@@ -5056,8 +5058,8 @@ _updateBallJump(_0x2fe319) {
           { x: negWidth, y: posHeight }
         ];
         let rotations = points.map(p => ({
-          x: objXCenter + p.x * cos - p.y * sin,
-          y: objYCenter + p.x * sin + p.y * cos
+          x: xPos + (isFlipped ? -(p.x * cos - p.y * sin) : (p.x * cos - p.y * sin)),
+          y: objYCenter + (isFlipped ? -(p.x * sin + p.y * cos) : (p.x * sin + p.y * cos))
         }));
         graphics.beginPath();
         graphics.moveTo(rotations[0].x, rotations[0].y);
@@ -5078,7 +5080,8 @@ _updateBallJump(_0x2fe319) {
       }
 
       this._hitboxTrail.forEach((pos, index) => {
-          const trailX = pos.x - camX;
+          const trailXRaw = pos.x - camX;
+          const trailX = isFlipped ? screenWidth - trailXRaw : trailXRaw;
           const trailY = b(pos.y) + camY;
 
           // 1. Outer box (red)
@@ -5096,18 +5099,19 @@ _updateBallJump(_0x2fe319) {
     }
 
     const _0x1e788a = b(playerY) + camY;
+    const _playerDrawX = isFlipped ? screenWidth - centerX : centerX;
     // comments so its easier for other people to read ts
     // outer box (red)
     graphics.lineStyle(2, hexToHexadecimal("ff0000"), 0.8);
-    graphics.strokeRect(centerX - playerSize, _0x1e788a - playerSize, hitboxsize, hitboxsize);
+    graphics.strokeRect(_playerDrawX - playerSize, _0x1e788a - playerSize, hitboxsize, hitboxsize);
     // ----
     // inner circle (dark red)
     graphics.lineStyle(2, hexToHexadecimal("b30001"), 0.8);
-    graphics.strokeCircle((centerX - playerSize)+hitboxsize/2, (_0x1e788a - playerSize)+hitboxsize/2, hitboxsize/2);
+    graphics.strokeCircle((_playerDrawX - playerSize)+hitboxsize/2, (_0x1e788a - playerSize)+hitboxsize/2, hitboxsize/2);
     // ----
     // inner hitbox (blue)
     graphics.lineStyle(2, hexToHexadecimal("0000ff"), 1);
-    graphics.strokeRect(centerX - 9, _0x1e788a - 9, 18, 18);
+    graphics.strokeRect(_playerDrawX - 9, _0x1e788a - 9, 18, 18);
   }
   playEndAnimation(_0x24408e, _0x281588, _0x54bbf4) {
     this._endAnimating = true;
