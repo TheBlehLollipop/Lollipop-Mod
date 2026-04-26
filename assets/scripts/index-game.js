@@ -3715,7 +3715,11 @@ if (this.p.isFlying || this.p.isUfo) {
     }
     this._gameLayer.setFlyMode(false, 0);
   }
-hitGround() {
+  hitGround() {
+    if (this.p.gravityFlipped && !this.p.onCeiling && !this.p.isFlying && !this.p.isBall && !this.p.isUfo && !this.p.isSpider) {
+        this.killPlayer();
+        return;
+    }
     const _0x4a38a5 = !this.p.onGround;
     if (!this.p.isFlying && !this.p.isWave && !this.p.isUfo) {
       this.p.lastGroundY = this.p.y;
@@ -4026,11 +4030,17 @@ hitGround() {
     }
     this._explosionPieces = null;
   }
-  _playPortalShine(_0x49e81f) {
+  _playPortalShine(_0x49e81f, type = 1) {
     const _0x4ed8ff = this._scene;
     const _0xf31b0d = _0x49e81f.x;
     const _0x3824c0 = b(_0x49e81f.portalY);
-    const _0x19c6b0 = ["portalshine_02_front_001.png", "portalshine_02_back_001.png"];
+
+    const typeStr = (type === 1) ? "02" : "01";
+    const _0x19c6b0 = [
+      `portalshine_${typeStr}_front_001.png`,
+      `portalshine_${typeStr}_back_001.png`
+    ];
+
     const _0x5d636a = [this._gameLayer.topContainer, this._gameLayer.container];
     for (let _0x34fd8c = 0; _0x34fd8c < 2; _0x34fd8c++) {
       const _0x4bfe30 = R(_0x4ed8ff, _0x19c6b0[_0x34fd8c]);
@@ -4571,13 +4581,13 @@ _updateBallJump(_0x2fe319) {
         } else if (_colType === "portal_gravity_down") {
           if (!gameObj.activated) {
             gameObj.activated = true;
-            this._playPortalShine(gameObj);
+            this._playPortalShine(gameObj, 2);
             this.flipGravity(false, 0.5);
           }
         } else if (_colType === "portal_gravity_up") {
           if (!gameObj.activated) {
             gameObj.activated = true;
-            this._playPortalShine(gameObj);
+            this._playPortalShine(gameObj, 2);
             this.flipGravity(true, 0.5);
           }
         } else if (_colType === "portal_mirror_on") {
@@ -4691,7 +4701,7 @@ _updateBallJump(_0x2fe319) {
         } else if (_colType === jumpRingType) {
           const _orbId = gameObj.orbId;
           const _isDash = (_orbId === 1704 || _orbId === 1751);
-          const _needsClick = _isDash ? this.p.upKeyDown : (this.p.queuedHold && this.p.upKeyDown);
+          const _needsClick = this.p.isFlying || this.p.isUfo ? this.p.upKeyDown : (_isDash ? this.p.upKeyDown : (this.p.queuedHold && this.p.upKeyDown));
           if (!gameObj.activated && _needsClick) {
             if (_isDash) {
               gameObj._dashHoldTicks = (gameObj._dashHoldTicks || 0) + 1;
@@ -4968,9 +4978,29 @@ _updateBallJump(_0x2fe319) {
     const iscube = !this.p.isFlying && !this.p.isBall && !this.p.isWave && !this.p.isUfo && !this.p.isSpider;
     const _effectiveSize = this.p.isWave ? waveHitSize : playerSize;
     if (!_0x30410f && !_boostedThisStep) {
-      if (!this.p.gravityFlipped && this.p.y <= _0x3020c8 + _effectiveSize) {
-        this.p.y = _0x3020c8 + _effectiveSize;
-        this.hitGround();
+      let gravCeilY = this._gameLayer.getCeilingY();
+
+      if (!_0x30410f && !_boostedThisStep) {
+        if (this.p.y <= _0x3020c8 + _effectiveSize) {
+          if (!this.p.gravityFlipped || !iscube) {
+            this.p.y = _0x3020c8 + _effectiveSize;
+            this.hitGround();
+            if (this.p.gravityFlipped) this.p.onCeiling = true;
+          } else if (this.p.gravityFlipped && iscube && this.p.yVelocity < -0.5 && !window.noClip) {
+            this.killPlayer();
+            return;
+          }
+        }
+
+        if (gravCeilY !== null) {
+          if (this.p.y >= gravCeilY - _effectiveSize) {
+            if (this.p.gravityFlipped) {
+              this.p.y = gravCeilY - _effectiveSize;
+              this.hitGround();
+              this.p.onCeiling = true;
+            }
+          }
+        }
       }
       if (!this.p.gravityFlipped && !window.noClip && this.p.y < _0x3020c8 - 30) {
         this.p.y = _0x3020c8 + _effectiveSize;
@@ -5083,34 +5113,40 @@ _updateBallJump(_0x2fe319) {
           const trailXRaw = pos.x - camX;
           const trailX = isFlipped ? screenWidth - trailXRaw : trailXRaw;
           const trailY = b(pos.y) + camY;
+          graphics.lineStyle(1, hexToHexadecimal("ff0000"), 1);
 
-          // 1. Outer box (red)
-          graphics.lineStyle(1, hexToHexadecimal("ff0000"), 0.5);
-          graphics.strokeRect(trailX - playerSize, trailY - playerSize, hitboxsize, hitboxsize);
+          if (!this.p.isWave){
+            // outer box (red)
+            graphics.lineStyle(1, hexToHexadecimal("ff0000"), 0.5);
+            graphics.strokeRect(trailX - playerSize, trailY - playerSize, hitboxsize, hitboxsize);
 
-          // 2. Inner circle (dark red)
-          graphics.lineStyle(1, hexToHexadecimal("b30001"), 0.5);
-          graphics.strokeCircle((trailX - playerSize) + hitboxsize / 2, (trailY - playerSize) + hitboxsize / 2, hitboxsize / 2);
+            // inner circle (dark red)
+            graphics.lineStyle(1, hexToHexadecimal("b30001"), 0.5);
+            graphics.strokeCircle((trailX - playerSize) + hitboxsize / 2, (trailY - playerSize) + hitboxsize / 2, hitboxsize / 2);
 
-          // 3. Inner hitbox (blue square)
-          graphics.lineStyle(1, hexToHexadecimal("0000ff"), 1);
+            graphics.lineStyle(1, hexToHexadecimal("0000ff"), 1);
+          }
+
+          // inner hitbox
           graphics.strokeRect(trailX - 9, trailY - 9, 18, 18);
       });
     }
 
+    // comments so its easier for other people to read ts
     const _0x1e788a = b(playerY) + camY;
     const _playerDrawX = isFlipped ? screenWidth - centerX : centerX;
-    // comments so its easier for other people to read ts
-    // outer box (red)
-    graphics.lineStyle(2, hexToHexadecimal("ff0000"), 0.8);
-    graphics.strokeRect(_playerDrawX - playerSize, _0x1e788a - playerSize, hitboxsize, hitboxsize);
-    // ----
-    // inner circle (dark red)
-    graphics.lineStyle(2, hexToHexadecimal("b30001"), 0.8);
-    graphics.strokeCircle((_playerDrawX - playerSize)+hitboxsize/2, (_0x1e788a - playerSize)+hitboxsize/2, hitboxsize/2);
-    // ----
-    // inner hitbox (blue)
-    graphics.lineStyle(2, hexToHexadecimal("0000ff"), 1);
+    graphics.lineStyle(1, hexToHexadecimal("ff0000"), 1);
+    if (!this.p.isWave){
+      // outer box (red)
+      graphics.lineStyle(2, hexToHexadecimal("ff0000"), 0.8);
+      graphics.strokeRect(_playerDrawX - playerSize, _0x1e788a - playerSize, hitboxsize, hitboxsize);
+      // inner circle (dark red)
+      graphics.lineStyle(2, hexToHexadecimal("b30001"), 0.8);
+      graphics.strokeCircle((_playerDrawX - playerSize)+hitboxsize/2, (_0x1e788a - playerSize)+hitboxsize/2, hitboxsize/2);
+
+      graphics.lineStyle(2, hexToHexadecimal("0000ff"), 1);
+    }
+    // inner hitbox
     graphics.strokeRect(_playerDrawX - 9, _0x1e788a - 9, 18, 18);
   }
   playEndAnimation(_0x24408e, _0x281588, _0x54bbf4) {
