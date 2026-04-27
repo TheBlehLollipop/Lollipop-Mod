@@ -6105,7 +6105,9 @@ class xs extends Phaser.Scene {
         const levelIdParsed = gdMap["1"] || levelId;
         const songIdRaw     = (gdMap["35"] || "").trim();
         const isCustomSong  = !!songIdRaw && songIdRaw !== "0";
-        const songKey       = isCustomSong ? `ng_song_${songIdRaw}` : window.currentlevel[0];
+        const officialSongId = gdMap["12"] || "0";
+        const songKey = isCustomSong ? `ng_song_${songIdRaw}` : window.allLevels[officialSongId][0];
+        window.currentlevel[0] = songKey;
         window._onlineSongOffset = parseFloat(gdMap["45"] || "0") || 0;
         console.log("song offset (field 45):", window._onlineSongOffset);
         console.log("level:", levelName, "| songId:", songIdRaw, "| custom:", isCustomSong);
@@ -6159,7 +6161,7 @@ class xs extends Phaser.Scene {
         window._onlineLevelId     = "online_" + levelIdParsed;
         this.game.registry.set("autoStartGame", true);
         window.currentlevel = [
-          isCustomSong ? songKey : window.currentlevel[0],
+          songKey,
           levelName,
           window._onlineLevelId,
           [window._onlineSongArtist || "Unknown"]
