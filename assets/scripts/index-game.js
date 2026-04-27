@@ -4690,7 +4690,7 @@ _updateBallJump(_0x2fe319) {
           const _orbId = gameObj.orbId;
           const _isDash = (_orbId === 1704 || _orbId === 1751);
           const justPressed = this.p.upKeyDown && !this.p.wasUpKeyDown;
-          const _needsClick = (this.p.isFlying || this.p.isUfo) ? justPressed : (_isDash ? this.p.upKeyDown : (this.p.queuedHold && this.p.upKeyDown));
+          const _needsClick = (this.p.isFlying || this.p.isUfo) ? justPressed : (_isDash ? this.p.upKeyDown : (justPressed || (this.p.queuedHold && this.p.upKeyDown)));
           this.p.touchingRing = true;
           if (!gameObj.activated && _needsClick) {
             if (_isDash) {
@@ -5044,15 +5044,15 @@ _updateBallJump(_0x2fe319) {
     this.p.wasUpKeyDown = this.p.upKeyDown;
     if (this.p.diedThisFrame == true && window.noClipAccuracy){
       this.noclipStats.deathFrames++;
+      this._scene.tweens.killTweensOf(this._scene.noclipFlash);
+      this._scene.tweens.add({
+        targets: this._scene.noclipFlash,
+        alpha: { from: 0.5, to: 0 },
+        duration: 400,
+        ease: 'Cubic.easeOut'
+      });
       if (this.p.diedLastFrame == false){
         this.noclipStats.deaths++;
-        this._scene.tweens.killTweensOf(this._scene.noclipFlash);
-        this._scene.tweens.add({
-            targets: this._scene.noclipFlash,
-            alpha: { from: 0.5, to: 0 },
-            duration: 400,
-            ease: 'Cubic.easeOut'
-        });
       }
     }
     if (this.noclipStats.totalFrames > 0) {
