@@ -7316,30 +7316,116 @@ class xs extends Phaser.Scene {
 
     const cardHit = this.add.zone(cardX, cardY, cardW, cardH)
       .setScrollFactor(0).setDepth(156).setInteractive();
-    cardHit.on("pointerdown", () => {
-      cardHit._pressed = true;
+    const dragState = {
+      pressed: false,
+      dragging: false,
+      startX: 0,
+      lastX: 0,
+      velSamples: [],
+      get vel() {
+        if (!this.velSamples.length) return 0;
+        return this.velSamples.reduce((a, b) => a + b, 0) / this.velSamples.length;
+      },
+      pushVel(v) {
+        this.velSamples.push(v);
+        if (this.velSamples.length > 5) this.velSamples.shift();
+      },
+      reset() {
+        this.pressed = false;
+        this.dragging = false;
+        this.velSamples = [];
+      }
+    };
+
+    const onDragStart = (ptr) => {
+      dragState.pressed = true;
+      dragState.startX = ptr.x;
+      dragState.lastX = ptr.x;
+      dragState.dragging = false;
+      dragState.velSamples = [];
+    };
+    cardHit.on("pointerdown", (ptr) => {
+      onDragStart(ptr);
       this.tweens.killTweensOf(cardBounceContainer, "scale");
       this.tweens.add({ targets: cardBounceContainer, scale: 1.26, duration: 300, ease: "Bounce.Out" });
     });
-    cardHit.on("pointerout", () => {
-      if (cardHit._pressed) {
-        cardHit._pressed = false;
+
+    const onDragMove = (ptr) => {
+      if (!dragState.pressed) return;
+      const dx = ptr.x - dragState.startX;
+      const frameDelta = ptr.x - dragState.lastX;
+      dragState.pushVel(frameDelta);
+      dragState.lastX = ptr.x;
+      if (!dragState.dragging && Math.abs(dx) > 12) {
+        dragState.dragging = true;
         this.tweens.killTweensOf(cardBounceContainer, "scale");
-        this.tweens.add({ targets: cardBounceContainer, scale: 1, duration: 400, ease: "Bounce.Out" });
+        this.tweens.add({ targets: cardBounceContainer, scale: 1, duration: 200, ease: "Quad.Out" });
       }
-    });
-    cardHit.on("pointerup", () => {
-      if (cardHit._pressed) {
-        cardHit._pressed = false;
-        this.tweens.killTweensOf(cardBounceContainer, "scale");
-        cardBounceContainer.setScale(1);
-        this._audio.playEffect("playSound_01", { volume: 1 });
-        this._closeLevelSelect(true);
-        this._audio.stopMusic();
-        this.game.registry.set("autoStartGame", true);
-        this.scene.restart();
+      if (dragState.dragging) {
+        cardContainer.x = dx;
       }
-    });
+    };
+    const onDragUp = (ptr) => {
+      if (!dragState.pressed) return;
+      const wasDragging = dragState.dragging;
+      const totalDx = ptr.x - dragState.startX;
+      const vel = dragState.vel;
+      dragState.reset();
+      if (wasDragging) {
+        const dragThreshold = cardW * 0.18;
+        if (Math.abs(totalDx) > dragThreshold || Math.abs(vel) > 3) {
+          const dir = totalDx < 0 ? 1 : -1;
+          switchLevel(dir, cardContainer.x, vel);
+        } else {
+          if (_currentAnimUpdate) {
+            this.events.off("preupdate", _currentAnimUpdate);
+            _currentAnimUpdate = null;
+          }
+          let snapX = cardContainer.x;
+          let snapVel = vel * 40;
+          const snapUpdate = (time, delta) => {
+            const dt = Math.min(delta / 1000, 0.05);
+            const tension = 400;
+            const friction = 18;
+            const force = -tension * snapX - friction * snapVel;
+            snapVel += force * dt;
+            snapX += snapVel * dt;
+            if (Math.abs(snapX) < 0.5 && Math.abs(snapVel) < 5) {
+              snapX = 0;
+              this.events.off("preupdate", snapUpdate);
+              if (_currentAnimUpdate === snapUpdate) _currentAnimUpdate = null;
+            }
+            cardContainer.x = snapX;
+          };
+          _currentAnimUpdate = snapUpdate;
+          this.events.on("preupdate", snapUpdate);
+        }
+      } else {
+        if (ptr.x >= cardX - cardW/2 && ptr.x <= cardX + cardW/2 &&
+            ptr.y >= cardY - cardH/2 && ptr.y <= cardY + cardH/2) {
+          this.tweens.killTweensOf(cardBounceContainer, "scale");
+          cardBounceContainer.setScale(1);
+          this._audio.playEffect("playSound_01", { volume: 1 });
+          this._closeLevelSelect(true);
+          this._audio.stopMusic();
+          this.game.registry.set("autoStartGame", true);
+          this.scene.restart();
+        } else {
+          this.tweens.killTweensOf(cardBounceContainer, "scale");
+          this.tweens.add({ targets: cardBounceContainer, scale: 1, duration: 200, ease: "Quad.Out" });
+        }
+      }
+    };
+    this.input.on("pointermove", onDragMove);
+    this.input.on("pointerup", onDragUp);
+    const _origClose = this._closeLevelSelect.bind(this);
+    const _patchedClose = (doTransition) => {
+      this.input.off("pointermove", onDragMove);
+      this.input.off("pointerup", onDragUp);
+      this._closeLevelSelect = _origClose;
+      _origClose(doTransition);
+    };
+    this._closeLevelSelect = _patchedClose;
     const cardContentObjs = [];
     const buildCardContent = () => {
       for (const o of cardContentObjs) { this.tweens.killTweensOf(o); o.destroy(); }
@@ -7492,31 +7578,32 @@ class xs extends Phaser.Scene {
     buildCardContent();
     buildBar();
     let _currentAnimUpdate = null;
-    const switchLevel = (dir) => {
+    const switchLevel = (dir, startX = null, dragVel = 0) => {
       if (!window.allLevels || window.allLevels.length === 0) return;
 
       if (_currentAnimUpdate) {
         this.events.off("preupdate", _currentAnimUpdate);
         _currentAnimUpdate = null;
-        cardContainer.x = 0;
       }
       let idx = window.allLevels.findIndex(l => l[2] === window.currentlevel[2]);
       idx = (idx + dir + window.allLevels.length) % window.allLevels.length;
       window.currentlevel = [...window.allLevels[idx]];
       const newColors = this._parseLevelColors(window.currentlevel[2]);
       const dark = isEveryEnd(window.currentlevel[2]);
-      const slideDist = cardW-200;
+      const slideDist = cardW - 200;
       const slideOutTarget = -dir * slideDist;
       const slideInStart = dir * slideDist;
       this.tweens.killTweensOf(cardContainer);
       let state = "out";
-      let currentX = cardContainer.x;
+      let currentX = startX !== null ? startX : cardContainer.x;
+      const dragSpeedBoost = Math.abs(dragVel) * 60;
+      const slideOutSpeed = slideDist * 14 + dragSpeedBoost;
+      const slideInVel = slideDist * 6 + dragSpeedBoost;
       let vel = 0;
-      const scrollAnimUpdate = (time,delta) => {
+      const scrollAnimUpdate = (time, delta) => {
         const dt = Math.min(delta / 1000, 0.05);
         if (state === "out") {
-          const speed = slideDist * 14; 
-          currentX += (-dir) * speed * dt; 
+          currentX += (-dir) * slideOutSpeed * dt;
           if ((dir > 0 && currentX <= slideOutTarget) || (dir < 0 && currentX >= slideOutTarget)) {
             for (const o of cardContentObjs) {
               cardBounceContainer.remove(o, false);
@@ -7536,22 +7623,18 @@ class xs extends Phaser.Scene {
             refreshDots();
             state = "in";
             currentX = slideInStart;
-            vel = (-dir) * slideDist * 6;
+            vel = (-dir) * slideInVel;
           }
         } else if (state === "in") {
           const tension = 300;
           const friction = 15;
-          
-          const force = -tension * (currentX - 0) - friction * vel;
+          const force = -tension * currentX - friction * vel;
           vel += force * dt;
           currentX += vel * dt;
-
           if (Math.abs(currentX) < 1 && Math.abs(vel) < 15) {
             currentX = 0;
             this.events.off("preupdate", scrollAnimUpdate);
-            if (_currentAnimUpdate === scrollAnimUpdate) {
-              _currentAnimUpdate = null;
-            }
+            if (_currentAnimUpdate === scrollAnimUpdate) _currentAnimUpdate = null;
           }
         }
         cardContainer.x = currentX;
@@ -7563,6 +7646,7 @@ class xs extends Phaser.Scene {
     this._makeBouncyButton(arrowR, 1.1, () => { switchLevel(1); });
     const inputBlocker = this.add.zone(cx, cy, sw, sh)
       .setScrollFactor(0).setDepth(151).setInteractive();
+    inputBlocker.on("pointerdown", onDragStart);
     this._levelSelectStaticObjs = [overlay, inputBlocker, tableBottom, ...staticGroundTiles, staticFloorLine, cornerBL, cornerBR, backBtn, infoBtn, arrowL, arrowR, cardSlideContainer, cardHit];
     this._levelSelectSwitchLevel = switchLevel;
     this._levelSelectDotObjs = dotObjs;
@@ -10055,3 +10139,5 @@ window.getCacheInfo = () => {
   }
   return null;
 };
+// say waalaaaahii bro tung tugn shaurrrrrr
+// say waalaaaahii bro tung tugn shaurrrrrr// say waalaaaahii bro tung tugn shaurrrrrr// say waalaaaahii bro tung tugn shaurrrrrr
