@@ -96,6 +96,7 @@ window.allobjects = function() {
     "gridW": 0,
     "gridH": 0,
     "black": true,
+    "can_color": false,
     "spriteW": 30,
     "spriteH": 27,
     "hitboxScaleX": 0.3,
@@ -431,6 +432,7 @@ window.allobjects = function() {
   "40": {
     "type": "solid",
     "frame": "plank_01_001.png",
+    "can_color": false,
     "gridW": 1,
     "gridH": 0.5,
     "children": [
@@ -627,6 +629,7 @@ window.allobjects = function() {
     "gridW": 0,
     "gridH": 0,
     "black": true,
+    "can_color": false,
     "spriteW": 30,
     "spriteH": 18,
     "hitboxScaleX": 0.3,
@@ -638,6 +641,7 @@ window.allobjects = function() {
   "62": {
     "type": "solid",
     "frame": "square_b_01_001.png",
+    "can_color": false,
     "gridW": 1,
     "gridH": 0.5,
     "default_detail_color_channel": -1,
@@ -647,6 +651,7 @@ window.allobjects = function() {
   "63": {
     "type": "solid",
     "frame": "square_b_02_001.png",
+    "can_color": false,
     "gridW": 1,
     "gridH": 0.5,
     "default_detail_color_channel": -1,
@@ -656,6 +661,7 @@ window.allobjects = function() {
   "64": {
     "type": "solid",
     "frame": "square_b_03_001.png",
+    "can_color": false,
     "gridW": 1,
     "gridH": 0.5,
     "default_detail_color_channel": -1,
@@ -665,6 +671,7 @@ window.allobjects = function() {
   "65": {
     "type": "solid",
     "frame": "square_b_04_001.png",
+    "can_color": false,
     "gridW": 1,
     "gridH": 0.5,
     "default_detail_color_channel": -1,
@@ -674,6 +681,7 @@ window.allobjects = function() {
   "66": {
     "type": "solid",
     "frame": "square_b_05_001.png",
+    "can_color": false,
     "gridW": 1,
     "gridH": 0.5,
     "default_detail_color_channel": -1,
@@ -692,6 +700,7 @@ window.allobjects = function() {
   "68": {
     "type": "solid",
     "frame": "square_b_06_001.png",
+    "can_color": false,
     "gridW": 1,
     "gridH": 0.5,
     "default_detail_color_channel": -1,
@@ -822,7 +831,7 @@ window.allobjects = function() {
     "default_z_order": 2
   },
   "76": {
-    "can_color": true,
+    "can_color": false,
     "children": [
       {
         "frame": "square_d_05_001.png",
@@ -862,7 +871,7 @@ window.allobjects = function() {
     "default_z_order": 2
   },
   "77": {
-    "can_color": true,
+    "can_color": false,
     "children": [
       {
         "frame": "square_d_05_001.png",
@@ -884,7 +893,7 @@ window.allobjects = function() {
     "default_z_order": 2
   },
   "78": {
-    "can_color": true,
+    "can_color": false,
     "children": [
       {
         "frame": "square_d_05_001.png",
@@ -912,7 +921,7 @@ window.allobjects = function() {
     "default_z_order": 2
   },
   "80": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
     "frame": "square_d_05_001.png",
     "glow_frame": "square_d_05_glow_001.png",
@@ -926,7 +935,7 @@ window.allobjects = function() {
     "default_z_order": -7
   },
   "81": {
-    "can_color": true,
+    "can_color": false,
     "children": [
       {
         "frame": "square_d_05_001.png",
@@ -960,7 +969,7 @@ window.allobjects = function() {
     "default_z_order": 2
   },
   "82": {
-    "can_color": true,
+    "can_color": false,
     "children": [
       {
         "frame": "square_d_05_001.png",
@@ -1111,7 +1120,7 @@ window.allobjects = function() {
     "default_z_order": 1
   },
   "90": {
-    "can_color": true,
+    "can_color": false,
     "children": [
       {
         "frame": "block005b_05_001.png",
@@ -1133,7 +1142,7 @@ window.allobjects = function() {
     "default_z_order": 2
   },
   "91": {
-    "can_color": true,
+    "can_color": false,
     "children": [
       {
         "frame": "block005b_05_001.png",
@@ -1155,7 +1164,7 @@ window.allobjects = function() {
     "default_z_order": 2
   },
   "92": {
-    "can_color": true,
+    "can_color": false,
     "children": [
       {
         "frame": "block005b_05_001.png",
@@ -1177,7 +1186,7 @@ window.allobjects = function() {
     "default_z_order": 2
   },
   "93": {
-    "can_color": true,
+    "can_color": false,
     "children": [
       {
         "frame": "block005b_05_001.png",
@@ -1201,6 +1210,7 @@ window.allobjects = function() {
   "94": {
     "type": "solid",
     "frame": "block005b_05_001.png",
+    "can_color": false,
     "gridW": 1,
     "gridH": 1,
     "glow": true,
@@ -1211,7 +1221,7 @@ window.allobjects = function() {
     "default_z_order": 1
   },
   "95": {
-    "can_color": true,
+    "can_color": false,
     "children": [
       {
         "frame": "block005b_05_001.png",
@@ -1233,7 +1243,7 @@ window.allobjects = function() {
     "default_z_order": 2
   },
   "96": {
-    "can_color": true,
+    "can_color": false,
     "children": [
       {
         "frame": "block005b_05_001.png",
