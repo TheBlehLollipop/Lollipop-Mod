@@ -2421,12 +2421,16 @@ class us {
       const sprites = this._colorChannelSprites[chId];
       if (!sprites || !sprites.length) continue;
       const hex = colorManager.getHex(parseInt(chId, 10));
+      const channelColor = colorManager.getColor(parseInt(chId, 10));
+      const hasExplicitColor = colorManager._colors[parseInt(chId, 10)] !== undefined;
       for (const spr of sprites) {
         if (!spr || !spr.active) continue;
         if (spr._eePulsed) continue;
         if (spr._isSaw) continue;
         if (spr._eeAudioScale) continue;
-        spr.setTint(hex);
+        if (hasExplicitColor) {
+          spr.setTint(hex);
+        }
       }
     }
   }
