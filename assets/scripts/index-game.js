@@ -10029,7 +10029,7 @@ const Ss = {
     windowEvents: false
   },
   render: {
-    powerPreference: "high-performance"
+    powerPreference: "default"
   },
   scale: {
     mode: Phaser.Scale.FIT,
