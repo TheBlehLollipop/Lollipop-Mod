@@ -4660,17 +4660,17 @@ _updateBallJump(_0x2fe319) {
                 if (_padId === 35) { _padVel = 16 * _grav; _padNextTickVel = _fm * 8 * _grav; }
                 else if (_padId === 140) { _padVel = 5.6 * _grav; }
                 else if (_padId === 1332) { _padVel = 10.08 * _grav; }
-                else if (_padId === 67) { _padVel = 6.4 * _grav; _padFlip = true; }
+                else if (_padId === 67) { _padVel = 15.0 * _grav; _padFlip = true; }
               } else if (this.p.isBall) {
                 if (_padId === 35) { _padVel = 9.6 * _grav; }
                 else if (_padId === 140) { _padVel = 6.72 * _grav; }
                 else if (_padId === 1332) { _padVel = 12 * _grav; }
-                else if (_padId === 67) { _padVel = 3.84 * _grav; _padFlip = true; }
+                else if (_padId === 67) { _padVel = 10.0 * _grav; _padFlip = true; }
               } else {
                 if (_padId === 35) { _padVel = 16 * _grav; }
                 else if (_padId === 140) { _padVel = 10.4 * _grav; }
                 else if (_padId === 1332) { _padVel = 20 * _grav; }
-                else if (_padId === 67) { _padVel = 6.4 * _grav; _padFlip = true; }
+                else if (_padId === 67) { _padVel = 15.0 * _grav; _padFlip = true; }
               }
               this.p.isJumping = true;
               this.p.onGround = false;
