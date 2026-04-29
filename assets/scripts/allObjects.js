@@ -1,3 +1,12 @@
+// -1: No color
+// 1: P Color
+// 2: P Color 2
+// 1000: Background Color
+// 1001: Ground Color
+// 1004: Default Color (white)
+// 1006: Glow
+// 1011: Detail Color FOr animated blocks (ill add some later)
+
 window.allobjects = function() {
     return {
   "0": {
@@ -816,13 +825,11 @@ window.allobjects = function() {
       {
         "frame": "square_c_05_001.png",
         "localDy": 0,
-        "tint": 65280,
         "z": -1
       },
       {
         "frame": "blockOutline_05_001.png",
         "localDy": 0,
-        "tint": 65280,
         "z": 1
       }
     ],
@@ -17090,7 +17097,6 @@ window.allobjects = function() {
       {
         "frame": "gravJumpRing_01_001.png",
         "localDy": 0,
-        "tint": 65280,
         "z": -1
       }
     ],
