@@ -4764,22 +4764,67 @@ _updateBallJump(_0x2fe319) {
                     }
                   }
                 } catch(e) {}
+              } else if (this.p.isWave) {
+                if (_orbId === 84 || _orbId === 1022) {
+                  this.flipGravity(!this.p.gravityFlipped);
+                  this.p.upKeyPressed = false;
+                  this.p.queuedHold = false;
+                  _boostedThisStep = true;
+                  try {
+                    for (let _orbSpr of (this._gameLayer._orbSprites || [])) {
+                      if (_orbSpr && _orbSpr._eeWorldX !== undefined && Math.abs(_orbSpr._eeWorldX - gameObj.x) < 10) {
+                        _orbSpr._hitTime = Date.now();
+                      }
+                    }
+                  } catch(e) {}
+                }
               } else {
                 if (this.p.isFlying) {
-                  if (_orbId === 36) { _orbVel = _cubeJump; }
+                  if (_orbId === 36){ _orbVel = 16; }
                   else if (_orbId === 141) { _orbVel = _cubeJump * 0.37; }
                   else if (_orbId === 1333) { _orbVel = _cubeJump; }
-                  else if (_orbId === 84) { _orbVel = _cubeJump * 0.7; _flipAfter = true; }
-                  else if (_orbId === 1022) { _orbVel = _cubeJump * 0.8; _flipBefore = true; }
+                  else if (_orbId === 84) { _orbVel = _cubeJump * 0.4; _flipAfter = true; }
+                  else if (_orbId === 1022) { _orbVel = _cubeJump * -0.7; _flipAfter = true; }
                   else if (_orbId === 1330) { _orbVel = -28; }
                 } else if (this.p.isBall) {
                   const _ballBase = _cubeJump * 0.7;
                   if (_orbId === 36) { _orbVel = _ballBase; }
                   else if (_orbId === 141) { _orbVel = _ballBase * 0.77; }
                   else if (_orbId === 1333) { _orbVel = _ballBase * 1.34; }
-                  else if (_orbId === 84) { _orbVel = _ballBase; _flipAfter = true; }
-                  else if (_orbId === 1022) { _orbVel = _ballBase * 0.8; _flipBefore = true; }
+                  else if (_orbId === 84) { _orbVel = _ballBase * 0.4; _flipAfter = true; }
+                  else if (_orbId === 1022) { _orbVel = _ballBase * -1; _flipAfter = true; }
                   else if (_orbId === 1330) { _orbVel = -30; }
+                } else if (this.p.isUfo) {
+                  if (_orbId === 36) { _orbVel = 16; }
+                  else if (_orbId === 141) { _orbVel = _cubeJump * 0.42; }
+                  else if (_orbId === 1333) { _orbVel = _cubeJump * 1.02; }
+                  else if (_orbId === 84) { _orbVel = _cubeJump * 0.4; _flipAfter = true; }
+                  else if (_orbId === 1022) { _orbVel = -16; _flipAfter = true; }
+                  else if (_orbId === 1330) { _orbVel = -22.4; }
+                } else if (this.p.isRobot) {
+                  if (_orbId === 36) { _orbVel = _cubeJump * 0.9; }
+                  else if (_orbId === 141) { _orbVel = _cubeJump * 0.72; }
+                  else if (_orbId === 1333) { _orbVel = _cubeJump * 1.28; }
+                  else if (_orbId === 84) { _orbVel = _cubeJump * 0.4; _flipAfter = true; }
+                  else if (_orbId === 1022) { _orbVel = _cubeJump * -1; _flipAfter = true; }
+                  else if (_orbId === 1330) { _orbVel = -30; }
+                } else if (this.p.isSpider) {
+                  const _spiderBase = _cubeJump * 0.7;
+                  if (_orbId === 36) { _orbVel = _spiderBase; }
+                  else if (_orbId === 141) { _orbVel = _spiderBase * 0.77; }
+                  else if (_orbId === 1333) { _orbVel = _spiderBase * 1.34; }
+                  else if (_orbId === 84) { _orbVel = _spiderBase * 0.4; _flipAfter = true; }
+                  else if (_orbId === 1022) { _orbVel = _spiderBase * -1; _flipAfter = true; }
+                  else if (_orbId === 1330) { _orbVel = -30; }
+                } else if (this.p.isSwing) {
+                  const _swingBase = _cubeJump * 0.6;
+                  const _spiderBase = _cubeJump * 0.7;
+                  if (_orbId === 36) { _orbVel = _swingBase; }
+                  else if (_orbId === 141) { _orbVel = _swingBase * 0.72; }
+                  else if (_orbId === 1333) { _orbVel = _swingBase * 1.38; }
+                  else if (_orbId === 84) { _orbVel = _swingBase * 0.4; _flipAfter = true; }
+                  else if (_orbId === 1022) { _orbVel = _spiderBase * -1; _flipAfter = true; }
+                  else if (_orbId === 1330) { _orbVel = -28; }
                 } else {
                   if (_orbId === 36) { _orbVel = _cubeJump; }
                   else if (_orbId === 141) { _orbVel = _cubeJump * 0.72; }
