@@ -1682,7 +1682,7 @@ if (this.p.isFlying || this.p.isUfo) {
       this.runRotateAction();
     } else if (this.p.isJumping) {
       const miniGrav = this.p.isMini ? 1.4 : 1;
-      this.p.yVelocity -= p * gravityMultiplier * this.flipMod() * _miniGrav;
+      this.p.yVelocity -= p * gravityMultiplier * this.flipMod() * miniGrav;
       if (this.playerIsFalling()) {
         this.p.isJumping = false;
         this.p.onGround = false;
@@ -1692,7 +1692,7 @@ if (this.p.isFlying || this.p.isUfo) {
         this.p.canJump = false;
       }
       const miniGrav = this.p.isMini ? 1.4 : 1;
-      this.p.yVelocity -= p * gravityMultiplier * this.flipMod() * _miniGrav;
+      this.p.yVelocity -= p * gravityMultiplier * this.flipMod() * miniGrav;
       if (this.p.gravityFlipped) {
         this.p.yVelocity = Math.min(this.p.yVelocity, 30);
       } else {
