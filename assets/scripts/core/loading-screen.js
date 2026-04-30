@@ -131,7 +131,7 @@ class A extends Phaser.Scene {
         loadFont(this, "goldFont", goldFontData);
       }
       const msg = LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)];
-      this.add.bitmapText(cx, cy + 187, "goldFont", msg, 28).setOrigin(0.5);
+      this.add.bitmapText(cx, cy + 187, "goldFont", msg, 30).setOrigin(0.5);
       const robtopLogo = this.add.image(cx, cy - 120, "GJ_LaunchSheet", "RobTopLogoBig_001.png").setOrigin(0.5).setScale(0.8);
       const gjLogo = this.add.image(cx, cy, "GJ_WebSheet", "gj_logo.png").setOrigin(0.5);
       this.children.bringToTop(robtopLogo);
