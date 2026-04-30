@@ -225,7 +225,7 @@ const flyPortal = "fly";
 const cubePortal = "cube";
 const portalWaveType = "portal_wave";
 const portalUfoType = "portal_ufo";
-const allObjects = window.allobjects();
+const allObjects = window.allObjects();
 if (!allObjects[1331]) {
   allObjects[1331] = {
     "can_color": false,
