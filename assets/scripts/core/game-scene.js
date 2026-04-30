@@ -3038,6 +3038,18 @@ _buildSettingsPopup() {
     const _0x22e36e = this._cameraX - (this._menuCameraX || 0);
     this._level.shiftGroundTiles(_0x22e36e);
     this._playerWorldX = this._cameraX;
+    let speedKey = parseInt(window.settingsMap["kA4"] || "0");
+    if (speedKey == 0) {
+      playerSpeed = SpeedPortal.ONE_TIMES;
+    } else if (speedKey == 1) {
+      playerSpeed = SpeedPortal.HALF;
+    } else if (speedKey == 2) {
+      playerSpeed = SpeedPortal.TWO_TIMES;
+    } else if (speedKey == 3) {
+      playerSpeed = SpeedPortal.THREE_TIMES;
+    } else if (speedKey == 4) {
+      playerSpeed = SpeedPortal.FOUR_TIMES;
+    }
     this._state.y = 30;
     this._state.onGround = true;
     this._level.additiveContainer.setVisible(true);
