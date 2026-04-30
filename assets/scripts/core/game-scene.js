@@ -1507,8 +1507,14 @@ class GameScene extends Phaser.Scene {
         this._releaseButton();
       }
     });
-    window.addEventListener("pointerup", () => this._releaseButton());
-    window.addEventListener("touchend", () => this._releaseButton());
+    if (!window.gdpointerup) {
+      window.gdpointerup = true;
+      window.addEventListener("pointerup", () => this._releaseButton());
+    }
+    if (!window.gdtouchend) {
+      window.gdtouchend = true;
+      window.addEventListener("touchend", () => this._releaseButton());
+    }
     this.scale.on("enterfullscreen", () => this._onFullscreenChange(true));
     this.scale.on("leavefullscreen", () => this._onFullscreenChange(false));
 
@@ -1523,12 +1529,18 @@ class GameScene extends Phaser.Scene {
         this._audio.resumeMusic();
       }
     });
-    window.addEventListener("orientationchange", () => {
-      this.time.delayedCall(100, () => this.scale.refresh());
-    });
-    window.addEventListener("resize", () => {
-      this.scale.refresh();
-    });
+    if (!window.gdorientationchange) {
+      window.gdorientationchange = true;
+      window.addEventListener("orientationchange", () => {
+        this.time.delayedCall(100, () => this.scale.refresh());
+      });
+    }
+    if (!window.gdresize) {
+      window.gdresize = true;
+      window.addEventListener("resize", () => {
+        this.scale.refresh();
+      });
+    }
     if (this.game.registry.get("fadeInFromBlack")) {
       this.game.registry.remove("fadeInFromBlack");
       this.cameras.main.fadeIn(400, 0, 0, 0);
