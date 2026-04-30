@@ -137,7 +137,7 @@ class xs extends Phaser.Scene {
     this._colorManager = new ms();
     this._practicedMode = new PracticeMode();
     if (this._audio == null) {
-      this._audio = new ys(this);
+      this._audio = new AudioManager(this);
     }
     if (window._onlineLevelString && window._onlineLevelId &&
         window.currentlevel[2] === window._onlineLevelId) {

@@ -1,4 +1,4 @@
-class ys {
+class AudioManager {
   constructor(scene) {
     this._scene = scene;
     this._music = null;
@@ -163,9 +163,9 @@ class ys {
   getUserMusicVolume() {
     return this._userMusicVol;
   }
-  setUserMusicVolume(_0x1fad3d) {
-    this._userMusicVol = _0x1fad3d;
-    localStorage.setItem("userMusicVol", _0x1fad3d);
+  setUserMusicVolume(newVolume) {
+    this._userMusicVol = newVolume;
+    localStorage.setItem("userMusicVol", newVolume);
     if (this._music) {
       this._music.volume = this._effectiveVolume();
     }
@@ -173,10 +173,10 @@ class ys {
   getMusicVolume() {
     return this._effectiveVolume();
   }
-  setMusicVolume(_0x2ddbf6) {
-    this.setUserMusicVolume(_0x2ddbf6 / 0.8);
+  setMusicVolume(newVolume) {
+    this.setUserMusicVolume(newVolume / 0.8);
   }
-  fadeInMusic(_0x3eff28 = 1000) {
+  fadeInMusic(durationMillis = 1000) {
     if (this._music) {
       this._music.stop();
       this._music.destroy();
@@ -213,16 +213,16 @@ class ys {
     this._scene.tweens.add({
       targets: this._music,
       volume: this._effectiveVolume(),
-      duration: _0x3eff28
+      duration: durationMillis
     });
   }
-  fadeOutMusic(_0x43835d = 1500) {
+  fadeOutMusic(durationMillis = 1500) {
     if (this._music && this._music.isPlaying) {
       this._music.setLoop(false);
       this._scene.tweens.add({
         targets: this._music,
         volume: 0,
-        duration: _0x43835d,
+        duration: durationMillis,
         onComplete: () => {
           if (this._music) {
             this._music.stop();
@@ -231,19 +231,19 @@ class ys {
       });
     }
   }
-  playEffect(_0x344122, _0x20f8e7 = {}) {
-    if (this._scene.sound.context && this._scene.cache.audio.exists(_0x344122)) {
-      const _0x4b9f6e = this._scene.sound.add(_0x344122);
-      _0x4b9f6e.play();
-      if (_0x20f8e7.volume) {
-        _0x4b9f6e.setVolume(_0x20f8e7.volume);
+  playEffect(soundEffect, volumeObj = {}) {
+    if (this._scene.sound.context && this._scene.cache.audio.exists(soundEffect)) {
+      const soundObject = this._scene.sound.add(soundEffect);
+      soundObject.play();
+      if (volumeObj.volume) {
+        soundObject.setVolume(volumeObj.volume);
       }
     }
   }
   _setupAnalyser() {
-    const _0xc0d316 = this._scene.sound.context;
-    if (_0xc0d316) {
-      this._analyser = _0xc0d316.createAnalyser();
+    const audioContext = this._scene.sound.context;
+    if (audioContext) {
+      this._analyser = audioContext.createAnalyser();
       this._analyser.fftSize = 2048;
       this._meterBuffer = new Float32Array(this._analyser.fftSize);
       this._scene.sound.masterVolumeNode.connect(this._analyser);
@@ -259,30 +259,30 @@ class ys {
       this.startMusic(offset);
     }
   }
-  update(_0x34aeef) {
+  update(timeSeconds) {
     if (!this._meteringEnabled || !this._analyser) {
       return;
     }
     this._analyser.getFloatTimeDomainData(this._meterBuffer);
-    let _0x3059f5 = 0;
-    for (let _0x462ecd = 0; _0x462ecd < this._meterBuffer.length; _0x462ecd++) {
-      let _0x129c51 = Math.abs(this._meterBuffer[_0x462ecd]);
-      if (_0x129c51 > _0x3059f5) {
-        _0x3059f5 = _0x129c51;
+    let biggestBuf = 0;
+    for (let index = 0; index < this._meterBuffer.length; index++) {
+      let buf = Math.abs(this._meterBuffer[index]);
+      if (buf > biggestBuf) {
+        biggestBuf = buf;
       }
     }
-    const _0x35ec51 = this._effectiveVolume();
-    if (_0x35ec51 > 0) {
-      _0x3059f5 /= _0x35ec51;
+    const volume = this._effectiveVolume();
+    if (volume > 0) {
+      biggestBuf /= volume;
     }
-    this._meterValue = 0.1 + _0x3059f5;
-    const _0x1fbcd4 = _0x34aeef * 60;
+    this._meterValue = 0.1 + biggestBuf;
+    const timeMinutes = timeSeconds * 60;
     if (this._silenceCounter < 3 || this._meterValue < this._lastAudio * 1.1 || this._meterValue < this._lastPeak * 0.95 && this._lastAudio > this._lastPeak * 0.2) {
-      this._meterValue = this._lastAudio * Math.pow(0.92, _0x1fbcd4);
+      this._meterValue = this._lastAudio * Math.pow(0.92, timeMinutes);
     } else {
       this._silenceCounter = 0;
       this._lastPeak = this._meterValue;
-      this._meterValue *= Math.pow(1.46, _0x1fbcd4);
+      this._meterValue *= Math.pow(1.46, timeMinutes);
     }
     if (this._meterValue <= 0.1) {
       this._lastPeak = 0;
