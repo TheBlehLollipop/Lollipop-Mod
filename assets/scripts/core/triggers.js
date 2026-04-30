@@ -58,38 +58,38 @@ class Easing {
 };
 
 class TriggerStepper {
-  constructor(_0x268d66, _0x3664f8, _0x4b756c) {
+  constructor(oldColor, newColor, triggerDuration) {
     this.from = {
-      ..._0x268d66
+      ...oldColor
     };
     this.to = {
-      ..._0x3664f8
+      ...newColor
     };
-    this.duration = _0x4b756c;
+    this.duration = triggerDuration;
     this.elapsed = 0;
-    this.done = _0x4b756c <= 0;
-    this.current = _0x4b756c <= 0 ? {
-      ..._0x3664f8
+    this.done = triggerDuration <= 0;
+    this.current = triggerDuration <= 0 ? {
+      ...newColor
     } : {
-      ..._0x268d66
+      ...oldColor
     };
   }
-  step(_0x4559d6) {
+  step(timeMillis) {
     if (this.done) {
       return;
     }
-    this.elapsed += _0x4559d6;
-    let _0xe145bf = this.duration > 0 ? Math.min(this.elapsed / this.duration, 1) : 1;
-    if (_0xe145bf >= 1) {
+    this.elapsed += timeMillis;
+    let progress = this.duration > 0 ? Math.min(this.elapsed / this.duration, 1) : 1;
+    if (progress >= 1) {
       this.current = {
         ...this.to
       };
       this.done = true;
     } else {
       this.current = {
-        r: Math.round(this.from.r + (this.to.r - this.from.r) * _0xe145bf),
-        g: Math.round(this.from.g + (this.to.g - this.from.g) * _0xe145bf),
-        b: Math.round(this.from.b + (this.to.b - this.from.b) * _0xe145bf)
+        r: Math.round(this.from.r + (this.to.r - this.from.r) * progress),
+        g: Math.round(this.from.g + (this.to.g - this.from.g) * progress),
+        b: Math.round(this.from.b + (this.to.b - this.from.b) * progress)
       };
     }
   }
@@ -121,75 +121,74 @@ class ColorManager {
     }
     this._actions = {};
   }
-  triggerColor(_0x917b29, _0x2cdda0, _0x10a755) {
-    let _0x16f9f0 = {
-      ...this.getColor(_0x917b29)
+  triggerColor(index, newColor, duration) {
+    let oldColor = {
+      ...this.getColor(index)
     };
-    this._actions[_0x917b29] = new TriggerStepper(_0x16f9f0, _0x2cdda0, _0x10a755);
-    if (_0x10a755 <= 0) {
-      this._colors[_0x917b29] = {
-        ..._0x2cdda0
+    this._actions[index] = new TriggerStepper(oldColor, newColor, duration);
+    if (duration <= 0) {
+      this._colors[index] = {
+        ...newColor
       };
     }
   }
-  step(_0x15fa55) {
-    for (let _0x2d0367 in this._actions) {
-      let _0x26a8a0 = this._actions[_0x2d0367];
-      _0x26a8a0.step(_0x15fa55);
-      this._colors[_0x2d0367] = {
-        ..._0x26a8a0.current
+  step(timeMillis) {
+    for (let actionIndex in this._actions) {
+      let action = this._actions[actionIndex];
+      action.step(timeMillis);
+      this._colors[actionIndex] = {
+        ...action.current
       };
-      if (_0x26a8a0.done) {
-        delete this._actions[_0x2d0367];
+      if (action.done) {
+        delete this._actions[actionIndex];
       }
     }
   }
-  getColor(_0xb3f1d9) {
-    return this._colors[_0xb3f1d9] || {
+  getColor(index) {
+    return this._colors[index] || {
       r: 255,
       g: 255,
       b: 255
     };
   }
-  getHex(_0x32378c) {
-    let _0x25f448 = this.getColor(_0x32378c);
-    return _0x25f448.r << 16 | _0x25f448.g << 8 | _0x25f448.b;
+  getHex(index) {
+    let color = this.getColor(index);
+    return color.r << 16 | color.g << 8 | color.b;
   }
 }
 
-function _s(_0xae9c8f, _0xe5190e, _0x399b97, _0x3f3165, _0x1f56bc, _0x560f20, _0xb730d4 = false, _0x550b4a = false, _0x4ee8d6 = 16777215) {
-  const _0x18a510 = _0xae9c8f.add.graphics().setScrollFactor(0).setDepth(55).setBlendMode(S);
-  const _0x3dff3a = {
-    r: _0x3f3165,
+function circleEffect(gameScene, xPos, yPos, radius, radius2, duration, filled = false, _0x550b4a /*idk what this is*/ = false, color = 16777215) {
+  const graphics = gameScene.add.graphics().setScrollFactor(0).setDepth(55).setBlendMode(S);
+  const targets = {
+    r: radius,
     t: 0
   };
-  _0xae9c8f.tweens.add({
-    targets: _0x3dff3a,
-    r: _0x1f56bc,
+  gameScene.tweens.add({
+    targets: targets,
+    r: radius2,
     t: 1,
-    duration: _0x560f20,
-    ease: _0xb730d4 && !_0x550b4a ? "Quad.Out" : "Linear",
+    duration: duration,
+    ease: filled && !_0x550b4a ? "Quad.Out" : "Linear",
     onUpdate: () => {
-      const _0x25e581 = _0x3dff3a.t;
-      const _0x344671 = _0x550b4a ? _0x25e581 < 0.5 ? _0x25e581 * 2 : (1 - _0x25e581) * 2 : 1 - _0x25e581;
-      _0x18a510.clear();
-      if (_0xb730d4) {
-        _0x18a510.fillStyle(_0x4ee8d6, Math.max(0, _0x344671));
-        _0x18a510.fillCircle(_0xe5190e, _0x399b97, _0x3dff3a.r);
+      const alpha = _0x550b4a ? targets.t < 0.5 ? targets.t * 2 : (1 - targets.t) * 2 : 1 - targets.t;
+      graphics.clear();
+      if (filled) {
+        graphics.fillStyle(color, Math.max(0, alpha));
+        graphics.fillCircle(xPos, yPos, targets.r);
       } else {
-        _0x18a510.lineStyle(4, _0x4ee8d6, Math.max(0, _0x344671));
-        _0x18a510.strokeCircle(_0xe5190e, _0x399b97, _0x3dff3a.r);
+        graphics.lineStyle(4, color, Math.max(0, alpha));
+        graphics.strokeCircle(xPos, yPos, targets.r);
       }
     },
-    onComplete: () => _0x18a510.destroy()
+    onComplete: () => graphics.destroy()
   });
 }
-function ws(_0x13c75c, _0x23c5aa = 16777215, _0x52bb5b = 16777215) {
-  const _0x2076d4 = 200;
-  const _0x4eb200 = _0x2076d4 + (screenWidth - 400) * Math.random();
-  const _0x126811 = _0x2076d4 + Math.random() * 240;
-  _s(_0x13c75c, _0x4eb200, _0x126811, 40, 140 + Math.random() * 60, 500, true, true, _0x52bb5b);
-  _0x13c75c.add.particles(_0x4eb200, _0x126811, "GJ_WebSheet", {
+function particleEffect(gameScene, color1 = 16777215, color2 = 16777215) {
+  const basePos = 200;
+  const xPos = basePos + (screenWidth - 400) * Math.random();
+  const yPos = basePos + Math.random() * 240;
+  circleEffect(gameScene, xPos, yPos, 40, 140 + Math.random() * 60, 500, true, true, color2);
+  gameScene.add.particles(xPos, yPos, "GJ_WebSheet", {
     frame: "square.png",
     speed: {
       min: 520,
@@ -212,8 +211,8 @@ function ws(_0x13c75c, _0x23c5aa = 16777215, _0x52bb5b = 16777215) {
       max: 500
     },
     stopAfter: 25,
-    blendMode: S,
-    tint: _0x23c5aa,
+    blendMode: S, 
+    tint: color1,
     x: {
       min: -20,
       max: 20

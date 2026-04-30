@@ -4034,9 +4034,9 @@ _applyMirrorEffect() {
     const _0x356782 = this._level.endXPos - this._cameraX;
     const _0x2d967b = b(this._endPortalGameY) + this._cameraY;
     for (let _0x481f7c = 0; _0x481f7c < 5; _0x481f7c++) {
-      this.time.delayedCall(_0x481f7c * 50, () => _s(this, _0x356782, _0x2d967b, 10, screenWidth, 500, false, true, window.mainColor));
+      this.time.delayedCall(_0x481f7c * 50, () => circleEffect(this, _0x356782, _0x2d967b, 10, screenWidth, 500, false, true, window.mainColor));
     }
-    _s(this, _0x356782, _0x2d967b, 10, 1000, 500, true, false, window.mainColor);
+    circleEffect(this, _0x356782, _0x2d967b, 10, 1000, 500, true, false, window.mainColor);
     this._showCompleteEffect();
   }
   _showCompleteEffect() {
@@ -4184,14 +4184,14 @@ _applyMirrorEffect() {
     }
     const _0x2eadf2 = this._level.endXPos - this._cameraX;
     const _0x380b24 = b(this._endPortalGameY) + this._cameraY;
-    _s(this, _0x2eadf2, _0x380b24, 10, screenWidth, 800, true, false, window.mainColor);
-    _s(this, _0x56628c, 250, 10, 1000, 800, true, false, window.mainColor);
+    circleEffect(this, _0x2eadf2, _0x380b24, 10, screenWidth, 800, true, false, window.mainColor);
+    circleEffect(this, _0x56628c, 250, 10, 1000, 800, true, false, window.mainColor);
     for (let _0x579e05 = 0; _0x579e05 < 5; _0x579e05++) {
-      this.time.delayedCall(_0x579e05 * 50, () => _s(this, _0x2eadf2, _0x380b24, 10, screenWidth, 500, false, true, window.mainColor));
+      this.time.delayedCall(_0x579e05 * 50, () => circleEffect(this, _0x2eadf2, _0x380b24, 10, screenWidth, 500, false, true, window.mainColor));
     }
     for (let _0x429722 = 0; _0x429722 < 10; _0x429722++) {
       const _0xbf7dd0 = _0x429722 * 150 + (Math.random() * 160 - 80);
-      this.time.delayedCall(Math.max(0, _0xbf7dd0), () => ws(this, window.mainColor, window.secondaryColor));
+      this.time.delayedCall(Math.max(0, _0xbf7dd0), () => particleEffect(this, window.mainColor, window.secondaryColor));
     }
     this.time.delayedCall(1500, () => this._showEndLayer());
   }
