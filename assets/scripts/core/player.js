@@ -38,7 +38,7 @@ class PlayerState {
   }
 }
 
-class cs {
+class StreakManager {
   constructor(_0x9c2356, _0x171c7f, _0x49d49a, _0xb01616, _0x5aac4b, _0x293ce3, _0x5c7bc5 = 16777215, _0x5a3e29 = 1) {
     this._color = _0x5c7bc5;
     this._opacity = _0x5a3e29;
@@ -65,6 +65,9 @@ class cs {
   addToContainer(_0xa23240, _0x4b05db) {
     _0xa23240.add(this._gfx);
     this._gfx.setDepth(_0x4b05db);
+  }
+  setColor(newColor) {
+    this._color = newColor
   }
   setPosition(_0x388397, _0x292e79) {
     this._posR.x = _0x388397;
@@ -281,7 +284,7 @@ function ds(scene, _0x592bc1, _0x4d69dc, _0xfb965c, _0x43d3fd, _0x5bbdf1) {
   };
 }
 
-class ps {
+class PlayerObject {
   constructor(scene, _0x3f50cc, _0x2811e1) {
     this._scene = scene;
     this.p = _0x3f50cc;
@@ -624,7 +627,7 @@ class ps {
     this._gameLayer.topContainer.add(this._landEmitter1);
     this._gameLayer.topContainer.add(this._landEmitter2);
     this._landIdx = false;
-    this._streak = new cs(this._scene, "streak_01", 0.231, 10, 8, 100, window.secondaryColor, 0.7);
+    this._streak = new StreakManager(this._scene, "streak_01", 0.231, 10, 8, 100, window.secondaryColor, 0.7);
     this._streak.addToContainer(this._gameLayer.container, 8);
     this._waveTrail = new WaveTrail(this._scene, window.secondaryColor, window.secondaryColor);
     this._waveTrail.addToContainer(this._gameLayer.container, 9);

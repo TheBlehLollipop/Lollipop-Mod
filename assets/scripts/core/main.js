@@ -38,7 +38,7 @@ if (window.gameCache) {
     }, 3000);
   }
 }
-const Ss = {
+const phaserConfig = {
   type: Phaser.AUTO,
   width: screenWidth,
   height: screenHeight,
@@ -58,9 +58,9 @@ const Ss = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
-  scene: [A, xs]
+  scene: [BootScene, GameScene]
 };
-new Phaser.Game(Ss);
+new Phaser.Game(phaserConfig);
 
 window.clearGameCache = () => {
   if (window.gameCache) {

@@ -65,7 +65,7 @@ function loadFont(scene, fontName, fontData) {
   scene.cache.bitmapFont.add(fontName, { data: fontConfig, texture: fontName, frame: null });
 }
 
-class A extends Phaser.Scene {
+class BootScene extends Phaser.Scene {
   constructor() {
     super({ key: "BootScene" });
   }

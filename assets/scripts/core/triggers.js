@@ -57,7 +57,7 @@ class Easing {
   static _backOut(x) { const ov=1.70158; const t=x-1; return t*t*((ov+1)*t+ov)+1; };
 };
 
-class vs {
+class TriggerStepper {
   constructor(_0x268d66, _0x3664f8, _0x4b756c) {
     this.from = {
       ..._0x268d66
@@ -94,7 +94,7 @@ class vs {
     }
   }
 }
-class ms {
+class ColorManager {
   constructor() {
     this._initialColors = {};
     this.reset();
@@ -125,7 +125,7 @@ class ms {
     let _0x16f9f0 = {
       ...this.getColor(_0x917b29)
     };
-    this._actions[_0x917b29] = new vs(_0x16f9f0, _0x2cdda0, _0x10a755);
+    this._actions[_0x917b29] = new TriggerStepper(_0x16f9f0, _0x2cdda0, _0x10a755);
     if (_0x10a755 <= 0) {
       this._colors[_0x917b29] = {
         ..._0x2cdda0

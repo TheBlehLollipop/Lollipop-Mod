@@ -100,7 +100,7 @@ class PracticeMode {
   }
 }
 
-class xs extends Phaser.Scene {
+class GameScene extends Phaser.Scene {
   constructor() {
     super({
       key: "GameScene"
@@ -123,18 +123,18 @@ class xs extends Phaser.Scene {
       _v: -centerX
     };
     this._state = new PlayerState();
-    this._level = new window.us(this, this._cameraXRef);
+    this._level = new window.LevelObject(this, this._cameraXRef);
     this._orbGfx = null;
     this._orbGfxTimer = 0;
-    this._player = new ps(this, this._state, this._level);
+    this._player = new PlayerObject(this, this._state, this._level);
     this._state2 = new PlayerState();
-    this._player2 = new ps(this, this._state2, this._level);
+    this._player2 = new PlayerObject(this, this._state2, this._level);
     this._isDual = false;
     this._player2.setCubeVisible(false);
     this._player2.setShipVisible(false);
     this._player2.setBallVisible(false);
     this._player2.setWaveVisible(false);
-    this._colorManager = new ms();
+    this._colorManager = new ColorManager();
     this._practicedMode = new PracticeMode();
     if (this._audio == null) {
       this._audio = new AudioManager(this);
