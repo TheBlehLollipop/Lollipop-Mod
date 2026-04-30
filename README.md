@@ -38,7 +38,7 @@
 - **Main Menu** - A mostly fully working main menu with all 2.1 levels.
 - **Custom Levels** - Some custom levels added in the main menu such as The Nightmare, Bloodbath, Nine Circles, and more!
 - **Icon kit** - A working Icon Kit with different colors and icons to choose from!
-- **Different Gamemodes** - Multiple working gamemodes such as the Ball, Wave, Cube, Mini portals and Speed portals!
+- **Different Gamemodes** - Multiple working gamemodes such as the Ball, Wave, Cube, UFO, Mini portals and Speed portals!
 - **Practice Mode** - Practice mode is still very buggy at the time. Currently, you can press Z to add a checkpoint, or X to delete a checkpoint, and P to enable and disable Practice mode!
 - **Extra Settingss** - You can enable and disable Noclip or Show Hitboxes from the pause menu in a level, along with other settings, like the level percentage!
 
@@ -48,7 +48,7 @@
 - **All Objects Working** - In the current state of Web Dashers, you might notice most objects seem to be bugged and/or not showing.
 - **Level Editor** - We wish to add a fully working level editor, with all of the objects in Geometry Dash to choose from, and more!
 
-### Come try out the Work in Progress demo at:
+### Come try out the WIP Web Dashers demo at:
 **[web-dashers.github.io](https://web-dashers.github.io/)**
 
 ---
