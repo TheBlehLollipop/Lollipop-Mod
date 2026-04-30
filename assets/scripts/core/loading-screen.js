@@ -75,8 +75,8 @@ class A extends Phaser.Scene {
     (function (game) {
       if (game.renderer.type === Phaser.WEBGL) {
         let gl = game.renderer.gl;
-        S = game.renderer.addBlendMode([gl.SRC_ALPHA, gl.ONE], gl.FUNC_ADD);
-        E = game.renderer.addBlendMode([gl.DST_COLOR, gl.ONE_MINUS_SRC_ALPHA], gl.FUNC_ADD);
+         window.S = game.renderer.addBlendMode([gl.SRC_ALPHA, gl.ONE], gl.FUNC_ADD);
+        window.E = game.renderer.addBlendMode([gl.DST_COLOR, gl.ONE_MINUS_SRC_ALPHA], gl.FUNC_ADD);
       }
     })(this.game);
 
