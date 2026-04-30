@@ -123,7 +123,7 @@ class xs extends Phaser.Scene {
       _v: -centerX
     };
     this._state = new PlayerState();
-    this._level = new us(this, this._cameraXRef);
+    this._level = new window.us(this, this._cameraXRef);
     this._orbGfx = null;
     this._orbGfxTimer = 0;
     this._player = new ps(this, this._state, this._level);
