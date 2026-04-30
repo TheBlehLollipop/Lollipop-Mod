@@ -2253,7 +2253,7 @@ _updateBallJump(_0x2fe319) {
                   else if (_orbId === 141) { _orbVel = _cubeJump * 0.72; }
                   else if (_orbId === 1333) { _orbVel = _cubeJump * 1.38; }
                   else if (_orbId === 84) { _orbVel = _cubeJump; _flipAfter = true; }
-                  else if (_orbId === 1022) { _orbVel = _cubeJump * 0.8; _flipBefore = true; }
+                  else if (_orbId === 1022) { _orbVel = _cubeJump * 1; _flipBefore = true; }
                   else if (_orbId === 1330) { _orbVel = -18; }
                 }
                 this.p.isJumping = true;
