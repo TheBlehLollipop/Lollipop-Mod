@@ -123,7 +123,7 @@ class xs extends Phaser.Scene {
       _v: -centerX
     };
     this._state = new PlayerState();
-    this._level = new window.us(this, this._cameraXRef);
+    this._level = new us(this, this._cameraXRef);
     this._orbGfx = null;
     this._orbGfxTimer = 0;
     this._player = new ps(this, this._state, this._level);
@@ -3592,6 +3592,13 @@ _buildSettingsPopup() {
       this._cameraXRef._v = this._menuCameraX;
       this._level.stepGroundAnimation(deltaTime / 1000);
       this._level.updateGroundTiles(this._cameraY);
+      if (this._menuRainbowTime === undefined) this._menuRainbowTime = 0;
+      this._menuRainbowTime += deltaTime / 1000;
+      const _rainbowHue = (this._menuRainbowTime * 15) % 360;
+      const _rainbowHex = Phaser.Display.Color.HSVToRGB(_rainbowHue / 360, 0.85, 0.9).color;
+      const _groundHex = Phaser.Display.Color.HSVToRGB(_rainbowHue / 360, 0.85, 0.55).color;
+      this._bg.setTint(_rainbowHex);
+      this._level.setGroundColor(_groundHex);
       return;
     }
     if (this._slideIn) {
