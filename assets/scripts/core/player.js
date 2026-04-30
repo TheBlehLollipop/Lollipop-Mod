@@ -272,7 +272,7 @@ class WaveTrail {
   }
 }
 function ds(scene, _0x592bc1, _0x4d69dc, _0xfb965c, _0x43d3fd, _0x5bbdf1) {
-  let _0x221d10 = R(scene, _0xfb965c);
+  let _0x221d10 = getAtlasFrame(scene, _0xfb965c);
   if (!_0x221d10) {
     return null;
   }
@@ -1471,7 +1471,7 @@ if (this.p.isFlying || this.p.isUfo) {
 
     const _0x5d636a = [this._gameLayer.topContainer, this._gameLayer.container];
     for (let _0x34fd8c = 0; _0x34fd8c < 2; _0x34fd8c++) {
-      const _0x4bfe30 = R(_0x4ed8ff, _0x19c6b0[_0x34fd8c]);
+      const _0x4bfe30 = getAtlasFrame(_0x4ed8ff, _0x19c6b0[_0x34fd8c]);
       if (!_0x4bfe30) {
         continue;
       }

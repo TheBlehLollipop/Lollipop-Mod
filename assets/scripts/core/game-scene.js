@@ -953,7 +953,7 @@ class GameScene extends Phaser.Scene {
       for (let ci = 0; ci < rainbowColors.length; ci++) {
         const cx = colorRowStartX + ci * (colorBtnSize + colorPadding);
 
-        const btn1AtlasInfo = R(this, "GJ_colorBtn_001.png");
+        const btn1AtlasInfo = getAtlasFrame(this, "GJ_colorBtn_001.png");
         let btn1;
         if (btn1AtlasInfo) {
           btn1 = this.add.image(cx, colorRow1Y, btn1AtlasInfo.atlas, btn1AtlasInfo.frame).setScrollFactor(0).setDepth(104).setTint(rainbowColors[ci]).setScale(0.5).setInteractive();
@@ -962,7 +962,7 @@ class GameScene extends Phaser.Scene {
         }
         this._iconOverlayObjects.push(btn1);
 
-        const btn2AtlasInfo = R(this, "GJ_colorBtn_001.png");
+        const btn2AtlasInfo = getAtlasFrame(this, "GJ_colorBtn_001.png");
         let btn2;
         if (btn2AtlasInfo) {
           btn2 = this.add.image(cx, colorRow2Y, btn2AtlasInfo.atlas, btn2AtlasInfo.frame).setScrollFactor(0).setDepth(104).setTint(rainbowColors[ci]).setScale(0.5).setInteractive();
@@ -1026,7 +1026,7 @@ class GameScene extends Phaser.Scene {
         selectedIcon.setScale(s);
         selectedIcon.setTint(window.mainColor);
         const extraFrame = frame.replace("_001.png", "_2_001.png");
-        const extraInfo = R(this, extraFrame);
+        const extraInfo = getAtlasFrame(this, extraFrame);
         if (extraInfo) {
           selectedIconExtra.setTexture(extraInfo.atlas, extraInfo.frame).setVisible(true).setScale(s).setTint(window.secondaryColor);
         } else {
@@ -1126,7 +1126,7 @@ class GameScene extends Phaser.Scene {
           ) * 0.7;
           iconImg.setScale(origScale);
           const extraFrame = frame.replace("_001.png", "_2_001.png");
-          const extraInfo = R(this, extraFrame);
+          const extraInfo = getAtlasFrame(this, extraFrame);
           const extraImg = extraInfo
             ? this.add.image(ix, iy, extraInfo.atlas, extraInfo.frame).setScrollFactor(0).setDepth(102).setScale(origScale)
             : null;
@@ -1164,7 +1164,7 @@ class GameScene extends Phaser.Scene {
                 for (const { lp, suffix, tint } of layerMap) {
                   const layer = this._player[lp];
                   if (!layer || !layer.sprite) continue;
-                  const found = R(this, `${window.currentPlayer}${suffix}`);
+                  const found = getAtlasFrame(this, `${window.currentPlayer}${suffix}`);
                   if (found) {
                     layer.sprite.setTexture(found.atlas, found.frame);
                     if (tint !== null) layer.sprite.setTint(tint);
@@ -1181,7 +1181,7 @@ class GameScene extends Phaser.Scene {
                 for (const { lp, suffix, tint } of layerMap) {
                   const layer = this._player[lp];
                   if (!layer || !layer.sprite) continue;
-                  const found = R(this, `${window.currentShip}${suffix}`);
+                  const found = getAtlasFrame(this, `${window.currentShip}${suffix}`);
                   if (found) {
                     layer.sprite.setTexture(found.atlas, found.frame);
                     if (tint !== null) layer.sprite.setTint(tint);
@@ -1197,7 +1197,7 @@ class GameScene extends Phaser.Scene {
                 for (const { lp, suffix, tint } of layerMap) {
                   const layer = this._player[lp];
                   if (!layer || !layer.sprite) continue;
-                  const found = R(this, `${window.currentBall}${suffix}`);
+                  const found = getAtlasFrame(this, `${window.currentBall}${suffix}`);
                   if (found) {
                     layer.sprite.setTexture(found.atlas, found.frame);
                     layer.sprite.setTint(tint);
@@ -1213,7 +1213,7 @@ class GameScene extends Phaser.Scene {
                 for (const { lp, suffix, tint } of layerMap) {
                   const layer = this._player[lp];
                   if (!layer || !layer.sprite) continue;
-                  const found = R(this, `${window.currentWave}${suffix}`);
+                  const found = getAtlasFrame(this, `${window.currentWave}${suffix}`);
                   if (found) {
                     layer.sprite.setTexture(found.atlas, found.frame);
                     if (tint !== null) layer.sprite.setTint(tint);
@@ -1230,7 +1230,7 @@ class GameScene extends Phaser.Scene {
                 for (const { lp, suffix, tint } of layerMap) {
                   const layer = this._player[lp];
                   if (!layer || !layer.sprite) continue;
-                  const found = R(this, `${window.currentBird}${suffix}`);
+                  const found = getAtlasFrame(this, `${window.currentBird}${suffix}`);
                   if (found) {
                     layer.sprite.setTexture(found.atlas, found.frame);
                     if (tint !== null) layer.sprite.setTint(tint);
@@ -3751,7 +3751,7 @@ _buildSettingsPopup() {
       if (window._animTimer - (_as._lastAnimSwap || 0) >= _as._animInterval) {
         _as._lastAnimSwap = window._animTimer;
         _as._animIdx = (_as._animIdx + 1) % _as._animFrames.length;
-        let _fr = R(_as._animScene, _as._animFrames[_as._animIdx]);
+        let _fr = getAtlasFrame(_as._animScene, _as._animFrames[_as._animIdx]);
         if (_fr) {
           try {
             _as.setTexture(_fr.atlas, _fr.frame);
@@ -4034,9 +4034,9 @@ _applyMirrorEffect() {
     const _0x356782 = this._level.endXPos - this._cameraX;
     const _0x2d967b = b(this._endPortalGameY) + this._cameraY;
     for (let _0x481f7c = 0; _0x481f7c < 5; _0x481f7c++) {
-      this.time.delayedCall(_0x481f7c * 50, () => circleEffect(this, _0x356782, _0x2d967b, 10, screenWidth, 500, false, true, window.mainColor));
+      this.time.delayedCall(_0x481f7c * 50, () => _s(this, _0x356782, _0x2d967b, 10, screenWidth, 500, false, true, window.mainColor));
     }
-    circleEffect(this, _0x356782, _0x2d967b, 10, 1000, 500, true, false, window.mainColor);
+    _s(this, _0x356782, _0x2d967b, 10, 1000, 500, true, false, window.mainColor);
     this._showCompleteEffect();
   }
   _showCompleteEffect() {
@@ -4184,14 +4184,14 @@ _applyMirrorEffect() {
     }
     const _0x2eadf2 = this._level.endXPos - this._cameraX;
     const _0x380b24 = b(this._endPortalGameY) + this._cameraY;
-    circleEffect(this, _0x2eadf2, _0x380b24, 10, screenWidth, 800, true, false, window.mainColor);
-    circleEffect(this, _0x56628c, 250, 10, 1000, 800, true, false, window.mainColor);
+    _s(this, _0x2eadf2, _0x380b24, 10, screenWidth, 800, true, false, window.mainColor);
+    _s(this, _0x56628c, 250, 10, 1000, 800, true, false, window.mainColor);
     for (let _0x579e05 = 0; _0x579e05 < 5; _0x579e05++) {
-      this.time.delayedCall(_0x579e05 * 50, () => circleEffect(this, _0x2eadf2, _0x380b24, 10, screenWidth, 500, false, true, window.mainColor));
+      this.time.delayedCall(_0x579e05 * 50, () => _s(this, _0x2eadf2, _0x380b24, 10, screenWidth, 500, false, true, window.mainColor));
     }
     for (let _0x429722 = 0; _0x429722 < 10; _0x429722++) {
       const _0xbf7dd0 = _0x429722 * 150 + (Math.random() * 160 - 80);
-      this.time.delayedCall(Math.max(0, _0xbf7dd0), () => particleEffect(this, window.mainColor, window.secondaryColor));
+      this.time.delayedCall(Math.max(0, _0xbf7dd0), () => ws(this, window.mainColor, window.secondaryColor));
     }
     this.time.delayedCall(1500, () => this._showEndLayer());
   }

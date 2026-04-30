@@ -71,9 +71,9 @@ let E = Phaser.BlendModes.NORMAL;
 const fs = 1000;
 const gs = 1001;
 
-const P = ["GJ_WebSheet", "GJ_GameSheet", "GJ_GameSheet02", "GJ_GameSheet03", "GJ_GameSheet04", "GJ_GameSheetEditor", "GJ_GameSheetGlow", "GJ_GameSheetIcons", "GJ_LaunchSheet", "player_ball_00", "player_dart_00"];
-function R(scene, frameName) {
-  for (let atlasName of P) {
+const atlasList = ["GJ_WebSheet", "GJ_GameSheet", "GJ_GameSheet02", "GJ_GameSheet03", "GJ_GameSheet04", "GJ_GameSheetEditor", "GJ_GameSheetGlow", "GJ_GameSheetIcons", "GJ_LaunchSheet", "player_ball_00", "player_dart_00"];
+function getAtlasFrame(scene, frameName) {
+  for (let atlasName of atlasList) {
     if (scene.textures.exists(atlasName)) {
       if (scene.textures.get(atlasName).has(frameName)) {
         return {
@@ -85,8 +85,8 @@ function R(scene, frameName) {
   }
   return null;
 }
-function L(scene, x, y, textureName) {
-  let textureInfo = R(scene, textureName);
+function addImageToScene(scene, x, y, textureName) {
+  let textureInfo = getAtlasFrame(scene, textureName);
   if (textureInfo) {
     return scene.add.image(x, y, textureInfo.atlas, textureInfo.frame);
   } else if (scene.textures.exists(textureName)) {
