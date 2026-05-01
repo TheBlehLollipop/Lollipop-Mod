@@ -3823,6 +3823,20 @@ _buildSettingsPopup() {
       if (this._level && this._level._orbSprites && this._level.container) {
         try {
         let _drawn = 0;
+
+        const _orbTypeColorMap = {
+          36: 0xfffb57,
+          84: 0x58ffff,
+          141: 0xff52f0,
+          444: 0xff00d2,
+          1022: 0x63ff5f,
+          1330: 0xffffff,
+          1333: 0xff6326,
+          1594: 0x6cff6b,
+          1704: 0x04ff04,
+          1751: 0xff00d2
+        };
+
         for (let _oSpr of this._level._orbSprites) {
           if (_drawn >= 4) break;
           if (!_oSpr || !_oSpr.visible || !_oSpr.active || !_oSpr.scene) continue;
@@ -3830,7 +3844,7 @@ _buildSettingsPopup() {
           const _sy = _oSpr.y + this._level.container.y;
           if (_sx < -40 || _sx > screenWidth + 40 || _sy < -40 || _sy > screenHeight + 40) continue;
           _drawn++;
-          const _orbTint = _oSpr.tintTopLeft !== undefined && _oSpr.tintTopLeft !== 16777215 ? _oSpr.tintTopLeft : window.mainColor;
+          const _orbTypeTint = _orbTypeColorMap[_oSpr._orbId];
           for (let _pi = 0; _pi < 5; _pi++) {
             const _orbitSpeed = 0.7 + (_pi % 3) * 0.35;
             const _orbitR = 34 + (_pi * 5 % 17);
@@ -3839,7 +3853,7 @@ _buildSettingsPopup() {
             const _py = _sy + Math.sin(_ang) * (_orbitR * 0.85);
             const _size = (window.orbParticleSize || 3.5) + (_pi % 3) * 1.0;
             const _alpha = 0.5 + (_pi % 4) * 0.12;
-            this._orbGfx.fillStyle(_orbTint, _alpha);
+            this._orbGfx.fillStyle(_orbTypeTint, _alpha);
             this._orbGfx.fillRect(_px - _size, _py - _size, _size * 2, _size * 2);
           }
         }
