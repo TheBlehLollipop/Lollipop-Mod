@@ -3428,7 +3428,18 @@ _buildSettingsPopup() {
     if (typeof checkpoint.speed === "number") {
       playerSpeed = checkpoint.speed;
     } else {
+    let speedKey = parseInt(window.settingsMap["kA4"] || "0");
+    if (speedKey == 0) {
       playerSpeed = SpeedPortal.ONE_TIMES;
+    } else if (speedKey == 1) {
+      playerSpeed = SpeedPortal.HALF;
+    } else if (speedKey == 2) {
+      playerSpeed = SpeedPortal.TWO_TIMES;
+    } else if (speedKey == 3) {
+      playerSpeed = SpeedPortal.THREE_TIMES;
+    } else if (speedKey == 4) {
+      playerSpeed = SpeedPortal.FOUR_TIMES;
+    }
     }
     this._level.resetColorTriggers();
     this._level.resetAlphaTriggers();
