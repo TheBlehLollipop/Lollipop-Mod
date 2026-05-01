@@ -1363,6 +1363,7 @@ class GameScene extends Phaser.Scene {
     this._spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this._upKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
     this._wKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+    this._lKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.L);
     this._leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
     this._rightKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
     this._aKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
@@ -2466,13 +2467,19 @@ _buildSettingsPopup() {
     createToggle(column1X, startY + (spacingY * 4), "Show Hitboxes", 
         () => window.showHitboxes, 
         (v) => window.showHitboxes = v,
-        (v) => { if (!v && this._player._hitboxGraphics) this._player._hitboxGraphics.clear(); }
+        (v) => { 
+            if (!v) {
+                this._player._hitboxGraphics.clear(); 
+            } else {
+                this._player.drawHitboxes(this._player._hitboxGraphics, this._cameraX, this._cameraY);
+            }
+        }
     );
 
     createToggle(column1X, startY + (spacingY * 5), "Hitbox Trail", 
         () => window.showHitboxTrail, 
         (v) => window.showHitboxTrail = v,
-        (v) => { if (!v) this._hitboxTrail = []; }
+        (v) => { if (window.showHitboxes) this._player.drawHitboxes(this._player._hitboxGraphics, this._cameraX, this._cameraY); }
     );
 
     createToggle(column2X, startY, "Show FPS", 
@@ -2490,6 +2497,11 @@ _buildSettingsPopup() {
         () => window.noClipAccuracy, 
         (v) => window.noClipAccuracy = v
     );
+
+    createToggle(column2X, startY + (spacingY * 3), "Hitboxes on Death", 
+        () => window.hitboxesOnDeath, 
+        (v) => window.hitboxesOnDeath = v
+    );
   }
   _saveSettings() {
     const settings = {
@@ -2501,7 +2513,8 @@ _buildSettingsPopup() {
         hitboxTrail: window.showHitboxTrail,
         showFPS: this._fpsText.visible,
         solidWaveTrail: window.solidWave,
-        noclipAccuracy: window.noClipAccuracy
+        noclipAccuracy: window.noClipAccuracy,
+        hitboxesOnDeath: window.hitboxesOnDeath
     };
     localStorage.setItem("gd_settings", JSON.stringify(settings));
   }
@@ -2516,7 +2529,8 @@ _buildSettingsPopup() {
         hitboxTrail: false,
         showFPS: false,
         solidWaveTrail: false,
-        noclipAccuracy: false
+        noclipAccuracy: false,
+        hitboxesOnDeath: false
     };
 
     const data = saved ? JSON.parse(saved) : defaults;
@@ -2530,6 +2544,7 @@ _buildSettingsPopup() {
     this._fpsText.visible = data.showFPS;
     window.solidWave = data.solidWaveTrail;
     window.noClipAccuracy = data.noclipAccuracy;
+    window.hitboxesOnDeath = data.hitboxesOnDeath;
   }
   _buildInfoPopup() {
     if (this._infoPopup) {
@@ -3573,7 +3588,7 @@ _buildSettingsPopup() {
       this._fpsFrames = 0;
     }
     if (this._paused) {
-      if (!this._updateLogPopup && (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown) && !this._spaceWasDown && !this._settingsPopup) {
+      if (!this._updateLogPopup && (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown) && !this._spaceWasDown && !this._settingsPopup) {
         setTimeout(() => {
           this._resumeGame();
         }, 75);
@@ -3582,7 +3597,7 @@ _buildSettingsPopup() {
       return;
     }
     if (this._menuActive) {
-      if (!this._updateLogPopup && (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown) && !this._spaceWasDown) {
+      if (!this._updateLogPopup && (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown) && !this._spaceWasDown) {
         this._spaceWasDown = true;
         if (this._levelSelectOverlay) {
           this._audio.playEffect("playSound_01", { volume: 1 });
@@ -3604,7 +3619,7 @@ _buildSettingsPopup() {
         }
       }
       this._arrowWasDown = _arrowLeft || _arrowRight;
-      this._spaceWasDown = this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown;
+      this._spaceWasDown = this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown;
       const menuDelta = Math.min(deltaTime / 1000 * 60, 2);
       const menuSpeed = 0.25;
       this._menuCameraX = (this._menuCameraX || 0) + menuDelta * playerSpeed * d * menuSpeed;
@@ -3669,7 +3684,7 @@ _buildSettingsPopup() {
       }
       return;
     }
-    let _0x368ad9 = this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown;
+    let _0x368ad9 = this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown;
     if (!this._updateLogPopup && _0x368ad9 && !this._spaceWasDown) {
       this._pushButton();
     } else if (!_0x368ad9 && this._spaceWasDown) {

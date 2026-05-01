@@ -897,9 +897,14 @@ if (this.p.isFlying || this.p.isUfo) {
       this._dashAnimationSprite.scaleY = this.p.gravityFlipped ? -miniScale : miniScale;
       this._dashAnimationSprite.scaleX = miniScale;
     }
-    
+
     if (!this._scene._slideIn){
-      if (window.showHitboxes) {
+      if (!this._hitboxTrail) this._hitboxTrail = [];
+      if (!this.p.isDead) {
+        this._hitboxTrail.push({ x: this._scene._playerWorldX, y: this.p.y });
+        if (this._hitboxTrail.length > 100) this._hitboxTrail.shift();
+      }
+      if (window.showHitboxes || this.p.isDead && window.hitboxesOnDeath) {
         this.drawHitboxes(this._hitboxGraphics, cameraX, cameraY);
       } else if (this._hitboxGraphics) {
         this._hitboxGraphics.clear();
@@ -2627,13 +2632,6 @@ _updateBallJump(gravityMultiplier) {
     }
 
     if (window.showHitboxTrail) {
-      if (!this._hitboxTrail) this._hitboxTrail = [];
-      
-      if (!this.p.isDead) {
-          this._hitboxTrail.push({ x: this._scene._playerWorldX, y: this.p.y });
-          if (this._hitboxTrail.length > 100) this._hitboxTrail.shift();
-      }
-
       this._hitboxTrail.forEach((pos, index) => {
           const trailXRaw = pos.x - camX;
           const trailX = isFlipped ? screenWidth - trailXRaw : trailXRaw;
