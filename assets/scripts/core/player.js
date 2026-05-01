@@ -397,22 +397,19 @@ class PlayerObject {
     if (this._ballOverlayLayer) {
       this._ballOverlayLayer.sprite.setTint(window.secondaryColor);
     }
-    this._waveGlowLayer = createSpriteLayer(spriteY, particleY, spriteX, "player_dart_00_glow_001.png", 9, false);
-    this._waveOverlayLayer = createSpriteLayer(spriteY, particleY, spriteX, "player_dart_00_2_001.png", 8, false);
+    this._waveGlowLayer = createSpriteLayer(spriteY, particleY, spriteX, `${window.currentWave}_glow_001.png`, 9, false);
+    this._waveOverlayLayer = createSpriteLayer(spriteY, particleY, spriteX, `${window.currentWave}_2_001.png`, 8, false);
     this._waveExtraLayer = null;
-    this._waveSpriteLayer = createSpriteLayer(spriteY, particleY, spriteX, "player_dart_00_001.png", 10, false);
+    this._waveSpriteLayer = createSpriteLayer(spriteY, particleY, spriteX, `${window.currentWave}_001.png`, 10, false);
     if (this._waveGlowLayer) {
       this._waveGlowLayer.sprite.setTint(window.secondaryColor);
       this._waveGlowLayer.sprite._glowEnabled = false;
-      this._waveGlowLayer.sprite.setScale(0.42);
     }
     if (this._waveSpriteLayer) {
       this._waveSpriteLayer.sprite.setTint(window.mainColor);
-      this._waveSpriteLayer.sprite.setScale(0.42);
     }
     if (this._waveOverlayLayer) {
       this._waveOverlayLayer.sprite.setTint(window.secondaryColor);
-      this._waveOverlayLayer.sprite.setScale(0.42);
     }
     this.playerSprite = this._playerSpriteLayer.sprite;
     this.shipSprite = this._shipSpriteLayer.sprite;
@@ -870,7 +867,7 @@ if (this.p.isFlying || this.p.isUfo) {
             playerLayer.sprite.rotation = isBallLayer ? playerRotation : (this.p.mirrored ? -playerRotation : playerRotation);
             let miniScale = this.p.isMini ? 0.6 : 1;
             if (this.p.isWave && this._waveLayers.includes(playerLayer)) {
-              miniScale *= 0.42; //fix wave size
+              miniScale *= 0.94; //fix wave size
             }
             playerLayer.sprite.scaleY = (this.p.gravityFlipped ? -miniScale : miniScale);
             playerLayer.sprite.scaleX = (this.p.mirrored ? -miniScale : miniScale);
@@ -890,7 +887,7 @@ if (this.p.isFlying || this.p.isUfo) {
             playerLayer.sprite.rotation = isBallLayer ? playerRotation : (this.p.mirrored ? -playerRotation : playerRotation);
             let miniScale = this.p.isMini ? 0.6 : 1;
             if (this.p.isWave && this._waveLayers.includes(playerLayer)) {
-              miniScale *= 0.42; //fix wave size
+              miniScale *= 0.94; //fix wave size
             }
             playerLayer.sprite.scaleY = (this.p.gravityFlipped ? -miniScale : miniScale);
             playerLayer.sprite.scaleX = (this.p.mirrored ? -miniScale : miniScale);
@@ -917,7 +914,7 @@ if (this.p.isFlying || this.p.isUfo) {
       if (!this._hitboxTrail) this._hitboxTrail = [];
       if (!this.p.isDead) {
         this._hitboxTrail.push({ x: this._scene._playerWorldX, y: this.p.y });
-        if (this._hitboxTrail.length > 100) this._hitboxTrail.shift();
+        if (this._hitboxTrail.length > 180) this._hitboxTrail.shift();
       }
       if (window.showHitboxes || this.p.isDead && window.hitboxesOnDeath) {
         this.drawHitboxes(this._hitboxGraphics, cameraX, cameraY);
@@ -1788,14 +1785,6 @@ _updateBallJump(gravityMultiplier) {
   _updateWaveJump() {
     const waveJumpPower = (this.p.isMini ? 22.7720072 : 11.3860036) * (playerSpeed / 11.540004);
     let waveVelocity = (this.p.upKeyDown ? 1 : -1) * this.flipMod() * waveJumpPower;
-    if (this.p.onGround) {
-      const canJump = this.p.onCeiling ? waveVelocity < 0 : waveVelocity > 0;
-      if (canJump) {
-        this.p.onGround = false;
-      } else {
-        waveVelocity = 0;
-      }
-    }
     this.p.canJump = false;
     this.p.isJumping = false;
     this.p.yVelocity = waveVelocity;

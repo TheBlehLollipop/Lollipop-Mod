@@ -3745,7 +3745,7 @@ _buildSettingsPopup() {
           this._audio.stopMusic();
         }
         this._audio.playEffect("explode_11", {
-          volume: 0.65
+          volume: 0.65 * this._sfxVolume
         });
         this._deathSoundPlayed = true;
       }
@@ -4081,7 +4081,7 @@ _applyMirrorEffect() {
   _showCompleteEffect() {
     this._audio.fadeOutMusic(1500);
     this.sound.play("endStart_02", {
-      volume: 0.8
+      volume: 0.8 * this._sfxVolume
     });
     (function (_0x3f5321, _0x8f5267, _0x2f1e2d, _0x4b5e5b) {
       const _0x29d856 = 2;
