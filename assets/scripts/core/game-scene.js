@@ -2959,13 +2959,8 @@ _buildSettingsPopup() {
     textureX.on("pointerup", () => {
       if (textureX._pressed) {
         textureX._pressed = false;
-        this.tweens.killTweensOf(textureX, "scale");
-        this.tweens.add({
-          targets: textureX,
-          scale: _0x57b645,
-          duration: 400,
-          ease: "Bounce.Out"
-        });
+        this.tweens.killTweensOf(textureX);
+        textureX.setScale(_0x57b645);
         _0x2f13d0();
       }
     });
