@@ -456,6 +456,12 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         const rawData = localStorage.getItem("created_levels");
         const createdLevels = rawData ? JSON.parse(rawData) : [];
 
+        createdLevels.sort((a, b) => {
+            const idA = parseInt(a.createdId.replace("local_", "")) || 0;
+            const idB = parseInt(b.createdId.replace("local_", "")) || 0;
+            return idB - idA;
+        });
+
         const getLengthStr = (sec) => {
             if (sec < 11) return "Tiny";
             if (sec < 30) return "Short";
@@ -2879,17 +2885,19 @@ _buildSettingsPopup() {
     };
 
     const buildGameplayPage = (container) => {
-        createToggle(container, column1X, startY, "Show Percentage",
-            () => window.showPercentage,
+        createToggle(container, column1X, startY, "Show Percentage", 
+            () => window.showPercentage, 
             (v) => window.showPercentage = v,
             (v) => { if (this._percentageLabel) this._percentageLabel.setVisible(v); }
         );
-        createToggle(container, column1X, startY + spacingY, "Percentage Decimals",
-            () => window.percentageDecimals,
+
+        createToggle(container, column1X, startY + spacingY, "Percentage Decimals", 
+            () => window.percentageDecimals, 
             (v) => window.percentageDecimals = v
         );
-        createToggle(container, column1X, startY + (spacingY * 2), "StartPos Switcher",
-            () => window.startPosSwitcher,
+
+        createToggle(container, column1X, startY + (spacingY * 2), "StartPos Switcher", 
+            () => window.startPosSwitcher, 
             (v) => window.startPosSwitcher = v,
             (v) => {
                 if (!v) this._startPosIndex = -1;
@@ -2898,8 +2906,9 @@ _buildSettingsPopup() {
                 if (this._startPosText) this._startPosText.setText(`0/${total}`);
             }
         );
-        createToggle(container, column1X, startY + (spacingY * 3), "Noclip",
-            () => window.noClip,
+
+        createToggle(container, column1X, startY + (spacingY * 3), "Noclip", 
+            () => window.noClip, 
             (v) => window.noClip = v,
             (v) => { if (this._noclipIndicator) this._noclipIndicator.setVisible(v); }
         );
@@ -2910,23 +2919,37 @@ _buildSettingsPopup() {
     };
 
     const buildVisualPage = (container) => {
-        createToggle(container, column1X, startY, "Show Hitboxes",
-            () => window.showHitboxes,
+        createToggle(container, column1X, startY, "Show Hitboxes", 
+            () => window.showHitboxes, 
             (v) => window.showHitboxes = v,
-            (v) => { if (!v && this._player._hitboxGraphics) this._player._hitboxGraphics.clear(); }
+            (v) => { 
+                if (!v) {
+                    this._player._hitboxGraphics.clear(); 
+                } else {
+                    this._player.drawHitboxes(this._player._hitboxGraphics, this._cameraX, this._cameraY);
+                }
+            }
         );
-        createToggle(container, column1X, startY + spacingY, "Hitbox Trail",
-            () => window.showHitboxTrail,
+
+        createToggle(container, column1X, startY + (spacingY), "Hitbox Trail", 
+            () => window.showHitboxTrail, 
             (v) => window.showHitboxTrail = v,
-            (v) => { if (!v) this._hitboxTrail = []; }
+            (v) => { if (window.showHitboxes) this._player.drawHitboxes(this._player._hitboxGraphics, this._cameraX, this._cameraY); }
         );
-        createToggle(container, column1X, startY + (spacingY * 2), "Show FPS",
-            () => this._fpsText.visible,
+        
+        createToggle(container, column1X, startY + (spacingY * 2), "Hitboxes on Death", 
+            () => window.hitboxesOnDeath, 
+            (v) => window.hitboxesOnDeath = v
+        );
+
+        createToggle(container, column1X, startY + (spacingY * 3), "Show FPS", 
+            () => this._fpsText.visible, 
             (v) => this._fpsText.visible = v,
             (v) => { if (this._fpsText) this._fpsText.setVisible(v); }
         );
-        createToggle(container, column1X, startY + (spacingY * 3), "Solid Wave Trail",
-            () => window.solidWave,
+
+        createToggle(container, column1X, startY + (spacingY * 4), "Solid Wave Trail", 
+            () => window.solidWave, 
             (v) => window.solidWave = v
         );
     };
