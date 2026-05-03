@@ -95,7 +95,6 @@ function parseLevel(levelString) {
       objects.push(object);
     }
   }
-  console.log(settings)
   return {
     settings: settings,
     objects: objects
@@ -360,7 +359,6 @@ window.LevelObject = class LevelObject {
       settingsMap[pairs[i]] = pairs[i + 1];
     }
     let colorStr = settingsMap["kS38"];
-    console.log(settingsMap)
     window._backgroundId = settingsMap["kA6"] ? settingsMap["kA6"] : "01";
     if (window._backgroundId.length < 2) {
       window._backgroundId = "0"+window._backgroundId;
@@ -409,13 +407,11 @@ window.LevelObject = class LevelObject {
       let col = parseColorEntry(settingsMap["kS30"]);
       if (col) this._initialColors[1001] = col;
     }
-    console.log("level colors:", JSON.stringify(this._initialColors));
   }
   _buildGround() {
     const scene = this._scene;
     window._groundId = window._groundId ? window._groundId : "01";
     
-      console.log(window._groundId)
     const groundFrame = scene.textures.getFrame("groundSquare_" + window._groundId + "_001.png");
     this._tileW = groundFrame ? groundFrame.width : 1012;
     this._groundTiles = [];
@@ -474,7 +470,6 @@ window.LevelObject = class LevelObject {
     const groundY = b(0);
     while (this._groundTiles.length < requiredTileCount) {
       const newTileX = this._maxGroundWorldX + tileWidth;
-      console.log(window._groundId)
       let newGroundTile = scene.add.image(0, groundY, "groundSquare_" + window._groundId + "_001.png");
       newGroundTile.setOrigin(0, 0).setTint(((newTile = this._groundTiles[0]) == null ? undefined : newTile.tintTopLeft) || 17578).setDepth(20);
       newGroundTile._worldX = newTileX;
@@ -1022,7 +1017,6 @@ window.LevelObject = class LevelObject {
             }
           }
         } else {
-          console.warn("No sprite found for object ID " + levelObj.id + " frame=" + frameName + " type=" + (objectDef ? objectDef.type : "null"));
         }
         if (objectDef && (objectDef.type === solidType || objectDef.type === hazardType)) {
           let _0x47077e = frameName.replace("_001.png", "_2_001.png");
@@ -1106,7 +1100,6 @@ window.LevelObject = class LevelObject {
         _0x443c50.add(levelObj.id);
         if (levelObj.id === 1331) {
         }
-        console.warn("Object ID " + levelObj.id + " has no definition in allObjects at x=" + worldX + " y=" + worldY);
       }
       if (objectDef && objectDef.portalParticle && frameName) {
         let _0x3a9438 = worldX;
@@ -1252,10 +1245,8 @@ window.LevelObject = class LevelObject {
             dual_off: "portal_dual_off",
           }[_0x5bcd81] || null;
           if (levelObj.id === 111) {
-            console.log("res - _0x5bcd81: " + _0x5bcd81 + ", _0x25452a: " + _0x25452a);
           }
           if (!_0x25452a) {
-            console.warn("unknown portal sub-type: id=" + levelObj.id + " sub=" + objectDef.sub);
           }
           if (_0x25452a) {
             let _0x4bd7bc = new Collider(_0x25452a, worldX, worldY, _0xad0974, _0x2c2226, levelObj.rot || 0);
@@ -1263,9 +1254,7 @@ window.LevelObject = class LevelObject {
             _registerCollider(_0x4bd7bc);
             this.objects.push(_0x4bd7bc);
             this._addCollisionToSection(_0x4bd7bc);
-            console.log("portal collision created: type=" + _0x25452a + " id=" + levelObj.id + " x=" + worldX + " y=" + worldY + " w=" + _0xad0974 + " h=" + _0x2c2226);
           } else {
-            console.warn("portal ID " + levelObj.id + " has no matching sub-type (sub=" + objectDef.sub + ")");
           }
         } else if (objectDef.type === padType) {
           let padW = objectDef.gridW * a;
@@ -1275,7 +1264,6 @@ window.LevelObject = class LevelObject {
           _registerCollider(padObj);
           this.objects.push(padObj);
           this._addCollisionToSection(padObj);
-          console.log("pad collision created: id=" + levelObj.id + " x=" + worldX + " y=" + worldY);
         } else if (objectDef.type === ringType) {
           let orbW = objectDef.gridW * a;
           let orbH = objectDef.gridH * a;
@@ -1286,7 +1274,6 @@ window.LevelObject = class LevelObject {
           _registerCollider(orbObj);
           this.objects.push(orbObj);
           this._addCollisionToSection(orbObj);
-          console.log("orb collision created: id=" + levelObj.id + " x=" + worldX + " y=" + worldY);
         } else if (objectDef.type === coinType) {
           let coinW = (objectDef.gridW || 1) * a;
           let coinH = (objectDef.gridH || 1) * a;
@@ -1312,19 +1299,16 @@ window.LevelObject = class LevelObject {
           _registerCollider(speedobject);
           this.objects.push(speedobject);
           this._addCollisionToSection(speedobject);
-          console.log("speed portal collision created: id=" + levelObj.id + " x=" + worldX + " y=" + worldY + " speed=" + speedobject.speedValue);
         }
       }
     }
     _0x443c50.size;
     if (_0x443c50.size > 0) {
-      console.warn("" + _0x443c50.size + " unique object IDs had no definition in allObjects:", [..._0x443c50].join(", "));
     }
     let colTypeCounts = {};
     for (let obj of this.objects) {
       colTypeCounts[obj.type] = (colTypeCounts[obj.type] || 0) + 1;
     }
-    console.log("colision objects by type:", JSON.stringify(colTypeCounts));
     this._colorTriggers.sort((_0x359c7f, _0x28dd8b) => _0x359c7f.x - _0x28dd8b.x);
     this._enterEffectTriggers.sort((_0x3e43f2, _0x5e3d9a) => _0x3e43f2.x - _0x5e3d9a.x);
     this._moveTriggers.sort((a, b) => a.x - b.x);
