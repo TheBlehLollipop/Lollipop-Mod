@@ -1781,13 +1781,16 @@ _updateBallJump(_0x2fe319) {
     this._rotation = _0x312a7f === 0 ? 0 : _0x312a7f > 0 ? -_waveAngle : _waveAngle;
   }
   _updateUfoJump(_dt) {
-    const _miniGrav = this.p.isMini ? 1.35 : 1;
-    const _gravStrength = p * 0.55 * _miniGrav;
-    this.p.yVelocity -= _gravStrength * _dt * this.flipMod();
+    const _ufoJump = this.p.isMini ? 13.296 : 13.742;
+    const _ufoThreshold = 3.832796;
+    const _ufoFastGrav = this.p.isMini ? 0.634524 : 0.540121;
+    const _ufoSlowGrav = this.p.isMini ? 0.421624 : 0.359973;
+    const _ufoUpVel = this.p.yVelocity * this.flipMod();
+    const _ufoGrav = _ufoUpVel > _ufoThreshold ? _ufoFastGrav : _ufoSlowGrav;
+    this.p.yVelocity -= p * _ufoGrav * _dt * this.flipMod();
     if (this.p.upKeyPressed) {
       this.p.upKeyPressed = false;
-      const _burstVel = 14.5 * this.flipMod();
-      this.p.yVelocity = _burstVel;
+      this.p.yVelocity = _ufoJump * this.flipMod();
       this.p.onGround = false;
       this.p.canJump = false;
       this.p.isJumping = true;
@@ -1796,12 +1799,14 @@ _updateBallJump(_0x2fe319) {
       } catch(e) {}
     }
     if (!this.p.wasBoosted) {
+      const _ufoMaxUp = this.p.isMini ? 18.824 : 16;
+      const _ufoMaxFall = this.p.isMini ? 15.058 : 12.8;
       if (this.p.gravityFlipped) {
-        this.p.yVelocity = Math.max(this.p.yVelocity, -14.5);
-        this.p.yVelocity = Math.min(this.p.yVelocity, 11);
+        this.p.yVelocity = Math.max(this.p.yVelocity, -_ufoMaxUp);
+        this.p.yVelocity = Math.min(this.p.yVelocity, _ufoMaxFall);
       } else {
-        this.p.yVelocity = Math.max(this.p.yVelocity, -11);
-        this.p.yVelocity = Math.min(this.p.yVelocity, 14.5);
+        this.p.yVelocity = Math.max(this.p.yVelocity, -_ufoMaxFall);
+        this.p.yVelocity = Math.min(this.p.yVelocity, _ufoMaxUp);
       }
     }
     if (this.p.upKeyDown) {
@@ -2086,6 +2091,11 @@ _updateBallJump(_0x2fe319) {
                 else if (_padId === 140) { _padVel = 5.6 * _grav; }
                 else if (_padId === 1332) { _padVel = 10.08 * _grav; }
                 else if (_padId === 67) { _padVel = 15.0 * _grav; _padFlip = true; }
+              } else if (this.p.isUfo) {
+                if (_padId === 35) { _padVel = this.p.isMini ? 25.6 : 16; }
+                else if (_padId === 140) { _padVel = this.p.isMini ? 10.237037 : 12.8; }
+                else if (_padId === 1332) { _padVel = this.p.isMini ? 25.6 : 16; }
+                else if (_padId === 67) { _padVel = this.p.isMini ? 20.48 : 25.6; _padFlip = true; }
               } else if (this.p.isBall) {
                 if (_padId === 35) { _padVel = 9.6 * _grav; }
                 else if (_padId === 140) { _padVel = 6.72 * _grav; }
@@ -2234,11 +2244,14 @@ _updateBallJump(_0x2fe319) {
                   else if (_orbId === 1022) { _orbVel = _ballBase * -1; _flipAfter = true; }
                   else if (_orbId === 1330) { _orbVel = -30; }
                 } else if (this.p.isUfo) {
-                  if (_orbId === 36) { _orbVel = 16; }
-                  else if (_orbId === 141) { _orbVel = _cubeJump * 0.42; }
+                  const _ufoYellowOrb = this.p.isMini ? 17.888 : 22.36;
+                  const _ufoPinkOrb = this.p.isMini ? 7.674 : 9.592;
+                  const _ufoBlueOrb = (this.p.isMini ? -7.155 : -8.944) * 2;
+                  if (_orbId === 36) { _orbVel = _ufoYellowOrb; }
+                  else if (_orbId === 141) { _orbVel = _ufoPinkOrb; }
                   else if (_orbId === 1333) { _orbVel = _cubeJump * 1.02; }
-                  else if (_orbId === 84) { _orbVel = _cubeJump * 0.4; _flipAfter = true; }
-                  else if (_orbId === 1022) { _orbVel = -16; _flipAfter = true; }
+                  else if (_orbId === 84) { _orbVel = _ufoBlueOrb; _flipAfter = true; }
+                  else if (_orbId === 1022) { _orbVel = -_ufoYellowOrb * 2; _flipAfter = true; }
                   else if (_orbId === 1330) { _orbVel = -22.4; }
                 } else if (this.p.isRobot) {
                   if (_orbId === 36) { _orbVel = _cubeJump * 0.9; }
