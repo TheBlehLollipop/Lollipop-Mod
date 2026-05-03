@@ -462,6 +462,20 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             return idB - idA;
         });
 
+        const nameCounts = {};
+        const levelRevisions = {};
+
+        createdLevels.forEach(lvl => {
+            const name = lvl.levelName;
+            if (!nameCounts[name]) {
+                nameCounts[name] = 1;
+                levelRevisions[lvl.createdId] = "";
+            } else {
+                levelRevisions[lvl.createdId] = `Rev. ${nameCounts[name]}`;
+                nameCounts[name]++;
+            }
+        });
+
         const lengthValues=[
           "Tiny", "Short", "Medium", "Long", "XL"
         ]
@@ -483,6 +497,15 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             const bgStripe = this.add.rectangle(centerX, slotY, tableW - 10, spacing, stripeColor, 1);
             const separator = this.add.rectangle(centerX, slotY + (spacing / 2), tableW - 10, 1, 0x502c16, 1);
             const nameTxt = this.add.bitmapText(tableX + 20, slotY - 22, "bigFont", level.levelName, 32).setOrigin(0, 0.5);
+            const revLabel = levelRevisions[level.createdId];
+            console.log(levelRevisions[level.createdId]);
+            const revText = this.add.bitmapText(
+                nameTxt.x + nameTxt.width + 10,
+                nameTxt.y + 5,
+                "goldFont",
+                revLabel, 
+                20
+            ).setOrigin(0, 0.5);
             const infoY = slotY + 18;
             const lenIcon = this.add.image(tableX + 35, infoY, "GJ_GameSheet03", "GJ_timeIcon_001.png").setScale(0.65);
             const lenTxt = this.add.bitmapText(lenIcon.x + 22, infoY, "bigFont", lengthValues[level.levelLength], 18).setOrigin(0, 0.5);
@@ -499,7 +522,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
                 this._openLevelView(level);
             });
 
-            listContainer.add([bgStripe, separator, nameTxt, lenIcon, lenTxt, songIcon, songTxt, statusIcon, statusTxt, viewBtn, viewTxt]);
+            listContainer.add([bgStripe, separator, nameTxt, revText, lenIcon, lenTxt, songIcon, songTxt, statusIcon, statusTxt, viewBtn, viewTxt]);
         });
         if (createdLevels.length === 0) {
             container.add(this.add.bitmapText(centerX, tableY + (tableH/2), "bigFont", "No Levels", 30).setOrigin(0.5).setAlpha(0.5));
@@ -571,7 +594,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
                 description: "",
                 version: 1,
                 status: "Unverified",
-                createdId: "local_" + (createdLevels.length + 1).toString()
+                createdId: this._getNextLocalId()
             };
 
             createdLevels.push(newLevel);
@@ -678,14 +701,14 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
                         description: extracted.desc || "",
                         version: extracted.version,
                         status: "Unverified",
-                        createdId: "local_" + (createdLevels.length + 1).toString()
+                        createdId: this._getNextLocalId()
                     };
 
                     createdLevels.push(newLevel);
                     localStorage.setItem("created_levels", JSON.stringify(createdLevels));
                     
                     this._closeEditorMenu(false);
-                    this._openEditorMenu();
+                    this._openLevelView(newLevel);
 
                 } catch (err) {
                     console.error("GMD Import Error:", err);
@@ -734,6 +757,20 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
     };
+    this._getNextLocalId = () => {
+        const rawData = localStorage.getItem("created_levels");
+        const levels = rawData ? JSON.parse(rawData) : [];
+        let maxId = 0;
+        levels.forEach(l => {
+            if (l.createdId && typeof l.createdId === "string") {
+                const idNum = parseInt(l.createdId.split('_')[1]);
+                if (!isNaN(idNum) && idNum > maxId) {
+                    maxId = idNum;
+                }
+            }
+        });
+        return "local_" + (maxId + 1);
+    };
     this._openLevelView = (level) => {
         const sw = screenWidth;
         const sh = screenHeight;
@@ -741,11 +778,20 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         const saveToLS = (key, val) => {
             const rawData = localStorage.getItem("created_levels");
             let levels = rawData ? JSON.parse(rawData) : [];
-            const idx = levels.findIndex(l => l.levelId === level.levelId);
+            const idx = levels.findIndex(l => l.createdId === level.createdId);
             if (idx !== -1) {
                 levels[idx][key] = val;
                 localStorage.setItem("created_levels", JSON.stringify(levels));
             }
+        };
+        const deleteLevel = () => {
+            if (!confirm(`Are you sure you want to delete ${level.levelName}?`)) return;
+            const rawData = localStorage.getItem("created_levels");
+            let levels = rawData ? JSON.parse(rawData) : [];
+            levels = levels.filter(l => l.createdId !== level.createdId);
+            localStorage.setItem("created_levels", JSON.stringify(levels));
+            cleanup();
+            this._openEditorMenu();
         };
         this._activeInput = null;
         let cursorVisible = true;
@@ -868,6 +914,8 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         this._makeBouncyButton(shareBtn, 1.1, () => { this._exportGMD(level); });
         const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_03_001.png").setFlipX(true).setFlipY(true).setRotation(Math.PI).setInteractive();
         this._makeBouncyButton(backBtn, 1, () => { cleanup(); this._openEditorMenu(); });
+        const deleteBtn = this.add.image(sw - 50, 48, "GJ_GameSheet03", "GJ_deleteBtn_001.png").setInteractive().setFlipY(true).setAngle(90).setScale(0.8);
+        this._makeBouncyButton(deleteBtn, 0.8, () => { deleteLevel(); });
 
         const footerY = sh - 100; 
         const subFooterY = sh - 30;
@@ -884,7 +932,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         const versionText = this.add.bitmapText(centerX - 180, subFooterY, "goldFont", `Version: ${level.version || 1}`, 30).setOrigin(0.5).setDepth(152);
         const idText = this.add.bitmapText(centerX + 180, subFooterY, "goldFont", `ID: ${level.levelId || "na"}`, 30).setOrigin(0.5).setDepth(152);
 
-        container.add([nameBox, titleText, titleCursor, descBox, descText, descCursor, playBtn, editBtn, shareBtn, backBtn, lengthIcon, lengthLabel, songIcon, songLabel, statusIcon, statusLabel, versionText, idText]);
+        container.add([nameBox, titleText, titleCursor, descBox, descText, descCursor, playBtn, editBtn, shareBtn, backBtn, deleteBtn, lengthIcon, lengthLabel, songIcon, songLabel, statusIcon, statusLabel, versionText, idText]);
     };
     this._startCreatedLevel = async (level) => {
         const PROXY_BASE = (window._gdProxyUrl || "").replace(/\/$/, "");
