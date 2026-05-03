@@ -524,7 +524,6 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         try {
           await _doSearchInner(levelId);
         } catch (err) {
-          console.error("search error:", err);
           _showStatus("error: " + err.message, "#ff5555");
         } finally {
           _loading = false;
@@ -546,7 +545,6 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         });
         if (!res.ok) throw new Error(`Proxy returned ${res.status}`);
         const rawResponse = await res.text();
-        console.log("raw response:", rawResponse.slice(0, 200));
         if (!rawResponse || rawResponse === "-1" || !rawResponse.includes(":")) {
           _showStatus("level not found from servers. check the id and try again.", "#ff0000");
           return;
@@ -558,7 +556,6 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
           const valueEnd   = i + 1 < _gdMatches.length ? _gdMatches[i + 1].index : rawResponse.length;
           gdMap[_gdMatches[i][1]] = rawResponse.slice(valueStart, valueEnd);
         }
-        console.log("parsed keys:", Object.keys(gdMap).join(", "), "| key35:", gdMap["35"]);
         const levelString   = gdMap["4"] || null;
         const levelName     = gdMap["2"] || "Online Level";
         const levelIdParsed = gdMap["1"] || levelId;
@@ -568,8 +565,6 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         const songKey = isCustomSong ? `ng_song_${songIdRaw}` : window.allLevels[officialSongId][0];
         window.currentlevel[0] = songKey;
         window._onlineSongOffset = parseFloat(gdMap["45"] || "0") || 0;
-        console.log("song offset (field 45):", window._onlineSongOffset);
-        console.log("level:", levelName, "| songId:", songIdRaw, "| custom:", isCustomSong);
         _showStatus(`found "${levelName}"${isCustomSong ? ` — loading song #${songIdRaw}...` : ""}`, "#00ff00");
         if (isCustomSong) {
           window._onlineSongBuffer = null; 
@@ -581,7 +576,6 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
               body: `songID=${songIdRaw}&secret=Wmfd2893gb7`
             });
             const ngText = ngRes.ok ? await ngRes.text() : "-1";
-            console.log("song info response:", ngText.slice(0, 200));
             if (ngText && ngText !== "-1") { 
               const ngParts = ngText.split("~|~");
               const ngMap = {};
@@ -590,7 +584,6 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
               const songUrl = decodeURIComponent(rawUrl);
               const songArtist = (ngMap["4"]  || "Unknown").replace(/:$/, "").trim();
               const songTitle  = (ngMap["2"]  || `Song #${songIdRaw}`).replace(/:$/, "").trim();
-              console.log("song url:", songUrl);
               if (songUrl) {
                 _showStatus(`loading "${songTitle}" by ${songArtist}...`, "#00ff00");
                 const audioCtx = this.game.sound.context;
@@ -604,11 +597,9 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
                 window._onlineSongKey    = songKey;
                 window._onlineSongTitle  = songTitle;
                 window._onlineSongArtist = songArtist;
-                console.log("song decoded ok, duration:", decoded.duration.toFixed(1) + "s");
               }
             }
           } catch (songErr) {
-            console.warn("song fetch failed using default music:", songErr);
           }
         } else {
           window._onlineSongBuffer = null;
@@ -1013,11 +1004,9 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
                     sprite.setTint(color);
                     if (this.renderer.type === Phaser.CANVAS && sprite.tintTopLeft !== undefined) {
                       if (sprite.tintTopLeft === 0xffffff && color !== 0xffffff) {
-                        console.warn('Canvas renderer detected tint may not work properly');
                       }
                     }
                   } catch (e) {
-                    console.warn('failed to set tint:', e);
                   }
                 }
               };
@@ -1030,7 +1019,6 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
                 try {
                   this._player._particleEmitter.tint = color;
                 } catch (e) {
-                  console.warn('failed to set particle emitter tint:', e);
                 }
               }
             }
@@ -1048,7 +1036,6 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
                   try {
                     sprite.setTint(color);
                   } catch (e) {
-                    console.warn('failed to set secondary tint:', e);
                   }
                 }
               };
@@ -1065,7 +1052,6 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
                 try {
                   this._player._streak._color = color;
                 } catch (e) {
-                  console.warn('failed to set streak color:', e);
                 }
               }
             }
@@ -1661,7 +1647,6 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       window.updateLogShown = true;
     }
     if (window.levelID) {
-        console.log("URL ID detected:", window.levelID);
         this._openSearchMenu();
     }
     if (this.game.registry.get("autoStartGame")) {
@@ -2028,7 +2013,6 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       const innerW2 = barW2 - padding * 2;
       const innerRadius = innerH2 / 2;
       const fillW = Math.max(innerH2, innerW2 * bestNormal / 100);
-      console.log({ bestNormal, fillW });
     if(bestNormal > 0) {
       const barFg = this.add.graphics().setScrollFactor(0).setDepth(155);
       barFg.fillStyle(0x00FF00, 1);   
@@ -5420,7 +5404,6 @@ _applyMirrorEffect() {
         });
 
       } catch (err) {
-        console.warn("OnlineLevelsScene fetch error:", err);
         spinSprite.setVisible(false);
         refreshBtn.setVisible(true);
       }
