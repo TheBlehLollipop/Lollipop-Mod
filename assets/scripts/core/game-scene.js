@@ -697,7 +697,43 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
 
         fileInput.click();
     };
+    this._exportGMD = (level) => {
+        const encodedDesc = btoa(level.description || "");
+        const authorName = "Web Dashers";
+        
+        const officialSong = level.songId < 0 ? Math.abs(level.songId) : 0;
+        const customSong = level.songId > 0 ? level.songId : 0;
 
+        let xml = '<?xml version="1.0"?>';
+        xml += '<plist version="1.0" gjver="2.0">';
+        xml += '<dict>';
+        xml += '<k>kCEK</k><i>4</i>';
+        xml += `<k>k1</k><i>${level.levelId && level.levelId !== "NA" ? level.levelId.replace(/\D/g, "") : 0}</i>`;
+        xml += `<k>k18</k><i>${level.levelLength || 0}</i>`;
+        xml += `<k>k23</k><i>${level.levelLength || 0}</i>`;
+        xml += `<k>k2</k><s>${level.levelName}</s>`;
+        xml += `<k>k4</k><s>${level.levelString}</s>`;
+        xml += `<k>k3</k><s>${encodedDesc}</s>`;
+        xml += `<k>k5</k><s>${authorName}</s>`;
+        xml += '<k>k101</k><s>0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0</s>';
+        xml += `<k>k8</k><i>${officialSong - 1}</i>`;
+        xml += `<k>k45</k><i>${customSong}</i>`;
+        xml += `<k>k16</k><i>${level.version || 1}</i>`;
+        xml += '<k>k13</k><t/><k>k21</k><i>2</i><k>k50</k><i>47</i>';
+        xml += '<k>kI1</k><r>0</r><k>kI2</k><r>0</r><k>kI3</k><r>0.1</r>';
+        xml += '<k>kI6</k><d><k>0</k><s>0</s><k>1</k><s>0</s><k>2</k><s>0</s><k>3</k><s>0</s><k>4</k><s>0</s><k>5</k><s>0</s><k>6</k><s>0</s><k>7</k><s>0</s><k>8</k><s>0</s><k>9</k><s>0</s><k>10</k><s>0</s><k>11</k><s>0</s><k>12</k><s>0</s><k>13</k><s>0</s></d>';
+        xml += '</dict></plist>';
+        const blob = new Blob([xml], { type: 'text/xml' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const fileName = `${level.levelName.replace(/[^a-z0-9]/gi, '_')}.gmd`;
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    };
     this._openLevelView = (level) => {
         const sw = screenWidth;
         const sh = screenHeight;
@@ -829,7 +865,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         const playBtn = this.add.image(centerX, btnY, "GJ_GameSheet03", "GJ_playBtn2_001.png").setInteractive().setFlipY(true).setAngle(90).setScale(1.1);
         this._makeBouncyButton(playBtn, 1.1, () => { cleanup(); this._startCreatedLevel(level); });
         const shareBtn = this.add.image(centerX + 220, btnY, "GJ_GameSheet03", "GJ_shareBtn_001.png").setInteractive().setFlipY(true).setAngle(90).setScale(1.1);
-        this._makeBouncyButton(shareBtn, 1.1, () => console.log("Share logic"));
+        this._makeBouncyButton(shareBtn, 1.1, () => { this._exportGMD(level); });
         const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_03_001.png").setFlipX(true).setFlipY(true).setRotation(Math.PI).setInteractive();
         this._makeBouncyButton(backBtn, 1, () => { cleanup(); this._openEditorMenu(); });
 
@@ -850,11 +886,11 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
 
         container.add([nameBox, titleText, titleCursor, descBox, descText, descCursor, playBtn, editBtn, shareBtn, backBtn, lengthIcon, lengthLabel, songIcon, songLabel, statusIcon, statusLabel, versionText, idText]);
     };
-    this._startCreatedLevel = (level) => {
+    this._startCreatedLevel = async (level) => {
+        const PROXY_BASE = (window._gdProxyUrl || "").replace(/\/$/, "");
         window._onlineLevelString = level.levelString;
         window._onlineLevelName = level.levelName;
         window._onlineLevelId = level.createdId;
-        
         window._onlineSongBuffer = null;
         window._onlineSongKey = null;
         window._onlineSongOffset = 0;
@@ -863,12 +899,53 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             "Placeholder",
             level.levelName,
             level.createdId,
-            ["Placeholder", "Placeholder"]
+            ["Local", "SongAuthor"]
         ];
         if (level.songId < 0){
-           window.currentlevel[0] = window.allLevels[Math.abs(level.songId) - 1][0];
+          window.currentlevel[0] = window.allLevels[Math.abs(level.songId) - 1][0];
+          window.currentlevel[3] = ["Local", window.allLevels[Math.abs(level.songId) - 1][3]]
         } else {
-          // custom music, ill do this later
+          const songId = level.songId;
+          const songKey = `ng_song_${songId}`;
+          window.currentlevel[0] = songKey;
+          
+          if (PROXY_BASE && songId > 0) {
+              try {                  
+                  const ngRes = await fetch(`${PROXY_BASE}/getGJSongInfo.php`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                      body: `songID=${songId}&secret=Wmfd2893gb7`
+                  });
+                  
+                  const ngText = ngRes.ok ? await ngRes.text() : "-1";
+                  if (ngText && ngText !== "-1") {
+                      const ngParts = ngText.split("~|~");
+                      const ngMap = {};
+                      for (let i = 0; i + 1 < ngParts.length; i += 2) ngMap[ngParts[i]] = ngParts[i + 1];
+
+                      const songUrl = decodeURIComponent((ngMap["10"] || "").trim());
+                      const songArtist = (ngMap["4"] || "Unknown").replace(/:$/, "").trim();
+                      const songTitle = (ngMap["2"] || `Song #${songId}`).replace(/:$/, "").trim();
+
+                      if (songUrl) {
+                          const audioCtx = this.game.sound.context;
+                          if (audioCtx.state === "suspended") await audioCtx.resume();
+                          const proxiedUrl = `${PROXY_BASE}/audio-proxy?url=${encodeURIComponent(songUrl)}`;
+                          const audioRes = await fetch(proxiedUrl);
+                          const arrayBuf = await audioRes.arrayBuffer();
+                          const decoded = await audioCtx.decodeAudioData(arrayBuf);
+                          window._onlineSongBuffer = decoded;
+                          window._onlineSongKey = songKey;
+                          window._onlineSongTitle = songTitle;
+                          window._onlineSongArtist = songArtist;
+                          
+                          window.currentlevel[3] = ["Local", window._onlineSongArtist]
+                      }
+                  }
+              } catch (err) {
+                  console.warn("Failed to load custom song", err);
+              }
+          }
         }
         this.scene.restart();
     };
