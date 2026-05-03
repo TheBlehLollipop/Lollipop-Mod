@@ -462,13 +462,9 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             return idB - idA;
         });
 
-        const getLengthStr = (sec) => {
-            if (sec < 11) return "Tiny";
-            if (sec < 30) return "Short";
-            if (sec < 60) return "Medium";
-            if (sec < 120) return "Long";
-            return "XL";
-        };
+        const lengthValues=[
+          "Tiny", "Short", "Medium", "Long", "XL"
+        ]
 
         const listContainer = this.add.container(0, 0);
         const maskShape = this.add.graphics().fillStyle(0xffffff).fillRect(tableX, tableY, tableW, tableH).setVisible(false);
@@ -489,13 +485,13 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             const nameTxt = this.add.bitmapText(tableX + 20, slotY - 22, "bigFont", level.levelName, 32).setOrigin(0, 0.5);
             const infoY = slotY + 18;
             const lenIcon = this.add.image(tableX + 35, infoY, "GJ_GameSheet03", "GJ_timeIcon_001.png").setScale(0.65);
-            const lenTxt = this.add.bitmapText(lenIcon.x + 22, infoY, "bigFont", getLengthStr(level.levelLength), 18).setOrigin(0, 0.5);
-            const songIcon = this.add.image(tableX + 120, infoY, "GJ_GameSheet03", "GJ_musicIcon_001.png").setScale(0.65);
+            const lenTxt = this.add.bitmapText(lenIcon.x + 22, infoY, "bigFont", lengthValues[level.levelLength], 18).setOrigin(0, 0.5);
+            const songIcon = this.add.image(tableX + 150, infoY, "GJ_GameSheet03", "GJ_musicIcon_001.png").setScale(0.65);
             const songTxt = this.add.bitmapText(songIcon.x + 22, infoY, "bigFont", level.song, 18).setOrigin(0, 0.5);
-            const statusIcon = this.add.image(tableX + 320, infoY, "GJ_GameSheet03", "GJ_infoIcon_001.png").setScale(0.65).setFlipY(true).setAngle(90);
+            const statusIcon = this.add.image(tableX + 380, infoY, "GJ_GameSheet03", "GJ_infoIcon_001.png").setScale(0.65).setFlipY(true).setAngle(90);
             const statusTxt = this.add.bitmapText(statusIcon.x + 22, infoY, "bigFont", level.status, 18).setOrigin(0, 0.5);
             
-            const viewBtn = this.add.nineslice(tableX + tableW - 80, slotY, "GJ_button_01", null, 60, 30, 12, 12, 12, 12 ).setScale(1.5).setInteractive();
+            const viewBtn = this.add.nineslice(tableX + tableW - 80, slotY, "GJ_button01", null, 60, 30, 12, 12, 12, 12 ).setScale(1.5).setInteractive();
             const viewTxt = this.add.bitmapText(viewBtn.x - 2, viewBtn.y - 1, "bigFont", "View", 32).setOrigin(0.5).setScale(0.8);
             
             this._makeBouncyButton(viewBtn, 1.5, () => {
@@ -569,7 +565,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
                 songId: -1,
                 levelId: null,
                 levelString: "H4sIAAAAAAAACq1QwRHDMAhbyO0hwIlzfWWGDsAAXaHD10Z-9Ff3Ln4gG4GMeD2tFYRLaEBrWGitARCUwKTHDbEFRCT2wF3yBOrXvYVEC7wRKSi6JoirBY8FwdHB9iVJjZ5ckP1rlf19taIv7pLGh-wP43XROPq9z9mOtX1uS7LldcKKzPx41ZKwEbz0yPueUSfPF9qApx3kMlrGJE7PSBbCIlYpy5QVuheMciE0AgiaoFRUihk5I2ec0Knp1PTK9slxYDM2OIFmjL8bv-1mBmB6YrvO4UErHR4fJXMaP9sDAAA=", 
-                levelLength: 1,
+                levelLength: 0,
                 normalBest: 0,
                 practiceBest: 0,
                 description: "",
@@ -588,6 +584,12 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         });
         container.add(newBtn);
 
+        const importBtn = this.add.image(newBtnX, newBtnY - 90, "import").setScale(0.3).setInteractive();
+        this._makeBouncyButton(importBtn, 0.3, () => {
+            this._importGMD();
+        });
+        container.add(importBtn);
+
         const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_03_001.png")
             .setScrollFactor(0).setDepth(104).setFlipX(true).setFlipY(true).setRotation(Math.PI).setInteractive();
         
@@ -598,6 +600,104 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
 
         this._editorObjects = [overlay, blocker, container, backBtn, maskShape];
     };
+    this._importGMD = () => {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.gmd';
+
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const content = event.target.result;
+                try {
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(content, "text/xml");
+                    const keys = xmlDoc.querySelectorAll("key, k");
+                    
+                    let extracted = {
+                        name: "Imported Level",
+                        data: "",
+                        version: 1,
+                        length: 0,
+                        id: "NA",
+                        desc: "",
+                        officialSongId: 0,
+                        customSongId: 0
+                    };
+
+                    keys.forEach(keyNode => {
+                        const k = keyNode.textContent;
+                        const v = keyNode.nextElementSibling;
+                        if (!v) return;
+                        const val = v.textContent;
+
+                        if (k === "k2") extracted.name = val;
+                        if (k === "k4") extracted.data = val;
+                        if (k === "k1") extracted.id = val;
+                        if (k === "k23") extracted.length = parseInt(val) || 0;
+                        if (k === "k16") extracted.version = parseInt(val) || 1;
+                        if (k === "k8") extracted.officialSongId = parseInt(val) || 0;
+                        if (k === "k45") extracted.customSongId = parseInt(val) || 0;
+                        if (k === "k3") {
+                            try { extracted.desc = atob(val); } catch(e) { extracted.desc = val; }
+                        }
+                    });
+
+                    if (!extracted.data) throw new Error("No level string found.");
+
+                    let finalSongName = "Stereo Madness";
+                    let finalSongId = -1;
+
+                    if (extracted.customSongId > 0) {
+                        finalSongId = extracted.customSongId;
+                        finalSongName = `NG#${extracted.customSongId}`;
+                    } else {
+                        finalSongId = -extracted.officialSongId -1;
+                        try {
+                            finalSongName = window.allLevels[extracted.officialSongId][0];
+                        } catch(e) {
+                            finalSongName = "Unknown";
+                        }
+                    }
+
+                    const rawLevels = localStorage.getItem("created_levels");
+                    let createdLevels = rawLevels ? JSON.parse(rawLevels) : [];
+                    
+                    const newLevel = {
+                        levelName: extracted.name,
+                        song: finalSongName,
+                        songId: finalSongId,
+                        levelId: (extracted.id === "0" || !extracted.id) ? "NA" : extracted.id,
+                        levelString: extracted.data, 
+                        levelLength: extracted.length,
+                        normalBest: 0,
+                        practiceBest: 0,
+                        description: extracted.desc || "",
+                        version: extracted.version,
+                        status: "Unverified",
+                        createdId: "local_" + (createdLevels.length + 1).toString()
+                    };
+
+                    createdLevels.push(newLevel);
+                    localStorage.setItem("created_levels", JSON.stringify(createdLevels));
+                    
+                    this._closeEditorMenu(false);
+                    this._openEditorMenu();
+
+                } catch (err) {
+                    console.error("GMD Import Error:", err);
+                    alert("Failed to parse .gmd: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        fileInput.click();
+    };
+
     this._openLevelView = (level) => {
         const sw = screenWidth;
         const sh = screenHeight;
@@ -735,16 +835,12 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
 
         const footerY = sh - 100; 
         const subFooterY = sh - 30;
-        const getLengthStr = (sec) => {
-            if (sec < 11) return "Tiny";
-            if (sec < 30) return "Short";
-            if (sec < 60) return "Medium";
-            if (sec < 120) return "Long";
-            return "XL";
-        };
+        const lengthValues=[
+          "Tiny", "Short", "Medium", "Long", "XL"
+        ]
 
         const lengthIcon = this.add.image(centerX - 350, footerY, "GJ_GameSheet03", "GJ_timeIcon_001.png").setScale(1).setDepth(152);
-        const lengthLabel = this.add.bitmapText(centerX - 310, footerY, "bigFont", getLengthStr(level.levelLength), 33).setOrigin(0, 0.5).setDepth(152);
+        const lengthLabel = this.add.bitmapText(centerX - 310, footerY, "bigFont", lengthValues[level.levelLength], 33).setOrigin(0, 0.5).setDepth(152);
         const songIcon = this.add.image(centerX - 160, footerY, "GJ_GameSheet03", "GJ_musicIcon_001.png").setScale(1).setDepth(152);
         const songLabel = this.add.bitmapText(centerX - 115, footerY, "bigFont", level.song, 29).setOrigin(0, 0.5).setDepth(152);
         const statusIcon = this.add.image(centerX + 200, footerY, "GJ_GameSheet03", "GJ_infoIcon_001.png").setScale(1).setDepth(152).setFlipY(true).setAngle(90);
@@ -4217,6 +4313,7 @@ _buildSettingsPopup() {
         this._onlineLevelsOverlay || this._settingsLayerOverlay || this._settingsPopup ||
         this._infoPopup || this._newgroundsPopup || this._statsLayerOverlay || this._updateLogPopup;
       if (!_anyOverlayOpen && (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown) && !this._spaceWasDown) {
+        if (this._creatorMenuOpen) return;
         this._spaceWasDown = true;
         if (this._levelSelectOverlay) {
           this._audio.playEffect("playSound_01", { volume: 1 });
