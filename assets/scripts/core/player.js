@@ -1549,7 +1549,6 @@ if (this.p.isFlying || this.p.isUfo) {
     }
   }
   flipGravity(flipped, _0x11bbde = 0.5) {
-      console.log("flipGravity called: flipped=" + flipped + " current=" + this.p.gravityFlipped);
       if (this.p.gravityFlipped === flipped) {
         return;
       }
