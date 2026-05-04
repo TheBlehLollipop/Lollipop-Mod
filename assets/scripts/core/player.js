@@ -783,12 +783,13 @@ class PlayerObject {
 if (this.p.isFlying || this.p.isUfo) {
       const _0x3904f8 = 10;
       const playerOffset = this.p.gravityFlipped ? -30 : 10; 
-      const _0x285611 = Math.cos(playerRotation);
-      const _0x501bf9 = Math.sin(playerRotation);
-      const _0x1b1d28 = -_0x3904f8 * _0x501bf9;
-      const _0x185f91 = _0x3904f8 * _0x285611; 
-      const _0x562424 = playerOffset * _0x501bf9;
-      const _0x3011c9 = -playerOffset * _0x285611;
+      const cosRotation = Math.cos(playerRotation);
+      const sinRotation = Math.sin(playerRotation);
+	  const mirrored = this.p.mirrored ? -1 : 1;
+      const _0x1b1d28 = -_0x3904f8 * sinRotation * mirrored;
+      const _0x185f91 = _0x3904f8 * cosRotation; 
+      const _0x562424 = playerOffset * sinRotation * mirrored;
+      const _0x3011c9 = -playerOffset * cosRotation;
       const _ufoMode = this.p.isUfo && !this.p.isFlying;
       if (this.p.isFlying) {
         for (const layer of this._shipLayers) {
