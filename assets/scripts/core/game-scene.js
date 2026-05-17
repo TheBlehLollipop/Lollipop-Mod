@@ -3461,6 +3461,16 @@ _buildSettingsPopup() {
             () => window.solidWave, 
             (v) => window.solidWave = v
         );
+        
+        createToggle(container, column1X, startY + (spacingY * 5), "Create Object ID labels", 
+            () => window.createObjectIds, 
+            (v) => window.createObjectIds = v
+        );
+
+        createToggle(container, column1X, startY + (spacingY * 6), "Show Object ID labels", 
+            () => window.showObjectIds, 
+            (v) => window.showObjectIds = v
+        );
     };
 
     const buildPage = (idx) => {
@@ -3493,7 +3503,9 @@ _buildSettingsPopup() {
         solidWaveTrail: window.solidWave,
         noclipAccuracy: window.noClipAccuracy,
         hitboxesOnDeath: window.hitboxesOnDeath,
-        showEditorGlow: window.showEditorGlow
+        showEditorGlow: window.showEditorGlow,
+        createObjectIds: window.createObjectIds,
+        showObjectIds: window.showObjectIds
     };
     localStorage.setItem("gd_settings", JSON.stringify(settings));
   }
@@ -3510,7 +3522,9 @@ _buildSettingsPopup() {
         solidWaveTrail: false,
         noclipAccuracy: false,
         hitboxesOnDeath: false,
-        showEditorGlow: false
+        showEditorGlow: false,
+        createObjectIds: false,
+        showObjectIds: false
     };
 
     const data = saved ? JSON.parse(saved) : defaults;
@@ -3526,6 +3540,8 @@ _buildSettingsPopup() {
     window.noClipAccuracy = data.noclipAccuracy;
     window.hitboxesOnDeath = data.hitboxesOnDeath;
     window.showEditorGlow = data.showEditorGlow;
+    window.createObjectIds = data.createObjectIds;
+    window.showObjectIds = data.showObjectIds;
   }
   
   _buildInfoPopup() {
@@ -4835,6 +4851,7 @@ _buildSettingsPopup() {
     this._level.topContainer.x = -this._cameraX;
     this._level.topContainer.y = this._cameraY;
     this._level.updateVisibility(this._cameraX);
+    this._level.updateObjectDebugIds();
     this._updateBackground();
     this._applyMirrorEffect();
     if (!this._audio.musicPlaying) {
@@ -4882,6 +4899,7 @@ _buildSettingsPopup() {
       this._level.shiftGroundTiles(this._cameraX - _0x56287b);
       this._level.updateGroundTiles(this._cameraY);
       this._level.updateVisibility(this._cameraX);
+      this._level.updateObjectDebugIds();
       this._level.applyEnterEffects(this._cameraX);
       const _0xde8a1a = this._playerWorldX - this._cameraX;
       this._player.syncSprites(this._cameraX, this._cameraY, 0, this._getMirrorXOffset(_0xde8a1a));
@@ -5078,6 +5096,7 @@ _buildSettingsPopup() {
       this._level.topContainer.x = -this._cameraX;
       this._level.topContainer.y = this._cameraY;
       this._level.updateVisibility(this._cameraX);
+      this._level.updateObjectDebugIds();
       this._updateBackground();
       this._level.stepGroundAnimation(deltaTime / 1000);
       this._level.updateGroundTiles(this._cameraY);
@@ -5381,6 +5400,7 @@ if (!this._state.isFlying && !this._state.isWave && !this._state.isUfo) {
     this._bg.setTint(this._colorManager.getHex(fs));
     this._level.setGroundColor(this._colorManager.getHex(gs));
     this._level.updateVisibility(this._cameraX);
+    this._level.updateObjectDebugIds();
     this._level.checkEnterEffectTriggers(playerX);
     this._level.applyEnterEffects(this._cameraX);
     this._glitterCenterX = this._cameraX + screenWidth / 2;
