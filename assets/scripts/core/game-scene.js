@@ -3653,7 +3653,10 @@ _buildSettingsPopup() {
       { text: "Update Log", scale: 0.85, font: "goldFont" },
       { text: "Accurate GDWeb+ logo", scale: 0.65 },
       { text: "Credit to Altruist for making it", scale: 0.6 },
-      { text: "is this update finally out?", scale: 0.65, color: 0xaaddff },
+      { text: "UI", scale: 0.65 },
+      { text: "some more UI", scale: 0.65 },
+      { text: "a little more UI", scale: 0.65 },
+      { text: "hot damn", scale: 0.65, color: 0xaaddff },
       { text: "- rohanis0000", scale: 0.65, color: 0xaaddff },
     ]; 
     let yPos = 0;
