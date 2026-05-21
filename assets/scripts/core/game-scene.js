@@ -1172,6 +1172,23 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
           }
         } else if (event.key === "Enter") {
           _doSearch();
+          } else if (event.ctrlKey || event.metaKey) {
+          if (event.key === "c" || event.key === "C") {
+            event.preventDefault();
+            navigator.clipboard.writeText(inputText);
+          } else if (event.key === "v" || event.key === "V") {
+            event.preventDefault();
+            navigator.clipboard.readText().then(pastedText => {
+              const filtered = pastedText.split('').filter(c => allowedChars.includes(c)).join('');
+              if (filtered.length > 0) {
+                const availableSpace = inputMaxLen - inputText.length;
+                inputText += filtered.slice(0, availableSpace);
+                _updateInputDisplay();
+              }
+            }).catch(() => {});
+          } else if (event.key === "a" || event.key === "A") {
+            event.preventDefault();
+          }
         } else if (event.key.length === 1 && allowedChars.includes(event.key) && !event.ctrlKey) {
           if (inputText.length < inputMaxLen) {
             inputText += event.key;
