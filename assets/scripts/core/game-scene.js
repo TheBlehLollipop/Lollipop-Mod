@@ -278,23 +278,23 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     this._makeBouncyButton(this._menuUpdateLogBtn, 0.64, () => {
       this._buildUpdateLogPopup();
     }, () => this._menuActive && !this._updateLogPopup);
-    this._menuSettingsBtn = this.add.image(centerX + 110, screenHeight - 80, "GJ_GameSheet03", "GJ_optionsBtn_001.png").setScrollFactor(0).setDepth(30).setScale(0.8).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
-    this._expandHitArea(this._menuSettingsBtn, 1.2);
-    this._makeBouncyButton(this._menuSettingsBtn, 0.8, () => {
+    this._menuSettingsBtn = this.add.image(centerX + 92, screenHeight - 90, "GJ_GameSheet03", "GJ_optionsBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
+    this._expandHitArea(this._menuSettingsBtn, 1);
+    this._makeBouncyButton(this._menuSettingsBtn, 1, () => {
       this._showSettingsScreen();
     }, () => this._menuActive && !this._settingsPopup);
-    this._menuStatsBtn = this.add.image(centerX + 200, screenHeight - 80, "GJ_GameSheet03", "GJ_statsBtn_001.png").setScrollFactor(0).setDepth(30).setScale(0.8).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
-    this._expandHitArea(this._menuStatsBtn, 1.2);
-    this._makeBouncyButton(this._menuStatsBtn, 0.8, () => {
+    this._menuStatsBtn = this.add.image(centerX + 202, screenHeight - 90, "GJ_GameSheet03", "GJ_statsBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
+    this._expandHitArea(this._menuStatsBtn, 1);
+    this._makeBouncyButton(this._menuStatsBtn, 1, () => {
       this._showStatsScreen();
     }, () => this._menuActive);
-    this._menuAchievementsBtn = this.add.image(centerX + 22, screenHeight - 80, "GJ_GameSheet03", "GJ_achBtn_001.png").setScrollFactor(0).setDepth(30).setScale(0.8).setInteractive().setTint(0x666666);
-    this._expandHitArea(this._menuAchievementsBtn, 1.2);
-    this._makeBouncyButton(this._menuAchievementsBtn, 0.8, () => {
+    this._menuAchievementsBtn = this.add.image(centerX - 12, screenHeight - 90, "GJ_GameSheet03", "GJ_achBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setTint(0x666666);
+    this._expandHitArea(this._menuAchievementsBtn, 1);
+    this._makeBouncyButton(this._menuAchievementsBtn, 1, () => {
     }, () => this._menuActive);
-    this._menuNewgroundsBtn = this.add.image(centerX + 290, screenHeight - 80, "GJ_GameSheet03", "GJ_ngBtn_001.png").setScrollFactor(0).setDepth(30).setScale(0.8).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
-    this._expandHitArea(this._menuNewgroundsBtn, 1.2);
-    this._makeBouncyButton(this._menuNewgroundsBtn, 0.8, () => {
+    this._menuNewgroundsBtn = this.add.image(centerX + 312, screenHeight - 90, "GJ_GameSheet03", "GJ_ngBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
+    this._expandHitArea(this._menuNewgroundsBtn, 1);
+    this._makeBouncyButton(this._menuNewgroundsBtn, 1, () => {
       this._buildNewgroundsPopup();
     }, () => this._menuActive && !this._newgroundsPopup);
     this._menuGlitter = this.add.particles(0, 0, "GJ_WebSheet", {
@@ -1384,38 +1384,12 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     };
     this._makeBouncyButton(this._creatorBtn, 1, () => {
       this._openCreatorMenu();
-      if (this._creatorBtn) {
-        this.tweens.killTweensOf(this._creatorBtn);
-        this._creatorBtn.y = 320;
-        this._creatorBtn.setScale(1);
-        this.tweens.add({
-          targets: this._creatorBtn,
-          y: 324,
-          duration: 750,
-          ease: "Quad.InOut",
-          yoyo: true,
-          repeat: -1
-        });
-      }
     }, () => this._menuActive && !this._levelSelectOverlay);
       //icon stufff
     this._iconBtn = this.add.image(0, 0, "GJ_GameSheet03", "GJ_garageBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setScale(1);
     this._iconBtnSelected = false;
     this._makeBouncyButton(this._iconBtn, 1, () => {
       this._openIconSelector();
-      if (this._iconBtn) {
-        this.tweens.killTweensOf(this._iconBtn);
-        this._iconBtn.y = 320;
-        this._iconBtn.setScale(1);
-        this.tweens.add({
-          targets: this._iconBtn,
-          y: 324,
-          duration: 750,
-          ease: "Quad.InOut",
-          yoyo: true,
-          repeat: -1
-        });
-      }
     }, () => this._menuActive && !this._levelSelectOverlay);
 
     this._iconOverlay = null;
@@ -1887,16 +1861,23 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
           }
 
           ((capturedFrame, capturedImg, capturedExtra, capturedOrigScale) => {
-            hitRect.on("pointerover",  () => { capturedImg.setAlpha(0.65); if (capturedExtra) capturedExtra.setAlpha(0.65); });
-            hitRect.on("pointerout",   () => {
-              capturedImg.setAlpha(1); capturedImg.setScale(capturedOrigScale);
-              if (capturedExtra) { capturedExtra.setAlpha(1); capturedExtra.setScale(capturedOrigScale); }
+            const bouncedScale = capturedOrigScale * 1.26;
+            const iconTargets = capturedExtra ? [capturedImg, capturedExtra] : [capturedImg];
+            hitRect.on("pointerdown", () => {
+              hitRect._pressed = true;
+              iconTargets.forEach(t => this.tweens.killTweensOf(t, "scale"));
+              iconTargets.forEach(t => this.tweens.add({ targets: t, scale: bouncedScale, duration: 300, ease: "Bounce.Out" }));
             });
-            hitRect.on("pointerdown",  () => { capturedImg.setScale(capturedOrigScale * 1.15); if (capturedExtra) capturedExtra.setScale(capturedOrigScale * 1.15); });
+            hitRect.on("pointerout", () => {
+              if (hitRect._pressed) {
+                hitRect._pressed = false;
+                iconTargets.forEach(t => this.tweens.killTweensOf(t, "scale"));
+                iconTargets.forEach(t => this.tweens.add({ targets: t, scale: capturedOrigScale, duration: 400, ease: "Bounce.Out" }));
+              }
+            });
             hitRect.on("pointerup",    () => {
-              capturedImg.setScale(capturedOrigScale);
-              capturedImg.setAlpha(1);
-              if (capturedExtra) { capturedExtra.setScale(capturedOrigScale); capturedExtra.setAlpha(1); }
+              hitRect._pressed = false;
+              iconTargets.forEach(t => { this.tweens.killTweensOf(t); t.setScale(capturedOrigScale); });
               if (!this._iconOverlay) return;
 
               selLabel.setPosition(capturedImg.x, capturedImg.y).setScale(0.75).setVisible(true);
@@ -2087,28 +2068,15 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
   this._iconBtn.x = (screenWidth / 2) - this._playBtn.width / 2 - 50 - (this._iconBtn.width * this._iconBtn.scaleX) / 2;
   this.tweens.killTweensOf(this._iconBtn, "y");
   this._iconBtn.y = 320;
-  this.tweens.add({
-    targets: this._iconBtn,
-    y: 324,
-    duration: 750,
-    ease: "Quad.InOut",
-    yoyo: true,
-    repeat: -1
-  });
+  if (this._chrSelDecor) this._chrSelDecor.destroy();
+  this._chrSelDecor = this.add.image(this._iconBtn.x - 110, this._iconBtn.y - (this._iconBtn.height * this._iconBtn.scaleY) / 2 + 160, "GJ_GameSheet03", "GJ_chrSel_001.png").setScrollFactor(0).setDepth(31);
 }
-    // creator stuff the sequel
     if (this._creatorBtn) {
   this._creatorBtn.x = (screenWidth / 2) + this._playBtn.width / 2 + 50 + (this._creatorBtn.width * this._creatorBtn.scaleX) / 2;
   this.tweens.killTweensOf(this._creatorBtn, "y");
   this._creatorBtn.y = 320;
-  this.tweens.add({
-    targets: this._creatorBtn,
-    y: 324,
-    duration: 750,
-    ease: "Quad.InOut",
-    yoyo: true,
-    repeat: -1
-  });
+  if (this._lvlEditDecor) this._lvlEditDecor.destroy();
+  this._lvlEditDecor = this.add.image(this._creatorBtn.x + 110, this._creatorBtn.y - (this._creatorBtn.height * this._creatorBtn.scaleY) / 2 + 160, "GJ_GameSheet03", "GJ_lvlEdit_001.png").setScrollFactor(0).setDepth(31);
 }
     this._spaceWasDown = false;
     this._spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
@@ -2423,7 +2391,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     const staticGroundTiles = [];
     for (let gi = 0; gi < numTiles; gi++) {
       const gt = this.add.image(gi * tileW, groundY, "groundSquare_" + groundId + "_001.png")
-        .setScrollFactor(0).setDepth(152).setOrigin(0, 1).setTint(groundTintHex(groundHex));
+        .setScrollFactor(0).setDepth(151).setOrigin(0, 1).setTint(groundTintHex(groundHex));
       staticGroundTiles.push(gt);
     }
     const floorLineFrame = this.textures.getFrame("GJ_WebSheet", "floorLine_01_001.png");
@@ -2431,7 +2399,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     const floorLineScale = sw / floorLineW;
     const groundTileH = groundFrame ? groundFrame.height : 80;
     const staticFloorLine = this.add.image(cx, groundY - groundTileH, "GJ_WebSheet", "floorLine_01_001.png")
-      .setScrollFactor(0).setDepth(153).setOrigin(0.5, 0.5).setScale(floorLineScale, 1).setBlendMode(S);
+      .setScrollFactor(0).setDepth(152).setOrigin(0.5, 0.5).setScale(floorLineScale, 1).setBlendMode(S);
     const cornerBL = this.add.image(0,  sh, "GJ_GameSheet03", "GJ_sideArt_001.png").setScrollFactor(0).setDepth(152).setOrigin(1, 1).setFlipY(true).setAngle(90);
     const cornerBR = this.add.image(sw, sh, "GJ_GameSheet03", "GJ_sideArt_001.png").setScrollFactor(0).setDepth(152).setOrigin(1, 0).setFlipY(false).setAngle(90);
     const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_01_001.png").setScrollFactor(0).setDepth(154).setFlipX(true).setScale(1, -1).setRotation(Math.PI).setInteractive();
@@ -4104,6 +4072,30 @@ _buildSettingsPopup() {
     }
   });
 }
+  if (this._chrSelDecor) {
+    this.tweens.add({
+      targets: this._chrSelDecor,
+      y: screenHeight + 100,
+      alpha: 0,
+      duration: 200,
+      ease: "Quad.In",
+      onComplete: () => {
+        if (this._chrSelDecor) { this._chrSelDecor.destroy(); this._chrSelDecor = null; }
+      }
+    });
+  }
+  if (this._lvlEditDecor) {
+    this.tweens.add({
+      targets: this._lvlEditDecor,
+      y: screenHeight + 100,
+      alpha: 0,
+      duration: 200,
+      ease: "Quad.In",
+      onComplete: () => {
+        if (this._lvlEditDecor) { this._lvlEditDecor.destroy(); this._lvlEditDecor = null; }
+      }
+    });
+  }
   //creator stuff the threequel
     if (this._creatorBtn) {
   this._closeCreatorMenu && this._closeCreatorMenu(true);
@@ -4268,6 +4260,7 @@ _buildSettingsPopup() {
     this._player2.setBallVisible(false);
     this._player2.setWaveVisible(false);
     this._levelAttempts = 1;
+    this._levelJumps = 0;
     this._attempts++;
     localStorage.setItem("gd_totalAttempts", this._attempts);
     this._attemptsLabel.setText("Attempt " + this._levelAttempts);
@@ -4309,10 +4302,12 @@ _buildSettingsPopup() {
       if (!this._state.isFlying && !this._state.isWave && !this._state.isUfo && this._state.canJump) {
         this._player.updateJump(0);
         this._totalJumps++;
+        this._levelJumps++;
         localStorage.setItem("gd_totalJumps", this._totalJumps);
       } else if (this._state.isUfo) {
         this._player.updateJump(0);
         this._totalJumps++;
+        this._levelJumps++;
         localStorage.setItem("gd_totalJumps", this._totalJumps);
       }
     }
@@ -4344,14 +4339,6 @@ _buildSettingsPopup() {
       this._playBtn.x = _0x1e5db8;
       this.tweens.killTweensOf(this._playBtn, "y");
       this._playBtn.y = 320;
-      this.tweens.add({
-        targets: this._playBtn,
-        y: 324,
-        duration: 750,
-        ease: "Quad.InOut",
-        yoyo: true,
-        repeat: -1
-      });
     }
     if (this._downloadBtns) {
       const _0x285ef7 = screenWidth - 130;
@@ -4379,14 +4366,6 @@ _buildSettingsPopup() {
       this._creatorBtn.x = (screenWidth / 2) + this._playBtn.width / 2 + 100 + (this._creatorBtn.width * this._creatorBtn.scaleX) / 2;
       this.tweens.killTweensOf(this._creatorBtn, "y");
       this._creatorBtn.y = 320;
-      this.tweens.add({
-        targets: this._creatorBtn,
-        y: 324,
-        duration: 750,
-        ease: "Quad.InOut",
-        yoyo: true,
-        repeat: -1
-      });
     }
     if (this._robLogo) {
       this._robLogo.x = 110;
@@ -4430,6 +4409,7 @@ _buildSettingsPopup() {
     this._attempts++;
     localStorage.setItem("gd_totalAttempts", this._attempts);
     this._levelAttempts++;
+    this._levelJumps = 0;
     const _0x2ba78a = this._cameraX;
     if (this._levelWon && this._practicedMode.practiceMode) {
       this._practicedMode.togglePracticeMode();
@@ -4889,7 +4869,7 @@ _buildSettingsPopup() {
       this._arrowWasDown = _arrowLeft || _arrowRight;
       this._spaceWasDown = this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown;
       const menuDelta = Math.min(deltaTime / 1000 * 60, 2);
-      const menuSpeed = 0.65;
+      const menuSpeed = 0.85;
       this._menuCameraX = (this._menuCameraX || 0) + menuDelta * playerSpeed * d * menuSpeed;
       const _0x38afac = this._cameraX;
       this._cameraX = this._menuCameraX;
@@ -6722,7 +6702,9 @@ _applyMirrorEffect() {
   }
   _showCompleteText() {
     const _0x56628c = screenWidth / 2;
-    const _0x45ab26 = this.add.image(_0x56628c, 250, "GJ_WebSheet", "GJ_levelComplete_001.png").setScrollFactor(0).setDepth(60).setScale(0.01);
+    const _0x45ab26 = this._practicedMode.practiceMode
+      ? this.add.image(_0x56628c, 250, "GJ_GameSheet03", "GJ_practiceComplete_001.png").setScrollFactor(0).setDepth(60).setScale(0.01)
+      : this.add.image(_0x56628c, 250, "GJ_WebSheet", "GJ_levelComplete_001.png").setScrollFactor(0).setDepth(60).setScale(0.01);
     this.tweens.add({
       targets: _0x45ab26,
       scale: 1.1,
@@ -6834,13 +6816,16 @@ _applyMirrorEffect() {
     const _0x3e9c79 = _0x33b564.y - 35;
     this._endLayerInternal.add(this.add.image(containerX - 312, _0x3e9c79, "GJ_WebSheet", "chain_01_001.png").setOrigin(0.5, 1));
     this._endLayerInternal.add(this.add.image(containerX + 312, _0x3e9c79, "GJ_WebSheet", "chain_01_001.png").setOrigin(0.5, 1));
-    this._endLayerInternal.add(this.add.image(containerX, 170, "GJ_WebSheet", "GJ_levelComplete_001.png").setScale(0.8));
+    const _completeBanner = this._practicedMode.practiceMode
+      ? this.add.image(containerX, 170, "GJ_GameSheet03", "GJ_practiceComplete_001.png").setScale(0.8)
+      : this.add.image(containerX, 170, "GJ_WebSheet", "GJ_levelComplete_001.png").setScale(0.8);
+    this._endLayerInternal.add(_completeBanner);
     const _0x45b6e4 = 0.8;
     let _0xe44f6d = 250;
-    const _0x2de55e = this.add.bitmapText(containerX, _0xe44f6d, "goldFont", "Attempts: " + this._attempts, 40).setOrigin(0.5, 0.5).setScale(_0x45b6e4);
+    const _0x2de55e = this.add.bitmapText(containerX, _0xe44f6d, "goldFont", "Attempts: " + this._levelAttempts, 40).setOrigin(0.5, 0.5).setScale(_0x45b6e4);
     this._endLayerInternal.add(_0x2de55e);
     _0xe44f6d += 48;
-    this._endLayerInternal.add(this.add.bitmapText(containerX, _0xe44f6d, "goldFont", "Jumps: " + this._totalJumps, 40).setOrigin(0.5, 0.5).setScale(_0x45b6e4));
+    this._endLayerInternal.add(this.add.bitmapText(containerX, _0xe44f6d, "goldFont", "Jumps: " + this._levelJumps, 40).setOrigin(0.5, 0.5).setScale(_0x45b6e4));
     _0xe44f6d += 48;
     const _0x596450 = Math.floor(this._playTime);
     const _0x30687e = Math.floor(_0x596450 / 3600);
