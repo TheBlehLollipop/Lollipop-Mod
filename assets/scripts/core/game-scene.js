@@ -3651,14 +3651,8 @@ _buildSettingsPopup() {
     */
     const updateEntries = [
       { text: "Update Log", scale: 0.85, font: "goldFont" },
-      { text: "Accurate Featured tab demo.", scale: 0.65 },
-      { text: "Info popups.", scale: 0.65 },
-      { text: "Main menu buttons.", scale: 0.65 },
-      { text: "Settings, Stats and Newgrounds.", scale: 0.65 },
-      { text: "Fixed being able to go to the level selector while in menus.", scale: 0.35 },
-      { text: "GD accurate loading screen.", scale: 0.65 },
-      { text: "UI tweaks.", scale: 0.65 },
-      { text: "Bug fixes.", scale: 0.65 },
+      { text: "Accurate GDWeb+ logo", scale: 0.65 },
+      { text: "Credit to Altruist for making it", scale: 0.6 },
       { text: "is this update finally out?", scale: 0.65, color: 0xaaddff },
       { text: "- rohanis0000", scale: 0.65, color: 0xaaddff },
     ]; 
