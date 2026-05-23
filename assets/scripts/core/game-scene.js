@@ -3155,34 +3155,37 @@ _buildSettingsPopup() {
     const dim = this.add.rectangle(centerX, centerY, screenWidth, screenHeight, 0, 150 / 255).setInteractive();
     this._settingsPopup.add(dim);
 
-    const corner = 0.325 * this.textures.get("GJ_square01").source[0].width;
-    const panel = this._drawScale9(centerX, centerY, panelWidth, panelHeight, 'GJ_square01', corner, 16777215, 1);
-    this._settingsPopup.add(panel);
+    const innerContainer = this.add.container(centerX, centerY).setScale(0);
+    this._settingsPopup.add(innerContainer);
 
-    const closeBtn = this.add.image(centerX - (panelWidth / 2) + 10, centerY - (panelHeight / 2) + 10, 'GJ_WebSheet', "GJ_closeBtn_001.png").setScale(0.8).setInteractive();
-    this._settingsPopup.add(closeBtn);
+    const corner = 0.325 * this.textures.get("GJ_square01").source[0].width;
+    const panel = this._drawScale9(0, 0, panelWidth, panelHeight, 'GJ_square01', corner, 16777215, 1);
+    innerContainer.add(panel);
+
+    const closeBtn = this.add.image(-(panelWidth / 2) + 10, -(panelHeight / 2) + 10, 'GJ_WebSheet', "GJ_closeBtn_001.png").setScale(0.8).setInteractive();
+    innerContainer.add(closeBtn);
     this._makeBouncyButton(closeBtn, 0.8, () => {
         this._settingsPopup.destroy();
         this._settingsPopup = null;
     });
     const pages = ["Gameplay", "Visual"];
     let currentPage = 0;
-    const pageTitle = this.add.bitmapText(centerX, centerY - (panelHeight / 2) + 45, "bigFont", pages[currentPage], 40).setOrigin(0.5);
-    this._settingsPopup.add(pageTitle);
-    const leftArrow = this.add.image(centerX - (panelWidth / 2) - 130, centerY, "GJ_GameSheet03", "GJ_arrow_01_001.png")
+    const pageTitle = this.add.bitmapText(0, -(panelHeight / 2) + 45, "bigFont", pages[currentPage], 40).setOrigin(0.5);
+    innerContainer.add(pageTitle);
+    const leftArrow = this.add.image(-(panelWidth / 2) - 130, 0, "GJ_GameSheet03", "GJ_arrow_01_001.png")
         .setFlipX(false).setInteractive();
-    this._settingsPopup.add(leftArrow);
-    const rightArrow = this.add.image(centerX + (panelWidth / 2) + 130, centerY, "GJ_GameSheet03", "GJ_arrow_01_001.png")
+    innerContainer.add(leftArrow);
+    const rightArrow = this.add.image((panelWidth / 2) + 130, 0, "GJ_GameSheet03", "GJ_arrow_01_001.png")
         .setInteractive().setFlipX(true);
-    this._settingsPopup.add(rightArrow);
-    const column1X = centerX - 200;
-    const column2X = centerX + 200;
+    innerContainer.add(rightArrow);
+    const column1X = -200;
+    const column2X = 200;
     const checkOffset = -120;
     const textOffset = -70;
     const spacingY = 70;
-    const startY = centerY - 150;
+    const startY = -150;
     let pageContainer = this.add.container(0, 0);
-    this._settingsPopup.add(pageContainer);
+    innerContainer.add(pageContainer);
 
     const createToggle = (container, x, y, label, getVal, setVal, callback = null) => {
         const getTex = () => getVal() ? "GJ_checkOn_001.png" : "GJ_checkOff_001.png";
@@ -3271,7 +3274,7 @@ _buildSettingsPopup() {
     const buildPage = (idx) => {
         pageContainer.destroy();
         pageContainer = this.add.container(0, 0);
-        this._settingsPopup.add(pageContainer);
+        innerContainer.add(pageContainer);
         pageTitle.setText(pages[idx]);
         if (idx === 0) buildGameplayPage(pageContainer);
         else if (idx === 1) buildVisualPage(pageContainer);
@@ -3284,6 +3287,13 @@ _buildSettingsPopup() {
     this._makeBouncyButton(rightArrow, 1, () => {
         currentPage = (currentPage + 1) % pages.length;
         buildPage(currentPage);
+    });
+    this.tweens.add({
+        targets: innerContainer,
+        scale: 1,
+        duration: 660,
+        ease: "Elastic.Out",
+        easeParams: [1, 0.6]
     });
   }
   _saveSettings() {
@@ -3453,8 +3463,9 @@ _buildSettingsPopup() {
     this.tweens.add({
       targets: bounceContainer,
       scale: { from: 0, to: 1 },
-      duration: 500,
-      ease: "Bounce.Out"
+      duration: 660,
+      ease: "Elastic.Out",
+      easeParams: [1, 0.6]
     });
   }
   _closeInfoPopup() {
@@ -3617,8 +3628,9 @@ _buildSettingsPopup() {
   this.tweens.add({
     targets: panelContainer,
     scale: 1,
-    duration: 400,
-    ease: "Bounce.Out"
+    duration: 660,
+    ease: "Elastic.Out",
+    easeParams: [1, 0.6]
   });
 }
   _closeHowToPlayPopup() {
@@ -3741,8 +3753,9 @@ _buildSettingsPopup() {
     this.tweens.add({
       targets: bounceContainer,
       scale: { from: 0, to: 1 },
-      duration: 500,
-      ease: "Bounce.Out"
+      duration: 660,
+      ease: "Elastic.Out",
+      easeParams: [1, 0.6]
     });
   }
   _closeUpdateLogPopup() {
@@ -3806,8 +3819,9 @@ _buildSettingsPopup() {
     this.tweens.add({
       targets: bounceContainer,
       scale: { from: 0, to: 1 },
-      duration: 500,
-      ease: "Bounce.Out"
+      duration: 660,
+      ease: "Elastic.Out",
+      easeParams: [1, 0.6]
     });
   }
   _closeNewgroundsPopup() {
@@ -3855,8 +3869,9 @@ _buildSettingsPopup() {
         this.tweens.add({
       targets: bounceContainer,
       scale: { from: 0, to: 1 },
-      duration: 500,
-      ease: "Bounce.Out"
+      duration: 660,
+      ease: "Elastic.Out",
+      easeParams: [1, 0.6]
     });
   }
   _closeFeaturedInfoPopup() {
