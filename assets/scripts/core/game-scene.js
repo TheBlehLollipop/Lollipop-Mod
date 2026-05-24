@@ -396,7 +396,26 @@ class GameScene extends Phaser.Scene {
     this._player.setShipVisible(false);
     this._player.setBallVisible(false);
     this._logo = this.add.image(0, 100, "GJ_WebSheet", "GJ_logo_001.png").setScrollFactor(0).setDepth(30);
-    this._robLogo = this.add.image(160, 555, "GJ_WebSheet", "RobTopLogoBig_001.png").setScrollFactor(0).setDepth(30).setScale(0.9);
+    this._robLogo = this.add.image(110, 595, "GJ_WebSheet", "RobTopLogoBig_001.png").setScrollFactor(0).setDepth(30).setScale(0.525).setInteractive();
+    this._makeBouncyButton(this._robLogo, 0.525, () => {
+      window.open("https://geometrydash.com", "_blank");
+    }, () => this._menuActive);
+    const _socialIconDefs = [
+      { frame: "gj_fbIcon_001.png",      url: "https://www.facebook.com/RobTopGames",  angle: 0,   row: 0, col: 0 },
+      { frame: "gj_twIcon_001.png",      url: "https://x.com/rohanis0000gd",       angle: -90, flipX: true, row: 0, col: 1 },
+      { frame: "gj_ytIcon_001.png",      url: "https://www.youtube.com/@rohanis0000gd",  angle: 0,   row: 0, col: 2 },
+      { frame: "gj_twitchIcon_001.png",  url: "https://www.twitch.tv/robtopgames",     angle: -90, flipX: true, row: 0, col: 3 },
+      { frame: "gj_discordIcon_001.png", url: "https://discord.gg/TfEzAVWPSJ",        angle: 90,  row: 1, col: 3 },
+    ];
+    const _socialScale = 0.75;
+    this._socialIcons = _socialIconDefs.map(def => {
+      const icon = this.add.image(0, 0, "GJ_GameSheet03", def.frame)
+        .setScrollFactor(0).setDepth(30).setScale(_socialScale).setAngle(def.angle).setFlipX(!!def.flipX).setInteractive();
+      this._makeBouncyButton(icon, _socialScale, () => {
+        window.open(def.url, "_blank");
+      }, () => this._menuActive);
+      return icon;
+    });
     this._copyrightText = this.add.text(0, 625, "© 2026 RobTop Games · geometrydash.com", {
       fontSize: "14px",
       color: "#ffffff",
@@ -438,23 +457,23 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     this._makeBouncyButton(this._menuUpdateLogBtn, 0.64, () => {
       this._buildUpdateLogPopup();
     }, () => this._menuActive && !this._updateLogPopup);
-    this._menuSettingsBtn = this.add.image(centerX + 110, screenHeight - 80, "GJ_GameSheet03", "GJ_optionsBtn_001.png").setScrollFactor(0).setDepth(30).setScale(0.8).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
-    this._expandHitArea(this._menuSettingsBtn, 1.2);
-    this._makeBouncyButton(this._menuSettingsBtn, 0.8, () => {
+    this._menuSettingsBtn = this.add.image(centerX + 92, screenHeight - 90, "GJ_GameSheet03", "GJ_optionsBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
+    this._expandHitArea(this._menuSettingsBtn, 1);
+    this._makeBouncyButton(this._menuSettingsBtn, 1, () => {
       this._showSettingsScreen();
     }, () => this._menuActive && !this._settingsPopup);
-    this._menuStatsBtn = this.add.image(centerX + 200, screenHeight - 80, "GJ_GameSheet03", "GJ_statsBtn_001.png").setScrollFactor(0).setDepth(30).setScale(0.8).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
-    this._expandHitArea(this._menuStatsBtn, 1.2);
-    this._makeBouncyButton(this._menuStatsBtn, 0.8, () => {
+    this._menuStatsBtn = this.add.image(centerX + 202, screenHeight - 90, "GJ_GameSheet03", "GJ_statsBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
+    this._expandHitArea(this._menuStatsBtn, 1);
+    this._makeBouncyButton(this._menuStatsBtn, 1, () => {
       this._showStatsScreen();
     }, () => this._menuActive);
-    this._menuAchievementsBtn = this.add.image(centerX + 22, screenHeight - 80, "GJ_GameSheet03", "GJ_achBtn_001.png").setScrollFactor(0).setDepth(30).setScale(0.8).setInteractive().setTint(0x666666);
-    this._expandHitArea(this._menuAchievementsBtn, 1.2);
-    this._makeBouncyButton(this._menuAchievementsBtn, 0.8, () => {
+    this._menuAchievementsBtn = this.add.image(centerX - 12, screenHeight - 90, "GJ_GameSheet03", "GJ_achBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setTint(0x666666);
+    this._expandHitArea(this._menuAchievementsBtn, 1);
+    this._makeBouncyButton(this._menuAchievementsBtn, 1, () => {
     }, () => this._menuActive);
-    this._menuNewgroundsBtn = this.add.image(centerX + 290, screenHeight - 80, "GJ_GameSheet03", "GJ_ngBtn_001.png").setScrollFactor(0).setDepth(30).setScale(0.8).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
-    this._expandHitArea(this._menuNewgroundsBtn, 1.2);
-    this._makeBouncyButton(this._menuNewgroundsBtn, 0.8, () => {
+    this._menuNewgroundsBtn = this.add.image(centerX + 312, screenHeight - 90, "GJ_GameSheet03", "GJ_ngBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setRotation(-Math.PI / 2).setFlipX(true);
+    this._expandHitArea(this._menuNewgroundsBtn, 1);
+    this._makeBouncyButton(this._menuNewgroundsBtn, 1, () => {
       this._buildNewgroundsPopup();
     }, () => this._menuActive && !this._newgroundsPopup);
     this._menuGlitter = this.add.particles(0, 0, "GJ_WebSheet", {
@@ -484,7 +503,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         max: 100
       }
     }).setScrollFactor(0).setDepth(29);
-    this._playBtn = this.add.image(0, 0, "GJ_WebSheet", "GJ_playBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive();
+    this._playBtn = this.add.image(0, 0, "GJ_GameSheet04", "GJ_playBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive();
     this._playBtnPressed = false;
     this._makeBouncyButton(this._playBtn, 1, () => {
       this._openLevelSelect();
@@ -1332,6 +1351,23 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
           }
         } else if (event.key === "Enter") {
           _doSearch();
+          } else if (event.ctrlKey || event.metaKey) {
+          if (event.key === "c" || event.key === "C") {
+            event.preventDefault();
+            navigator.clipboard.writeText(inputText);
+          } else if (event.key === "v" || event.key === "V") {
+            event.preventDefault();
+            navigator.clipboard.readText().then(pastedText => {
+              const filtered = pastedText.split('').filter(c => allowedChars.includes(c)).join('');
+              if (filtered.length > 0) {
+                const availableSpace = inputMaxLen - inputText.length;
+                inputText += filtered.slice(0, availableSpace);
+                _updateInputDisplay();
+              }
+            }).catch(() => {});
+          } else if (event.key === "a" || event.key === "A") {
+            event.preventDefault();
+          }
         } else if (event.key.length === 1 && allowedChars.includes(event.key) && !event.ctrlKey) {
           if (inputText.length < inputMaxLen) {
             inputText += event.key;
@@ -1544,38 +1580,12 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     };
     this._makeBouncyButton(this._creatorBtn, 1, () => {
       this._openCreatorMenu();
-      if (this._creatorBtn) {
-        this.tweens.killTweensOf(this._creatorBtn);
-        this._creatorBtn.y = 320;
-        this._creatorBtn.setScale(1);
-        this.tweens.add({
-          targets: this._creatorBtn,
-          y: 324,
-          duration: 750,
-          ease: "Quad.InOut",
-          yoyo: true,
-          repeat: -1
-        });
-      }
     }, () => this._menuActive && !this._levelSelectOverlay);
       //icon stufff
     this._iconBtn = this.add.image(0, 0, "GJ_GameSheet03", "GJ_garageBtn_001.png").setScrollFactor(0).setDepth(30).setInteractive().setScale(1);
     this._iconBtnSelected = false;
     this._makeBouncyButton(this._iconBtn, 1, () => {
       this._openIconSelector();
-      if (this._iconBtn) {
-        this.tweens.killTweensOf(this._iconBtn);
-        this._iconBtn.y = 320;
-        this._iconBtn.setScale(1);
-        this.tweens.add({
-          targets: this._iconBtn,
-          y: 324,
-          duration: 750,
-          ease: "Quad.InOut",
-          yoyo: true,
-          repeat: -1
-        });
-      }
     }, () => this._menuActive && !this._levelSelectOverlay);
 
     this._iconOverlay = null;
@@ -2047,16 +2057,23 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
           }
 
           ((capturedFrame, capturedImg, capturedExtra, capturedOrigScale) => {
-            hitRect.on("pointerover",  () => { capturedImg.setAlpha(0.65); if (capturedExtra) capturedExtra.setAlpha(0.65); });
-            hitRect.on("pointerout",   () => {
-              capturedImg.setAlpha(1); capturedImg.setScale(capturedOrigScale);
-              if (capturedExtra) { capturedExtra.setAlpha(1); capturedExtra.setScale(capturedOrigScale); }
+            const bouncedScale = capturedOrigScale * 1.26;
+            const iconTargets = capturedExtra ? [capturedImg, capturedExtra] : [capturedImg];
+            hitRect.on("pointerdown", () => {
+              hitRect._pressed = true;
+              iconTargets.forEach(t => this.tweens.killTweensOf(t, "scale"));
+              iconTargets.forEach(t => this.tweens.add({ targets: t, scale: bouncedScale, duration: 300, ease: "Bounce.Out" }));
             });
-            hitRect.on("pointerdown",  () => { capturedImg.setScale(capturedOrigScale * 1.15); if (capturedExtra) capturedExtra.setScale(capturedOrigScale * 1.15); });
+            hitRect.on("pointerout", () => {
+              if (hitRect._pressed) {
+                hitRect._pressed = false;
+                iconTargets.forEach(t => this.tweens.killTweensOf(t, "scale"));
+                iconTargets.forEach(t => this.tweens.add({ targets: t, scale: capturedOrigScale, duration: 400, ease: "Bounce.Out" }));
+              }
+            });
             hitRect.on("pointerup",    () => {
-              capturedImg.setScale(capturedOrigScale);
-              capturedImg.setAlpha(1);
-              if (capturedExtra) { capturedExtra.setScale(capturedOrigScale); capturedExtra.setAlpha(1); }
+              hitRect._pressed = false;
+              iconTargets.forEach(t => { this.tweens.killTweensOf(t); t.setScale(capturedOrigScale); });
               if (!this._iconOverlay) return;
 
               selLabel.setPosition(capturedImg.x, capturedImg.y).setScale(0.75).setVisible(true);
@@ -2247,28 +2264,15 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
   this._iconBtn.x = (screenWidth / 2) - this._playBtn.width / 2 - 50 - (this._iconBtn.width * this._iconBtn.scaleX) / 2;
   this.tweens.killTweensOf(this._iconBtn, "y");
   this._iconBtn.y = 320;
-  this.tweens.add({
-    targets: this._iconBtn,
-    y: 324,
-    duration: 750,
-    ease: "Quad.InOut",
-    yoyo: true,
-    repeat: -1
-  });
+  if (this._chrSelDecor) this._chrSelDecor.destroy();
+  this._chrSelDecor = this.add.image(this._iconBtn.x - 110, this._iconBtn.y - (this._iconBtn.height * this._iconBtn.scaleY) / 2 + 160, "GJ_GameSheet03", "GJ_chrSel_001.png").setScrollFactor(0).setDepth(31);
 }
-    // creator stuff the sequel
     if (this._creatorBtn) {
   this._creatorBtn.x = (screenWidth / 2) + this._playBtn.width / 2 + 50 + (this._creatorBtn.width * this._creatorBtn.scaleX) / 2;
   this.tweens.killTweensOf(this._creatorBtn, "y");
   this._creatorBtn.y = 320;
-  this.tweens.add({
-    targets: this._creatorBtn,
-    y: 324,
-    duration: 750,
-    ease: "Quad.InOut",
-    yoyo: true,
-    repeat: -1
-  });
+  if (this._lvlEditDecor) this._lvlEditDecor.destroy();
+  this._lvlEditDecor = this.add.image(this._creatorBtn.x + 110, this._creatorBtn.y - (this._creatorBtn.height * this._creatorBtn.scaleY) / 2 + 160, "GJ_GameSheet03", "GJ_lvlEdit_001.png").setScrollFactor(0).setDepth(31);
 }
     this._spaceWasDown = false;
     this._spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
@@ -2588,7 +2592,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     const overlay = this.add.graphics().setScrollFactor(0).setDepth(150);
     drawOverlay(overlay, bgHex, isEveryEnd(window.currentlevel[2]));
     this._levelSelectOverlay = overlay;
-    const tableBottom = this.add.image(cx, -24, "GJ_GameSheet03", "GJ_table_bottom_001.png").setScrollFactor(0).setDepth(152).setOrigin(0.5, 0);
+    const tableBottom = this.add.image(cx, 0, "GJ_GameSheet03", "GJ_topBar_001.png").setScrollFactor(0).setDepth(152).setOrigin(0.5, 0);
     const groundY = sh + 175;
     const groundId = (window._groundId || "00");
     const groundFrame = this.textures.getFrame("groundSquare_" + groundId + "_001.png");
@@ -2603,7 +2607,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     const staticGroundTiles = [];
     for (let gi = 0; gi < numTiles; gi++) {
       const gt = this.add.image(gi * tileW, groundY, "groundSquare_" + groundId + "_001.png")
-        .setScrollFactor(0).setDepth(152).setOrigin(0, 1).setTint(groundTintHex(groundHex));
+        .setScrollFactor(0).setDepth(151).setOrigin(0, 1).setTint(groundTintHex(groundHex));
       staticGroundTiles.push(gt);
     }
     const floorLineFrame = this.textures.getFrame("GJ_WebSheet", "floorLine_01_001.png");
@@ -2611,7 +2615,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     const floorLineScale = sw / floorLineW;
     const groundTileH = groundFrame ? groundFrame.height : 80;
     const staticFloorLine = this.add.image(cx, groundY - groundTileH, "GJ_WebSheet", "floorLine_01_001.png")
-      .setScrollFactor(0).setDepth(153).setOrigin(0.5, 0.5).setScale(floorLineScale, 1).setBlendMode(S);
+      .setScrollFactor(0).setDepth(152).setOrigin(0.5, 0.5).setScale(floorLineScale, 1).setBlendMode(S);
     const cornerBL = this.add.image(0,  sh, "GJ_GameSheet03", "GJ_sideArt_001.png").setScrollFactor(0).setDepth(152).setOrigin(1, 1).setFlipY(true).setAngle(90);
     const cornerBR = this.add.image(sw, sh, "GJ_GameSheet03", "GJ_sideArt_001.png").setScrollFactor(0).setDepth(152).setOrigin(1, 0).setFlipY(false).setAngle(90);
     const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_01_001.png").setScrollFactor(0).setDepth(154).setFlipX(true).setScale(1, -1).setRotation(Math.PI).setInteractive();
@@ -3354,12 +3358,15 @@ _buildSettingsPopup() {
     const dim = this.add.rectangle(centerX, centerY, screenWidth, screenHeight, 0, 150 / 255).setInteractive();
     this._settingsPopup.add(dim);
 
-    const corner = 0.325 * this.textures.get("GJ_square01").source[0].width;
-    const panel = this._drawScale9(centerX, centerY, panelWidth, panelHeight, 'GJ_square01', corner, 16777215, 1);
-    this._settingsPopup.add(panel);
+    const innerContainer = this.add.container(centerX, centerY).setScale(0);
+    this._settingsPopup.add(innerContainer);
 
-    const closeBtn = this.add.image(centerX - (panelWidth / 2) + 10, centerY - (panelHeight / 2) + 10, 'GJ_WebSheet', "GJ_closeBtn_001.png").setScale(0.8).setInteractive();
-    this._settingsPopup.add(closeBtn);
+    const corner = 0.325 * this.textures.get("GJ_square01").source[0].width;
+    const panel = this._drawScale9(0, 0, panelWidth, panelHeight, 'GJ_square01', corner, 16777215, 1);
+    innerContainer.add(panel);
+
+    const closeBtn = this.add.image(-(panelWidth / 2) + 10, -(panelHeight / 2) + 10, 'GJ_WebSheet', "GJ_closeBtn_001.png").setScale(0.8).setInteractive();
+    innerContainer.add(closeBtn);
     this._makeBouncyButton(closeBtn, 0.8, () => {
         this._settingsPopup.destroy();
         this._settingsPopup = null;
@@ -3367,25 +3374,22 @@ _buildSettingsPopup() {
 
     const pages = ["Gameplay", "Visual"];
     let currentPage = 0;
-    const pageTitle = this.add.bitmapText(centerX, centerY - (panelHeight / 2) + 45, "bigFont", pages[currentPage], 40).setOrigin(0.5);
-    this._settingsPopup.add(pageTitle);
-    
-    const leftArrow = this.add.image(centerX - (panelWidth / 2) - 130, centerY, "GJ_GameSheet03", "GJ_arrow_01_001.png")
+    const pageTitle = this.add.bitmapText(0, -(panelHeight / 2) + 45, "bigFont", pages[currentPage], 40).setOrigin(0.5);
+    innerContainer.add(pageTitle);
+    const leftArrow = this.add.image(-(panelWidth / 2) - 130, 0, "GJ_GameSheet03", "GJ_arrow_01_001.png")
         .setFlipX(false).setInteractive();
-    this._settingsPopup.add(leftArrow);
-    
-    const rightArrow = this.add.image(centerX + (panelWidth / 2) + 130, centerY, "GJ_GameSheet03", "GJ_arrow_01_001.png")
+    innerContainer.add(leftArrow);
+    const rightArrow = this.add.image((panelWidth / 2) + 130, 0, "GJ_GameSheet03", "GJ_arrow_01_001.png")
         .setInteractive().setFlipX(true);
-    this._settingsPopup.add(rightArrow);
-    
-    const column1X = centerX - 200;
-    const column2X = centerX + 200;
+    innerContainer.add(rightArrow);
+    const column1X = -200;
+    const column2X = 200;
     const checkOffset = -120;
     const textOffset = -70;
     const spacingY = 70;
-    const startY = centerY - 150;
+    const startY = -150;
     let pageContainer = this.add.container(0, 0);
-    this._settingsPopup.add(pageContainer);
+    innerContainer.add(pageContainer);
 
     const createToggle = (container, x, y, label, getVal, setVal, callback = null) => {
         const getTex = () => getVal() ? "GJ_checkOn_001.png" : "GJ_checkOff_001.png";
@@ -3609,7 +3613,7 @@ _buildSettingsPopup() {
     const buildPage = (idx) => {
         pageContainer.destroy();
         pageContainer = this.add.container(0, 0);
-        this._settingsPopup.add(pageContainer);
+        innerContainer.add(pageContainer);
         pageTitle.setText(pages[idx]);
         
         if (idx === 0) buildGameplayPage(pageContainer);
@@ -3626,6 +3630,13 @@ _buildSettingsPopup() {
     this._makeBouncyButton(rightArrow, 1, () => {
         currentPage = (currentPage + 1) % pages.length;
         buildPage(currentPage);
+    });
+    this.tweens.add({
+        targets: innerContainer,
+        scale: 1,
+        duration: 660,
+        ease: "Elastic.Out",
+        easeParams: [1, 0.6]
     });
   }
   _saveSettings() {
@@ -3965,8 +3976,9 @@ _buildSettingsPopup() {
     this.tweens.add({
       targets: bounceContainer,
       scale: { from: 0, to: 1 },
-      duration: 500,
-      ease: "Bounce.Out"
+      duration: 660,
+      ease: "Elastic.Out",
+      easeParams: [1, 0.6]
     });
   }
   _closeInfoPopup() {
@@ -4129,8 +4141,9 @@ _buildSettingsPopup() {
   this.tweens.add({
     targets: panelContainer,
     scale: 1,
-    duration: 400,
-    ease: "Bounce.Out"
+    duration: 660,
+    ease: "Elastic.Out",
+    easeParams: [1, 0.6]
   });
 }
   _closeHowToPlayPopup() {
@@ -4180,14 +4193,8 @@ _buildSettingsPopup() {
     */
     const updateEntries = [
       { text: "Update Log", scale: 0.85, font: "goldFont" },
-      { text: "Accurate Featured tab demo.", scale: 0.65 },
-      { text: "Info popups.", scale: 0.65 },
-      { text: "Main menu buttons.", scale: 0.65 },
-      { text: "Settings, Stats and Newgrounds.", scale: 0.65 },
-      { text: "Fixed being able to go to the level selector while in menus.", scale: 0.35 },
-      { text: "GD accurate loading screen.", scale: 0.65 },
-      { text: "UI tweaks.", scale: 0.65 },
-      { text: "Bug fixes.", scale: 0.65 },
+      { text: "Accurate GDWeb+ logo", scale: 0.65 },
+      { text: "Credit to Altruist for making it", scale: 0.6 },
       { text: "is this update finally out?", scale: 0.65, color: 0xaaddff },
       { text: "- rohanis0000", scale: 0.65, color: 0xaaddff },
     ]; 
@@ -4259,8 +4266,9 @@ _buildSettingsPopup() {
     this.tweens.add({
       targets: bounceContainer,
       scale: { from: 0, to: 1 },
-      duration: 500,
-      ease: "Bounce.Out"
+      duration: 660,
+      ease: "Elastic.Out",
+      easeParams: [1, 0.6]
     });
   }
   _closeUpdateLogPopup() {
@@ -4324,8 +4332,9 @@ _buildSettingsPopup() {
     this.tweens.add({
       targets: bounceContainer,
       scale: { from: 0, to: 1 },
-      duration: 500,
-      ease: "Bounce.Out"
+      duration: 660,
+      ease: "Elastic.Out",
+      easeParams: [1, 0.6]
     });
   }
   _closeNewgroundsPopup() {
@@ -4373,8 +4382,9 @@ _buildSettingsPopup() {
         this.tweens.add({
       targets: bounceContainer,
       scale: { from: 0, to: 1 },
-      duration: 500,
-      ease: "Bounce.Out"
+      duration: 660,
+      ease: "Elastic.Out",
+      easeParams: [1, 0.6]
     });
   }
   _closeFeaturedInfoPopup() {
@@ -4601,6 +4611,30 @@ _buildSettingsPopup() {
     }
   });
 }
+  if (this._chrSelDecor) {
+    this.tweens.add({
+      targets: this._chrSelDecor,
+      y: screenHeight + 100,
+      alpha: 0,
+      duration: 200,
+      ease: "Quad.In",
+      onComplete: () => {
+        if (this._chrSelDecor) { this._chrSelDecor.destroy(); this._chrSelDecor = null; }
+      }
+    });
+  }
+  if (this._lvlEditDecor) {
+    this.tweens.add({
+      targets: this._lvlEditDecor,
+      y: screenHeight + 100,
+      alpha: 0,
+      duration: 200,
+      ease: "Quad.In",
+      onComplete: () => {
+        if (this._lvlEditDecor) { this._lvlEditDecor.destroy(); this._lvlEditDecor = null; }
+      }
+    });
+  }
   //creator stuff the threequel
     if (this._creatorBtn) {
   this._closeCreatorMenu && this._closeCreatorMenu(true);
@@ -4692,6 +4726,18 @@ _buildSettingsPopup() {
       }
       this._downloadBtns = null;
     }
+    if (this._socialIcons && this._socialIcons.length > 0) {
+      for (const _icon of this._socialIcons) {
+        this.tweens.add({
+          targets: _icon,
+          y: screenHeight + 64,
+          duration: 300,
+          ease: "Quad.In",
+          onComplete: () => _icon.destroy()
+        });
+      }
+      this._socialIcons = [];
+    }
     if (this._logo) {
       this.tweens.add({
         targets: this._logo,
@@ -4753,6 +4799,7 @@ _buildSettingsPopup() {
     this._player2.setBallVisible(false);
     this._player2.setWaveVisible(false);
     this._levelAttempts = 1;
+    this._levelJumps = 0;
     this._attempts++;
     localStorage.setItem("gd_totalAttempts", this._attempts);
     this._attemptsLabel.setText("Attempt " + this._levelAttempts);
@@ -4800,10 +4847,12 @@ _buildSettingsPopup() {
       if (!this._state.isFlying && !this._state.isWave && !this._state.isUfo && this._state.canJump) {
         this._player.updateJump(0);
         this._totalJumps++;
+        this._levelJumps++;
         localStorage.setItem("gd_totalJumps", this._totalJumps);
       } else if (this._state.isUfo) {
         this._player.updateJump(0);
         this._totalJumps++;
+        this._levelJumps++;
         localStorage.setItem("gd_totalJumps", this._totalJumps);
       }
     }
@@ -4900,14 +4949,6 @@ _buildSettingsPopup() {
       this._playBtn.x = _0x1e5db8;
       this.tweens.killTweensOf(this._playBtn, "y");
       this._playBtn.y = 320;
-      this.tweens.add({
-        targets: this._playBtn,
-        y: 324,
-        duration: 750,
-        ease: "Quad.InOut",
-        yoyo: true,
-        repeat: -1
-      });
     }
     if (this._downloadBtns) {
       const _0x285ef7 = screenWidth - 130;
@@ -4935,13 +4976,19 @@ _buildSettingsPopup() {
       this._creatorBtn.x = (screenWidth / 2) + this._playBtn.width / 2 + 100 + (this._creatorBtn.width * this._creatorBtn.scaleX) / 2;
       this.tweens.killTweensOf(this._creatorBtn, "y");
       this._creatorBtn.y = 320;
-      this.tweens.add({
-        targets: this._creatorBtn,
-        y: 324,
-        duration: 750,
-        ease: "Quad.InOut",
-        yoyo: true,
-        repeat: -1
+    }
+    if (this._robLogo) {
+      this._robLogo.x = 110;
+      this._robLogo.y = 585;
+    }
+    if (this._socialIcons && this._socialIcons.length > 0) {
+      const _iconSpacing = 52;
+      const _originX = 65;
+      const _originY = 530;
+      const _layout = [{row:0,col:0},{row:0,col:1},{row:0,col:2},{row:0,col:3},{row:1,col:3}];
+      this._socialIcons.forEach((icon, i) => {
+        icon.x = _originX + _layout[i].col * _iconSpacing;
+        icon.y = _originY + _layout[i].row * _iconSpacing;
       });
     }
   }
@@ -4973,6 +5020,7 @@ _buildSettingsPopup() {
     this._attempts++;
     localStorage.setItem("gd_totalAttempts", this._attempts);
     this._levelAttempts++;
+    this._levelJumps = 0;
     const _0x2ba78a = this._cameraX;
     if (this._levelWon && this._practicedMode.practiceMode) {
       this._practicedMode.togglePracticeMode();
@@ -5475,7 +5523,7 @@ _buildSettingsPopup() {
       this._arrowWasDown = _arrowLeft || _arrowRight;
       this._spaceWasDown = this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown;
       const menuDelta = Math.min(deltaTime / 1000 * 60, 2);
-      const menuSpeed = 0.65;
+      const menuSpeed = 0.85;
       this._menuCameraX = (this._menuCameraX || 0) + menuDelta * playerSpeed * d * menuSpeed;
       const _0x38afac = this._cameraX;
       this._cameraX = this._menuCameraX;
@@ -5488,8 +5536,8 @@ _buildSettingsPopup() {
       if (this._menuRainbowTime === undefined) this._menuRainbowTime = 0;
       this._menuRainbowTime += deltaTime / 1000;
       const _rainbowHue = (this._menuRainbowTime * 15) % 360;
-      const _rainbowHex = Phaser.Display.Color.HSVToRGB(_rainbowHue / 360, 0.85, 0.9).color;
-      const _groundHex = Phaser.Display.Color.HSVToRGB(_rainbowHue / 360, 0.85, 0.55).color;
+      const _rainbowHex = Phaser.Display.Color.HSVToRGB(_rainbowHue / 360, 0.85, 1.0).color;
+      const _groundHex = Phaser.Display.Color.HSVToRGB(_rainbowHue / 360, 0.85, 1.0).color;
       this._bg.setTint(_rainbowHex);
       this._level.setGroundColor(_groundHex);
       return;
@@ -7315,7 +7363,9 @@ _applyMirrorEffect() {
   }
   _showCompleteText() {
     const _0x56628c = screenWidth / 2;
-    const _0x45ab26 = this.add.image(_0x56628c, 250, "GJ_WebSheet", "GJ_levelComplete_001.png").setScrollFactor(0).setDepth(60).setScale(0.01);
+    const _0x45ab26 = this._practicedMode.practiceMode
+      ? this.add.image(_0x56628c, 250, "GJ_GameSheet03", "GJ_practiceComplete_001.png").setScrollFactor(0).setDepth(60).setScale(0.01)
+      : this.add.image(_0x56628c, 250, "GJ_WebSheet", "GJ_levelComplete_001.png").setScrollFactor(0).setDepth(60).setScale(0.01);
     this.tweens.add({
       targets: _0x45ab26,
       scale: 1.1,
@@ -7427,13 +7477,16 @@ _applyMirrorEffect() {
     const _0x3e9c79 = _0x33b564.y - 35;
     this._endLayerInternal.add(this.add.image(containerX - 312, _0x3e9c79, "GJ_WebSheet", "chain_01_001.png").setOrigin(0.5, 1));
     this._endLayerInternal.add(this.add.image(containerX + 312, _0x3e9c79, "GJ_WebSheet", "chain_01_001.png").setOrigin(0.5, 1));
-    this._endLayerInternal.add(this.add.image(containerX, 170, "GJ_WebSheet", "GJ_levelComplete_001.png").setScale(0.8));
+    const _completeBanner = this._practicedMode.practiceMode
+      ? this.add.image(containerX, 170, "GJ_GameSheet03", "GJ_practiceComplete_001.png").setScale(0.8)
+      : this.add.image(containerX, 170, "GJ_WebSheet", "GJ_levelComplete_001.png").setScale(0.8);
+    this._endLayerInternal.add(_completeBanner);
     const _0x45b6e4 = 0.8;
     let _0xe44f6d = 250;
-    const _0x2de55e = this.add.bitmapText(containerX, _0xe44f6d, "goldFont", "Attempts: " + this._attempts, 40).setOrigin(0.5, 0.5).setScale(_0x45b6e4);
+    const _0x2de55e = this.add.bitmapText(containerX, _0xe44f6d, "goldFont", "Attempts: " + this._levelAttempts, 40).setOrigin(0.5, 0.5).setScale(_0x45b6e4);
     this._endLayerInternal.add(_0x2de55e);
     _0xe44f6d += 48;
-    this._endLayerInternal.add(this.add.bitmapText(containerX, _0xe44f6d, "goldFont", "Jumps: " + this._totalJumps, 40).setOrigin(0.5, 0.5).setScale(_0x45b6e4));
+    this._endLayerInternal.add(this.add.bitmapText(containerX, _0xe44f6d, "goldFont", "Jumps: " + this._levelJumps, 40).setOrigin(0.5, 0.5).setScale(_0x45b6e4));
     _0xe44f6d += 48;
     const _0x596450 = Math.floor(this._playTime);
     const _0x30687e = Math.floor(_0x596450 / 3600);
