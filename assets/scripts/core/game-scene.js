@@ -1759,9 +1759,9 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
   }
       this._iconOverlayObjects.push(topBar);
 
-      const cols = 10;
+      const cols = 12;
       const iconSize = 60;
-      const padding = 18;
+      const padding = 2;
       const containerPadding = 10;
       const rows = 3;
       const containerWidth  = cols * iconSize + (cols - 1) * padding + 12;
