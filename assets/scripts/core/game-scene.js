@@ -1958,11 +1958,18 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       this._iconOverlayObjects.push(selectedIconExtra, selectedIcon);
 
       const tabBtnY = containerY - 40;
-      const tabKeys = ["icon", "ship", "ball", "wave", "ufo"];
-      const tabOffsets     = [-218, -109,  0,    109,   218  ];
-      const tabRotations   = { icon: -Math.PI/2, ship: 0, ball: -Math.PI/2, wave: Math.PI/2, ufo: Math.PI/2 };
-      const tabFlipXStates = { icon: true, ship: false, ball: true, wave: false, ufo: false };
-      const tabFlipYStates = { icon: false, ship: false, ball: false, wave: true, ufo: true };
+      const tabKeys = ["icon", "ship", "ball", "ufo", "wave"];
+      const tabSpacing = 65;
+      const tabOffsets = {
+        icon: -tabSpacing * 2,
+        ship: -tabSpacing,
+        ball: 0,
+        ufo: tabSpacing,
+        wave: tabSpacing * 2,
+      };
+      const tabRotations = { icon: -Math.PI/2, ship: 0, ball: -Math.PI/2, ufo: Math.PI/2, wave: Math.PI/2 };
+      const tabFlipXStates = { icon: true, ship: false, ball: true, ufo: false, wave: false };
+      const tabFlipYStates = { icon: false, ship: false, ball: false, ufo: true, wave: true };
       const tabBtnSprites  = {};
 
       const _switchTab = (tab) => {
@@ -1978,7 +1985,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
 
       tabKeys.forEach((tab, i) => {
         const isActive = tab === startTab;
-        const btn = this.add.image(sw / 2 + tabOffsets[i], tabBtnY, "GJ_GameSheet03",
+        const btn = this.add.image(sw / 2 + tabOffsets[tab], tabBtnY, "GJ_GameSheet03",
             isActive ? _tabBtnFrames[tab].on : _tabBtnFrames[tab].off)
           .setScrollFactor(0).setDepth(104).setScale(0.75)
           .setRotation(tabRotations[tab]).setFlipX(tabFlipXStates[tab]).setFlipY(tabFlipYStates[tab])
