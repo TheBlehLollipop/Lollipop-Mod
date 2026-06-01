@@ -1860,9 +1860,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         this._iconOverlayObjects.push(btn2);
 
         ((color, b1, b2) => {
-          b1.on("pointerover", () => b1.setAlpha(0.7));
-          b1.on("pointerout",  () => b1.setAlpha(1));
-          b1.on("pointerup",   () => {
+          this._makeBouncyButton(b1, 0.5, () => {
             window.mainColor = color;
             localStorage.setItem("iconMainColor", hexadecimalToHex(color));
             if (this._player) {
@@ -1892,10 +1890,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             }
             selectedIcon.setTint(color);
           });
-
-          b2.on("pointerover", () => b2.setAlpha(0.7));
-          b2.on("pointerout",  () => b2.setAlpha(1));
-          b2.on("pointerup",   () => {
+          this._makeBouncyButton(b2, 0.5, () => {
             window.secondaryColor = color;
             localStorage.setItem("iconSecondaryColor", hexadecimalToHex(color));
             if (this._player) {
@@ -1923,8 +1918,8 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
                 }
               }
             }
-                selectedIconExtra.setTint(window.secondaryColor);
-                _refreshPreview(currentTab, _getPreviewFrame(currentTab));
+            selectedIconExtra.setTint(window.secondaryColor);
+            _refreshPreview(currentTab, _getPreviewFrame(currentTab));
           });
         })(rainbowColors[ci], btn1, btn2);
       }
