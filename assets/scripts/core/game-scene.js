@@ -1836,7 +1836,6 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         fontSize: "11px", color: "#ffffff", fontFamily: "Arial"}).setScrollFactor(0).setDepth(104).setOrigin(0, 0.5).setAlpha(1);
       this._iconOverlayObjects.push(colorLabel2);
 
-      //dark box behind the color buttons
       const colorBoxWidth = sw;
       const colorBoxHeight = colorBtnSize * 2 + 10 + 20;
       const colorBoxX = 0;
@@ -1845,6 +1844,23 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       colorBox.fillStyle(0x000000, 0.5);
       colorBox.fillRect(colorBoxX, colorBoxY, colorBoxWidth, colorBoxHeight);
       this._iconOverlayObjects.push(colorBox);
+
+      const color1SelLabel = this.add.image(0, 0, "GJ_GameSheet03", "GJ_select_001.png").setScrollFactor(0).setDepth(106).setOrigin(0.5, 0.5).setVisible(false).setScale(0.6);
+      const color2SelLabel = this.add.image(0, 0, "GJ_GameSheet03", "GJ_select_001.png").setScrollFactor(0).setDepth(106).setOrigin(0.5, 0.5).setVisible(false).setScale(0.6);
+      this._iconOverlayObjects.push(color1SelLabel, color2SelLabel);
+
+      const _moveColorSelect = (label, color, rowY) => {
+        const idx = rainbowColors.indexOf(color);
+        if (idx === -1) {
+          label.setVisible(false);
+          return;
+        }
+
+        label.setPosition(colorRowStartX + idx * (colorBtnSize + colorPadding), rowY).setVisible(true);
+      };
+
+      _moveColorSelect(color1SelLabel, window.mainColor, colorRow1Y);
+      _moveColorSelect(color2SelLabel, window.secondaryColor, colorRow2Y);
 
       for (let ci = 0; ci < rainbowColors.length; ci++) {
         const cx = colorRowStartX + ci * (colorBtnSize + colorPadding);
@@ -1863,6 +1879,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
           this._makeBouncyButton(b1, 1.0, () => {
             window.mainColor = color;
             localStorage.setItem("iconMainColor", hexadecimalToHex(color));
+            _moveColorSelect(color1SelLabel, color, colorRow1Y);
             if (this._player) {
               const safeSetTint = (sprite, color) => {
                 if (sprite && sprite.setTint) {
@@ -1893,6 +1910,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
           this._makeBouncyButton(b2, 1.0, () => {
             window.secondaryColor = color;
             localStorage.setItem("iconSecondaryColor", hexadecimalToHex(color));
+            _moveColorSelect(color2SelLabel, color, colorRow2Y);
             if (this._player) {
               const safeSetTint = (sprite, color) => {
                 if (sprite && sprite.setTint) {
