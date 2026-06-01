@@ -1767,7 +1767,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       const containerWidth  = cols * iconSize + (cols - 1) * padding + 12;
       const containerHeight = rows * iconSize + (rows - 1) * padding + 12;
       const containerX = sw / 2 - containerWidth / 2;
-      const containerY = sh - containerHeight - containerPadding - 130;
+      const containerY = sh - containerHeight - containerPadding - 150;
       const startX = containerX + 6 + iconSize / 2;
       const startY = containerY + 6 + iconSize / 2;
 
@@ -1778,12 +1778,10 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
 
       const cornerTL = this.add.image(0,  0,  "GJ_GameSheet03", "GJ_sideArt_001.png").setScrollFactor(0).setDepth(100).setOrigin(1, 0).setFlipX(false).setAngle(-90)
       const cornerTR = this.add.image(sw, 0,  "GJ_GameSheet03", "GJ_sideArt_001.png").setScrollFactor(0).setDepth(103).setOrigin(0, 0).setFlipY(false).setFlipX(true).setAngle(90);
-      const cornerBR = this.add.image(sw, sh, "GJ_GameSheet03", "GJ_sideArt_001.png").setScrollFactor(0).setDepth(152).setOrigin(1, 0).setFlipY(false).setAngle(90);
-      const cornerBL = this.add.image(0,  sh, "GJ_GameSheet03", "GJ_sideArt_001.png").setScrollFactor(0).setDepth(152).setOrigin(1, 1).setFlipY(true).setAngle(90)
-      this._iconOverlayObjects.push(cornerTL, cornerTR, cornerBR, cornerBL);
+      this._iconOverlayObjects.push(cornerTL, cornerTR);
 
       const navDotSpacing = 35;
-      const navDotY = containerY + containerHeight + 26;
+      const navDotY = containerY + containerHeight + 30;
       const navDot1 = this.add.image(sw / 2 - navDotSpacing / 2, navDotY, "GJ_GameSheet03", "gj_navDotBtn_on_001.png").setScrollFactor(0).setDepth(104).setScale(0.75);
       const navDot2 = this.add.image(sw / 2 + navDotSpacing / 2, navDotY, "GJ_GameSheet03", "gj_navDotBtn_off_001.png").setScrollFactor(0).setDepth(104).setScale(0.75);
       const navDot3 = this.add.image(sw / 2 + navDotSpacing / 2, navDotY, "GJ_GameSheet03", "gj_navDotBtn_off_001.png").setScrollFactor(0).setDepth(104).setScale(0.75).setVisible(false);
@@ -1824,9 +1822,9 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       ];
 
       const colorBtnSize = 35;
-      const colorPadding = 4;
+      const colorPadding = 6;
       const colorRowWidth = rainbowColors.length * (colorBtnSize + colorPadding) - colorPadding;
-      const colorRow1Y = containerY + containerHeight + 70;
+      const colorRow1Y = containerY + containerHeight + 88;
       const colorRow2Y = colorRow1Y + colorBtnSize + 10;
       const colorRowStartX = sw / 2 - colorRowWidth / 2 + colorBtnSize / 2;
 
@@ -1838,29 +1836,31 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         fontSize: "11px", color: "#ffffff", fontFamily: "Arial"}).setScrollFactor(0).setDepth(104).setOrigin(0, 0.5).setAlpha(1);
       this._iconOverlayObjects.push(colorLabel2);
 
+      //dark box behind the color buttons
+      const colorBoxWidth = sw;
+      const colorBoxHeight = colorBtnSize * 2 + 10 + 20;
+      const colorBoxX = 0;
+      const colorBoxY = colorRow1Y - colorBtnSize / 2 - 10;
+      const colorBox = this.add.graphics().setScrollFactor(0).setDepth(101);
+      colorBox.fillStyle(0x000000, 0.5);
+      colorBox.fillRect(colorBoxX, colorBoxY, colorBoxWidth, colorBoxHeight);
+      this._iconOverlayObjects.push(colorBox);
+
       for (let ci = 0; ci < rainbowColors.length; ci++) {
         const cx = colorRowStartX + ci * (colorBtnSize + colorPadding);
 
         const btn1AtlasInfo = getAtlasFrame(this, "GJ_colorBtn_001.png");
         let btn1;
-        if (btn1AtlasInfo) {
-          btn1 = this.add.image(cx, colorRow1Y, btn1AtlasInfo.atlas, btn1AtlasInfo.frame).setScrollFactor(0).setDepth(104).setTint(rainbowColors[ci]).setScale(0.5).setInteractive();
-        } else {
-          btn1 = this.add.rectangle(cx, colorRow1Y, colorBtnSize, colorBtnSize, rainbowColors[ci]).setScrollFactor(0).setDepth(104).setInteractive();
-        }
+        btn1 = this.add.rectangle(cx, colorRow1Y, colorBtnSize, colorBtnSize, rainbowColors[ci]).setScrollFactor(0).setDepth(104).setInteractive();
         this._iconOverlayObjects.push(btn1);
 
         const btn2AtlasInfo = getAtlasFrame(this, "GJ_colorBtn_001.png");
         let btn2;
-        if (btn2AtlasInfo) {
-          btn2 = this.add.image(cx, colorRow2Y, btn2AtlasInfo.atlas, btn2AtlasInfo.frame).setScrollFactor(0).setDepth(104).setTint(rainbowColors[ci]).setScale(0.5).setInteractive();
-        } else {
-          btn2 = this.add.rectangle(cx, colorRow2Y, colorBtnSize, colorBtnSize, rainbowColors[ci]).setScrollFactor(0).setDepth(104).setInteractive();
-        }
+        btn2 = this.add.rectangle(cx, colorRow2Y, colorBtnSize, colorBtnSize, rainbowColors[ci]).setScrollFactor(0).setDepth(104).setInteractive();
         this._iconOverlayObjects.push(btn2);
 
         ((color, b1, b2) => {
-          this._makeBouncyButton(b1, 0.5, () => {
+          this._makeBouncyButton(b1, 1.0, () => {
             window.mainColor = color;
             localStorage.setItem("iconMainColor", hexadecimalToHex(color));
             if (this._player) {
@@ -1890,7 +1890,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             }
             selectedIcon.setTint(color);
           });
-          this._makeBouncyButton(b2, 0.5, () => {
+          this._makeBouncyButton(b2, 1.0, () => {
             window.secondaryColor = color;
             localStorage.setItem("iconSecondaryColor", hexadecimalToHex(color));
             if (this._player) {
