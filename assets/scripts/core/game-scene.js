@@ -3831,6 +3831,7 @@ _buildSettingsPopup() {
         createToggle(container, column1X, startY + (spacingY * 7), "Show Object ID labels", 
             () => window.showObjectIds, 
             (v) => window.showObjectIds = v
+        );
 
         createToggle(container, column1X, startY + (spacingY * 5), "Show CPS", 
             () => window.showCPS, 
@@ -3881,7 +3882,7 @@ _buildSettingsPopup() {
         hitboxesOnDeath: window.hitboxesOnDeath,
         showEditorGlow: window.showEditorGlow,
         createObjectIds: window.createObjectIds,
-        showObjectIds: window.showObjectIds
+        showObjectIds: window.showObjectIds,
         showCPS: window.showCPS,
         speedHack: window.speedHack,
         macroBot: window.macroBot,
@@ -3904,7 +3905,7 @@ _buildSettingsPopup() {
         hitboxesOnDeath: false,
         showEditorGlow: false,
         createObjectIds: false,
-        showObjectIds: false
+        showObjectIds: false,
         showCPS: false,
         speedHack: 1.0,
         macroBot: false,
