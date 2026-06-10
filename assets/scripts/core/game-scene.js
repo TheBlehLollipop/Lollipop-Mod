@@ -401,11 +401,12 @@ class GameScene extends Phaser.Scene {
       window.open("https://geometrydash.com", "_blank");
     }, () => this._menuActive);
     const _socialIconDefs = [
-      { frame: "gj_fbIcon_001.png",      url: "https://www.facebook.com/RobTopGames",  angle: 0,   row: 0, col: 0 },
-      { frame: "gj_twIcon_001.png",      url: "https://x.com/rohanis0000gd",       angle: -90, flipX: true, row: 0, col: 1 },
-      { frame: "gj_ytIcon_001.png",      url: "https://www.youtube.com/@rohanis0000gd",  angle: 0,   row: 0, col: 2 },
-      { frame: "gj_twitchIcon_001.png",  url: "https://www.twitch.tv/robtopgames",     angle: -90, flipX: true, row: 0, col: 3 },
-      { frame: "gj_discordIcon_001.png", url: "https://discord.gg/TfEzAVWPSJ",        angle: 90,  row: 1, col: 3 },
+      { frame: "gj_githubIcon_001.png",  url: "https://github.com/web-dashers/web-dashers.github.io", angle: 0,   row: 0, col: 0 },
+      //{ frame: "gj_fbIcon_001.png",      url: "https://www.facebook.com/RobTopGames",                 angle: 0,   row: 0, col: 0 },
+      { frame: "gj_twIcon_001.png",      url: "https://x.com/rohanis0000gd",                          angle: -90, flipX: true, row: 0, col: 1 },
+      { frame: "gj_ytIcon_001.png",      url: "https://www.youtube.com/@rohanis0000gd",               angle: 0,   row: 0, col: 2 },
+      { frame: "gj_twitchIcon_001.png",  url: "https://www.twitch.tv/robtopgames",                    angle: -90, flipX: true, row: 0, col: 3 },
+      { frame: "gj_discordIcon_001.png", url: "https://discord.gg/TfEzAVWPSJ",                        angle: 90,  row: 1, col: 3 },
     ];
     const _socialScale = 0.75;
     this._socialIcons = _socialIconDefs.map(def => {
