@@ -6,13 +6,6 @@ window.AccountAPI = {
   },
 
   async checkSession() {
-<<<<<<< HEAD
-    if (!window._apiBase && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
-      this.currentUser = null;
-      return this.currentUser;
-    }
-=======
->>>>>>> aa956f1977b0a896e7ab682fa357558c4dd2e42c
     try {
       const res = await fetch(this._url('/api/auth/me'), { credentials: 'include' });
       if (res.ok) {
@@ -67,11 +60,7 @@ window.AccountAPI = {
         'gd_completedLevels', 'created_levels', 'iconMainColor', 'iconSecondaryColor',
         'iconCurrentPlayer', 'iconCurrentShip', 'iconCurrentBall', 'iconCurrentWave',
         'iconCurrentSpider', 'iconCurrentBird', 'userMusicVol', 'userSfxVol',
-<<<<<<< HEAD
-        'menuMusicEnabled', 'gd_completedSet', 'gd_recentLevels', 'gd_achievements',
-=======
         'menuMusicEnabled',
->>>>>>> aa956f1977b0a896e7ab682fa357558c4dd2e42c
       ];
       for (const key of keys) {
         localStorage.removeItem(key);
@@ -131,11 +120,7 @@ window.AccountAPI = {
       'gd_completedLevels', 'created_levels', 'iconMainColor', 'iconSecondaryColor',
       'iconCurrentPlayer', 'iconCurrentShip', 'iconCurrentBall', 'iconCurrentWave',
       'iconCurrentSpider', 'iconCurrentBird', 'userMusicVol', 'userSfxVol',
-<<<<<<< HEAD
-      'menuMusicEnabled', 'gd_completedSet', 'gd_recentLevels', 'gd_achievements',
-=======
       'menuMusicEnabled',
->>>>>>> aa956f1977b0a896e7ab682fa357558c4dd2e42c
     ];
     const save = {};
     for (const key of keys) {
@@ -160,11 +145,7 @@ window.AccountAPI = {
       'gd_completedLevels', 'created_levels', 'iconMainColor', 'iconSecondaryColor',
       'iconCurrentPlayer', 'iconCurrentShip', 'iconCurrentBall', 'iconCurrentWave',
       'iconCurrentSpider', 'iconCurrentBird', 'userMusicVol', 'userSfxVol',
-<<<<<<< HEAD
-      'menuMusicEnabled', 'gd_completedSet', 'gd_recentLevels', 'gd_achievements',
-=======
       'menuMusicEnabled',
->>>>>>> aa956f1977b0a896e7ab682fa357558c4dd2e42c
     ];
     for (const key of keys) {
       if (save[key] !== undefined) localStorage.setItem(key, save[key]);
