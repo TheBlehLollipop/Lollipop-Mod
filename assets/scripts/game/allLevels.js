@@ -7,7 +7,7 @@ window.allLevels = [
     ],
     [
         "back_on_track",
-	    "Back on Track",
+	    "Back On Track",
 	    "level_2",
 	    ["RobTop", "DJVI" ]
     ],
@@ -67,7 +67,7 @@ window.allLevels = [
     ],
     [
         "theory_of_everything",
-	    "Theory of Everything",
+	    "Theory Of Everything",
 	    "level_12",
 	    ["RobTop", "DJ-Nate"] 
     ],
@@ -103,7 +103,7 @@ window.allLevels = [
     ],
     [
         "theory_of_everything_2",
-	    "Theory of Everything 2",
+	    "Theory Of Everything 2",
 	    "level_18",
 	    ["RobTop", "DJ-Nate"] 
     ],
@@ -167,4 +167,24 @@ window.allLevels = [
 	    "level_116489424",
 	    ["Torrenware", "MidiGuyDP"]
     ],
+    [
+        "nine_circles",
+	    "Nine Circles",
+	    "level_4284013",
+	    ["Zobros", "Rukkus"]
+    ],
+    [
+        "sunshine",
+	    "Sunshine",
+	    "level_56199846",
+	    ["Unzor", "DjHoneyb"]
+    ],
+	/*
+    [
+        "stereo_madness",
+	    "Test Level",
+	    "level_23",
+	    ["rohanis0000", "Forever Bound"]
+    ]
+	*/
 ]
