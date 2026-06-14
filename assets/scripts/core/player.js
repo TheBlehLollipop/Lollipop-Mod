@@ -35,6 +35,7 @@ class PlayerState {
     this.isDashing = false;
     this.dashYVelocity = 0;
     this.isDual = false;
+    this.ignorePortals = false;
   }
 }
 
@@ -927,11 +928,6 @@ if (this.p.isFlying || this.p.isUfo) {
     }
 
     if (!this._scene._slideIn){
-      if (!this._hitboxTrail) this._hitboxTrail = [];
-      if (!this.p.isDead) {
-        this._hitboxTrail.push({ x: this._scene._playerWorldX, y: this.p.y, rotation: this._rotation });
-        if (this._hitboxTrail.length > 180) this._hitboxTrail.shift();
-      }
       if (window.showHitboxes || this.p.isDead && window.hitboxesOnDeath) {
         this.drawHitboxes(this._hitboxGraphics, cameraX, cameraY);
       } else if (this._hitboxGraphics) {
@@ -939,7 +935,7 @@ if (this.p.isFlying || this.p.isUfo) {
       }
     }
   }
-  enterShipMode(_0xeb37c6 = null) {
+  enterShipMode(_0xeb37c6 = null, fromCheckpoint = false) {
     if (this.p.isFlying) {
       return;
     }
@@ -947,7 +943,9 @@ if (this.p.isFlying || this.p.isUfo) {
     this.exitWaveMode();
     this.p.isFlying = true;
     this._scene.toggleGlitter(true);
-    this.p.yVelocity *= 0.5;
+    if (!fromCheckpoint){ // dont mess with y velocity if ur loading a checkpoint
+      this.p.yVelocity *= 0.5;
+    }
     this.p.onGround = false;
     this.p.canJump = false;
     this.p.isJumping = false;
@@ -1123,14 +1121,16 @@ if (this.p.isFlying || this.p.isUfo) {
     this.setCubeVisible(true);
     this._gameLayer.setFlyMode(false, 0);
   }
-  enterUfoMode(_portal = null) {
+  enterUfoMode(_portal = null, fromCheckpoint = false) {
     if (this.p.isUfo) return;
     this.exitBallMode();
     this.exitWaveMode();
     this.exitShipMode();
     this.p.isUfo = true;
     this._scene.toggleGlitter(true);
-    this.p.yVelocity *= 0.4;
+    if (!fromCheckpoint){ // dont mess with y velocity if ur loading a checkpoint
+      this.p.yVelocity *= 0.4;
+    }
     this.p.onGround = false;
     this.p.canJump = false;
     this.p.isJumping = false;
@@ -1531,6 +1531,61 @@ if (this.p.isFlying || this.p.isUfo) {
       });
     }
   }
+
+   // teleport portals
+  _findTeleportOut(fromPortal) {
+   // blue tp portal shares same X with orange
+    const sections = this._gameLayer && this._gameLayer._collisionSections;
+    if (!sections) {
+      return null;
+    }
+
+    const SECTION_SIZE = 400;
+    const startSec = Math.max(0, Math.floor(fromPortal.x / SECTION_SIZE));
+    const endSec   = sections.length - 1; 
+
+    let bestOut  = null;
+    let bestDist = Infinity;
+
+    for (let si = startSec; si <= endSec; si++) {
+      const sec = sections[si];
+      if (!sec) continue;
+      for (const obj of sec) {
+        if ((obj.type === "portal_teleport_out" || obj.sub === "teleport_out") &&
+            obj !== fromPortal) {
+          const dist = obj.x - fromPortal.x;
+          const xDiff = Math.abs(obj.x - fromPortal.x);
+          
+          if (xDiff < 200 && dist >= 0 && dist < bestDist) {
+            bestDist = dist;
+            bestOut  = obj;
+          }
+        }
+      }
+    }
+    
+    return bestOut;
+  }
+
+  _teleportPlayer(toPortal) {
+    // only change Y pos, not X
+    const targetY = toPortal.portalY !== undefined ? toPortal.portalY : toPortal.y;
+
+    this.p.y = targetY;
+    this.p.lastY = targetY;
+    this.p.lastGroundPosY = targetY;
+    
+    // reducing velocity after you teleport
+    this.p.vy *= 0.8;
+    this.p.yVelocity *= 0.8;
+
+    this.p.onGround = false;
+    this.p.canJump = false;
+    this.p.isJumping = false;
+
+    this._playPortalShine(toPortal, 1);
+  }
+
   _checkSnapJump(_0x1f801b) {
     const _0x483058 = [{
       dx: 240,
@@ -1705,7 +1760,7 @@ if (this.p.isFlying || this.p.isUfo) {
       this._updateUfoJump(_0x3d1c6f);
     } else if (this.p.isSpider) {
       this._updateSpiderJump(_0x3d1c6f);
-    } else if (this.p.upKeyDown && this.p.canJump && !this.p.touchingRing) {
+    } else if (this.p.upKeyDown && this.p.canJump) {
       this.p.isJumping = true;
       this.p.onGround = false;
       this.p.canJump = false;
@@ -1979,6 +2034,10 @@ _updateWaveJump() {
       }
       if (_broadPhaseHit) {
         const _colType = gameObj.type;
+        if (this.p.ignorePortals && (_colType.startsWith("portal_") || _colType === "speed")) {
+          gameObj.activated = true;
+          continue;
+        }
         if (_colType === "portal_fly") {
           if (!gameObj.activated) {
             gameObj.activated = true;
@@ -2037,6 +2096,19 @@ _updateWaveJump() {
             this.exitUfoMode();
             this.exitSpiderMode();
             this.enterSpiderMode(gameObj);
+          }
+        } else if (_colType === "portal_teleport_in" || gameObj.sub === "teleport_in") {
+          if (!gameObj.activated) {
+            gameObj.activated = true;
+            this._playPortalShine(gameObj);
+            const teleportOut = this._findTeleportOut(gameObj);
+            if (teleportOut) {
+              this._teleportPlayer(teleportOut);
+            }
+          }
+        } else if (_colType === "portal_teleport_out" || gameObj.sub === "teleport_out") {
+          if (!gameObj.activated) {
+            gameObj.activated = true;
           }
         } else if (_colType === "portal_gravity_down") {
           if (!gameObj.activated) {
@@ -2614,6 +2686,8 @@ _updateWaveJump() {
         hitboxColor = 16729156;
       } else if (nearObject.type === "portal_fly" || nearObject.type === "portal_cube" || nearObject.type === "portal_ball" || nearObject.type === portalWaveType || nearObject.type === portalUfoType) {
         hitboxColor = 4491519;
+      } else if (nearObject.type === "portal_teleport_in" || nearObject.type === "portal_teleport_out" || nearObject.sub === "teleport_in" || nearObject.sub === "teleport_out") {
+        hitboxColor = 8388352;
       } else if (nearObject.type === "portal_gravity_down" || nearObject.type === "portal_gravity_up" || nearObject.type === "portal_gravity_toggle") {
         hitboxColor = 16776960;
       } else if (nearObject.type === "portal_mirror_on" || nearObject.type === "portal_mirror_off") {

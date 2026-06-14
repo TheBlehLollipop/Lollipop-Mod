@@ -3,7 +3,7 @@ function checkForAutoLoad() {
   const lastLoadTime = parseInt(localStorage.getItem('webdash_last_load_time') || '0');
   const now = Date.now();
   const hoursSinceLoad = (now - lastLoadTime) / (1000 * 60 * 60);
-  if (assetsLoaded && hoursSinceLoad < 24 && window.gameCache && window.gameCache.shouldUseCachedFiles()) {
+  if (assetsLoaded && hoursSinceLoad < 24 && window.gameCache.isCacheValid()) {
     const stats = window.gameCache.getCacheStats();
     if (stats.validEntries > 50) {
       console.log('auto loading from cache');
@@ -38,9 +38,6 @@ if (window.gameCache) {
     }, 3000);
   }
 }
-if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
-}
 const phaserConfig = {
   type: Phaser.AUTO,
   width: screenWidth,
@@ -55,11 +52,7 @@ const phaserConfig = {
     windowEvents: false
   },
   render: {
-    powerPreference: "default",
-    roundPixels: false,
-    antialias: true,
-    antialiasGL: true,
-    pixelArt: false
+    powerPreference: "default"
   },
   scale: {
     mode: Phaser.Scale.FIT,
@@ -72,20 +65,11 @@ new Phaser.Game(phaserConfig);
 window.clearGameCache = () => {
   if (window.gameCache) {
     window.gameCache.clearCache();
+    localStorage.removeItem('webdash_assets_loaded');
+    localStorage.removeItem('webdash_last_load_time');
+    console.log('Game cache cleared');
+    location.reload();
   }
-  if (window.caches) {
-    caches.keys()
-      .then(names => Promise.all(names
-        .filter(name => name.startsWith('webdash-runtime-cache'))
-        .map(name => caches.delete(name))))
-      .catch(() => {});
-  }
-  localStorage.removeItem('webdash_assets_loaded');
-  localStorage.removeItem('webdash_last_load_time');
-  localStorage.removeItem('webdash_first_localstorage_save');
-  localStorage.removeItem('webdash_cache_ready');
-  console.log('Game cache cleared');
-  location.reload();
 };
 
 window.getCacheInfo = () => {

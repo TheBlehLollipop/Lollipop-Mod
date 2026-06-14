@@ -160,7 +160,6 @@ class BootScene extends Phaser.Scene {
       "Such wow, very amaze.",
       "Fus Ro DASH!",
       "Loading Rage Cannon",
-      "bog was here... BOOGIBUCK!",
       "Counting to 1337",
       "It's all in the timing",
       "Fake spikes are fake",
@@ -214,14 +213,14 @@ class BootScene extends Phaser.Scene {
       const msg = LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)];
       this.add.bitmapText(cx, cy + 187, "goldFont", msg, 30).setOrigin(0.5);
       const robtopLogo = this.add.image(cx, cy - 120, "GJ_LaunchSheet", "RobTopLogoBig_001.png").setOrigin(0.5).setScale(0.8);
-      const gjLogo = this.add.image(cx, cy, "GJ_WebSheet", "GJ_logo_001.png").setOrigin(0.5);
+      const gjLogo = this.add.image(cx, cy, "GJ_WebSheet", "gj_logo.png").setOrigin(0.5);
       this.children.bringToTop(robtopLogo);
       this.children.bringToTop(gjLogo);
       if (window.gameCache) {
         const originalXhr = this.load.xhrLoader;
         this.load.xhrLoader = (file) => {
           const url = file.url;
-          if (window.gameCache.shouldUseCachedFiles() && window.gameCache.isFileCached(url)) {
+          if (window.gameCache.isFileCached(url)) {
             const cached = window.gameCache.getCachedFile(url);
             if (cached) {
               return new Promise((resolve) => {
@@ -273,11 +272,13 @@ class BootScene extends Phaser.Scene {
       this.load.image("tab5", "assets/sprites/tab5.png");
       this.load.image("GJ_moveBtn", "assets/sprites/GJ_moveBtn.png");
       this.load.image("GJ_moveSBtn", "assets/sprites/GJ_moveSBtn.png");
-      this.load.image("edit_swipeBtn_001", "assets/sprites/edit_swipeBtn_001.png");
-      this.load.image("edit_enableRotateBtn_001", "assets/sprites/edit_enableRotateBtn_001.png");
-      this.load.image("edit_freeMoveBtn_001", "assets/sprites/edit_freeMoveBtn_001.png");
-      this.load.image("edit_snapBtn_001", "assets/sprites/edit_snapBtn_001.png");
       this.load.image("slidergroove2", "assets/sprites/slidergroove2.png");
+      this.load.image("macroBot", "assets/sprites/macroBot.png");
+      this.load.image("importMacro", "assets/sprites/importMacro.png");
+      this.load.image("playbackMacro", "assets/sprites/playbackMacro.png");
+      this.load.image("stopPlayback", "assets/sprites/stopPlayback.png");
+      this.load.image("recordMacro", "assets/sprites/recordMacro.png");
+      this.load.image("stopRecord", "assets/sprites/stopRecord.png");
 
       for (let i = 1; i < 23; i++) {
         let index = i - 1;
@@ -298,19 +299,10 @@ class BootScene extends Phaser.Scene {
       this.load.audio("menu_music", "assets/music/menuLoop.mp3");
       this.load.audio("StayInsideMe", "assets/music/StayInsideMe.mp3");
 
-      for (const lvlarray of window.allLevels) {
+      /*for (const lvlarray of window.allLevels) {
         this.load.text(lvlarray[2], "assets/levels/" + lvlarray[2].split("_")[1] + ".txt");
-        const musicFile = lvlarray[4] ? lvlarray[4] : lvlarray[1].replaceAll(" ", "");
-        if (musicFile !== "Sunshine") {
-          this.load.audio(lvlarray[0], "assets/music/" + musicFile + ".mp3");
-        }
-      }
-      if (!window.allLevels.some(level => level[0] === "dash")) {
-        this.load.audio("dash", "assets/music/Dash.mp3");
-      }
-      if (!window.allLevels.some(level => level[0] === "power_trip")) {
-        this.load.audio("power_trip", "assets/music/PowerTrip.mp3");
-      }
+        this.load.audio(lvlarray[0], "assets/music/" + (lvlarray[4] ? lvlarray[4] : lvlarray[1].replaceAll(" ", "")) + ".mp3");
+      }*/
 
       this.load.audio("explode_11", "assets/sfx/explode_11.ogg");
       this.load.audio("endStart_02", "assets/sfx/endStart_02.ogg");
@@ -332,10 +324,6 @@ class BootScene extends Phaser.Scene {
 
           localStorage.setItem('webdash_assets_loaded', 'true');
           localStorage.setItem('webdash_last_load_time', Date.now().toString());
-          if (window.gameCache) {
-            window.gameCache.markLoadComplete();
-            window.gameCache.primeRuntimeCacheFromPerformance().catch(() => {});
-          }
           this.scene.start("GameScene");
         });
       });
