@@ -2516,7 +2516,7 @@ _updateRobotJump(dt) {
             this.exitSpiderMode();
             this.enterSpiderMode(gameObj);
           }
-		          } else if (_colType === "portal_robot") {
+		    } else if (_colType === "portal_robot" || gameObj.sub === "robot") {
           if (!gameObj.activated) {
             gameObj.activated = true;
             this._playPortalShine(gameObj);
@@ -3115,7 +3115,7 @@ _updateRobotJump(dt) {
       let hitboxColor = 65280;
       if (nearObject.type === hazardType) {
         hitboxColor = 16729156;
-      } else if (nearObject.type === "portal_fly" || nearObject.type === "portal_cube" || nearObject.type === "portal_ball" || nearObject.type === portalWaveType || nearObject.type === portalUfoType || nearObject.type === "portal_robot") {
+      } else if (nearObject.type === "portal_fly" || nearObject.type === "portal_cube" || nearObject.type === "portal_ball" || nearObject.type === portalWaveType || nearObject.type === portalUfoType || nearObject.type === "portal_robot" || nearObject.sub === "robot") {
         hitboxColor = 4491519;
       } else if (nearObject.type === "portal_teleport_in" || nearObject.type === "portal_teleport_out" || nearObject.sub === "teleport_in" || nearObject.sub === "teleport_out") {
         hitboxColor = 8388352;
