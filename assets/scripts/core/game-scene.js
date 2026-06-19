@@ -5567,7 +5567,7 @@ _buildSettingsPopup() {
     this._physicsFrame = checkpoint.physicsFrame;
     if (this._macroBot?.recording == true){
       this._macroBot?.rollbackRecording(this._physicsFrame);
-      if (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown){
+      if (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown || this._zKey.isDown || this._enterKey.isDown){
         this._macroBot.recordEdge(true, this._physicsFrame);
       } else {
         this._macroBot.recordEdge(false, this._physicsFrame);
