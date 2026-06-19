@@ -5567,7 +5567,7 @@ _buildSettingsPopup() {
     this._physicsFrame = checkpoint.physicsFrame;
     if (this._macroBot?.recording == true){
       this._macroBot?.rollbackRecording(this._physicsFrame);
-      if (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown || this._zKey.isDown || this._enterKey.isDown){
+      if (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown || this._zKey.isDown || this._enterKey.isDown || this.rightKey.isDown){
         this._macroBot.recordEdge(true, this._physicsFrame);
       } else {
         this._macroBot.recordEdge(false, this._physicsFrame);
@@ -5760,7 +5760,7 @@ _buildSettingsPopup() {
       this._fpsFrames = 0;
     }
     if (this._paused) {
-      if (!this._updateLogPopup && (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown || this._zKey.isDown || this._enterKey.isDown) && !this._spaceWasDown && !this._settingsPopup) {
+      if (!this._updateLogPopup && (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown || this._zKey.isDown || this._enterKey.isDown || this._rightKey.isDown) && !this._spaceWasDown && !this._settingsPopup) {
         setTimeout(() => {
           this._resumeGame();
         }, 75);
@@ -5772,7 +5772,7 @@ _buildSettingsPopup() {
       const _anyOverlayOpen = this._iconOverlay || this._creatorOverlay || this._searchOverlay ||
         this._onlineLevelsOverlay || this._settingsLayerOverlay || this._settingsPopup ||
         this._infoPopup || this._newgroundsPopup || this._statsLayerOverlay || this._updateLogPopup;
-      if (!_anyOverlayOpen && (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._zKey.isDown || this._enterKey.isDown) && !this._spaceWasDown) {
+      if (!_anyOverlayOpen && (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._zKey.isDown || this._enterKey.isDown || this._rightKey.isDown) && !this._spaceWasDown) {
         if (this._creatorMenuOpen) return;
         this._spaceWasDown = true;
         if (this._levelSelectOverlay) {
@@ -5795,7 +5795,7 @@ _buildSettingsPopup() {
         }
       }
       this._arrowWasDown = _arrowLeft || _arrowRight;
-      this._spaceWasDown = this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown || this._zKey.isDown || this._enterKey.isDown;
+      this._spaceWasDown = this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown || this._zKey.isDown || this._enterKey.isDown || this.rightKey.isDown;
       const menuDelta = Math.min(deltaTime / 1000 * 60, 2);
       const menuSpeed = 0.85;
       this._menuCameraX = (this._menuCameraX || 0) + menuDelta * playerSpeed * d * menuSpeed;
@@ -5862,7 +5862,7 @@ _buildSettingsPopup() {
       return;
     }
     this._applyJumpInput = () => {
-      const jumpHeld = this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown || this._zKey.isDown || this._enterKey.isDown;
+      const jumpHeld = this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown || this._zKey.isDown || this._enterKey.isDown || this.rightKey.isDown;
       if (!this._updateLogPopup && jumpHeld && !this._spaceWasDown) {
         this._pushButton();
       } else if (!jumpHeld && this._spaceWasDown) {
