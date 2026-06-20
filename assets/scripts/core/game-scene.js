@@ -5976,9 +5976,15 @@ _buildSettingsPopup() {
   }
   _onFullscreenChange(_0x310c5b) {
     if (_0x310c5b) {
-      try { navigator.keyboard.lock().catch(() => {}); } catch(e) {}
+      setTimeout(() => {
+        if (navigator.keyboard && navigator.keyboard.lock) {
+          navigator.keyboard.lock().catch(() => {});
+        }
+      }, 100);
     } else {
-      try { navigator.keyboard.unlock(); } catch(e) {}
+      if (navigator.keyboard && navigator.keyboard.unlock) {
+        navigator.keyboard.unlock();
+      }
       l(1138);
     }
     this.time.delayedCall(200, () => this._applyScreenResize());
