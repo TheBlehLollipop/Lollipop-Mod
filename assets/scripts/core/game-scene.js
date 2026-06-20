@@ -1198,8 +1198,17 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             ["Local", "SongAuthor"]
         ];
         if (level.songId < 0){
-          window.currentlevel[0] = window.allLevels[Math.abs(level.songId) - 1][0];
-          window.currentlevel[3] = ["Local", window.allLevels[Math.abs(level.songId) - 1][3]]
+          const mainLevel = window.allLevels[Math.abs(level.songId) - 1];
+          window.currentlevel[0] = mainLevel[0];
+          window.currentlevel[3] = ["Local", mainLevel[3]];
+          const songKey = mainLevel[0];
+          if (!this.cache.audio.exists(songKey)) {
+            const songFileName = mainLevel[1].replaceAll(" ", "");
+            this.load.audio(songKey, "assets/music/" + songFileName + ".mp3");
+            this.load.once("complete", () => this.scene.restart());
+            this.load.start();
+            return;
+          }
         } else {
           const songId = level.songId;
           const songKey = `ng_song_${songId}`;
