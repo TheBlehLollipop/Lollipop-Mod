@@ -8164,7 +8164,7 @@ _applyMirrorEffect() {
     this._audio.playEffect("highscoreGet02");
   }
   _starsToOrbs(stars) {
-    const orbTable = { 1:50, 2:75, 3:125, 4:175, 5:225, 6:275, 7:350, 8:425, 9:500, 10:600, 11:700, 12:800, 13:900, 14:1000, 15:1200 };
+    const orbTable = { 1:0, 2:0, 3:0, 4:125, 5:175, 6:225, 7:275, 8:350, 9:425, 10:500, 11:500, 12:500, 13:500, 14:500, 15:500 };
     return orbTable[stars] || stars * 50;
   }
   _levelComplete() {
