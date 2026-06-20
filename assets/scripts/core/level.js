@@ -1075,10 +1075,6 @@ window.LevelObject = class LevelObject {
           ? levelObj.groups.split(".").map(Number).filter(n => n > 0)
           : [];
         this._teleportExits.push({ x: worldX, y: worldY, groups: exitGroups });
-        console.log("[TELEPORT] Exit portal 749 found at", worldX, worldY, "groups:", exitGroups);
-      }
-      if (levelObj.id === 747) {
-        console.log("[TELEPORT] Entrance portal 747 found at", worldX, worldY, "raw 51:", levelObj._raw["51"], "groups:", levelObj.groups);
       }
 
       if (frameName.indexOf("sawblade") >= 0) {
@@ -1461,14 +1457,12 @@ window.LevelObject = class LevelObject {
       colTypeCounts[obj.type] = (colTypeCounts[obj.type] || 0) + 1;
     }
 
-    console.log("[TELEPORT] Resolving teleport portals. Exits:", this._teleportExits.length);
     for (const obj of this.objects) {
       if (obj.type !== "portal_teleport") continue;
       const tg = obj._teleportTargetGroup;
-      console.log("[TELEPORT] Resolving entrance at", obj.x, obj.y, "targetGroup:", tg);
       if (tg > 0) {
         const exit = this._teleportExits.find(e => e.groups.includes(tg));
-        if (exit) { obj.teleportY = exit.y; console.log("[TELEPORT] Matched by group to Y:", exit.y); continue; }
+        if (exit) { obj.teleportY = exit.y; continue; }
       }
       let nearest = null;
       let nearestDist = Infinity;
@@ -1479,8 +1473,7 @@ window.LevelObject = class LevelObject {
           nearest = exit;
         }
       }
-      if (nearest) { obj.teleportY = nearest.y; console.log("[TELEPORT] Matched nearest to Y:", nearest.y); }
-      else { console.log("[TELEPORT] No exit found!"); }
+      if (nearest) { obj.teleportY = nearest.y; }
     }
 
     this._colorTriggers.sort((a, b) => a.x - b.x);

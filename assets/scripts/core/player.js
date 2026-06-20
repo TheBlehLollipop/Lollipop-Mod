@@ -2083,12 +2083,10 @@ _updateWaveJump() {
           if (!gameObj.activated) {
             gameObj.activated = true;
             this._playPortalShine(gameObj);
-            console.log("[TELEPORT] Hit! teleportY:", gameObj.teleportY, "current p.y:", this.p.y);
             if (gameObj.teleportY !== undefined) {
               this.p.y = gameObj.teleportY;
               this.p.yVelocity = 0;
               this.p.onGround = false;
-              console.log("[TELEPORT] Teleported to Y:", this.p.y);
             }
           }
         } else if (_colType === speedType) {
