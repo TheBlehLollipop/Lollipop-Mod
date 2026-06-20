@@ -3517,6 +3517,17 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         cardContentObjs.push(starIcon, starText);
         cardBounceContainer.add([starIcon, starText]);
       }
+      if (levelStars > 0) {
+        const maxOrbs = this._starsToOrbs(levelStars);
+        const completedSet2 = JSON.parse(localStorage.getItem("gd_completedSet") || "[]");
+        const earnedOrbs = completedSet2.includes(levelId) ? maxOrbs : 0;
+        const orbText = this.add.bitmapText(-cardW / 2 + 65, cardH / 2 - 30, "bigFont", earnedOrbs + "/" + maxOrbs, 20)
+          .setScrollFactor(0).setDepth(155).setOrigin(0, 0.5).setTint(0x00ccff);
+        const orbIcon = this.add.image(-cardW / 2 + 45, cardH / 2 - 30, "GJ_GameSheet03", "GJ_diamondsIcon_001.png")
+          .setScrollFactor(0).setDepth(155).setScale(0.6);
+        cardContentObjs.push(orbText, orbIcon);
+        cardBounceContainer.add([orbText, orbIcon]);
+      }
       const levelCoinCount = lvl[5] || 0;
       if (levelCoinCount > 0) {
         let savedCoins;
