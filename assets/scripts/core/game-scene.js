@@ -5639,6 +5639,7 @@ _buildSettingsPopup() {
     this._level.resetEnterEffectTriggers();
     this._level.resetMoveTriggers();
     this._level.resetVisibility();
+    this._level._updateGlowVisibility();
     if (this._orbGfx) { this._orbGfx.clear(); }
     this._colorManager.reset();
     this._player.noclipStats.totalFrames = 0;
