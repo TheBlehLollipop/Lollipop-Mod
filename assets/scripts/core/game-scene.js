@@ -8854,101 +8854,103 @@ _applyMirrorEffect() {
   }
   _showLevelInfoPage(levelData, songKey, onPlay) {
     if (this._levelInfoContainer) this._closeLevelInfoPage();
-    const cx = screenWidth / 2;
-    const cy = screenHeight / 2;
-    this._levelInfoOverlay = this.add.rectangle(cx, cy, screenWidth, screenHeight, 0, 0.7).setScrollFactor(0).setDepth(250).setInteractive();
-    this._levelInfoContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(251);
+    const sw = screenWidth;
+    const sh = screenHeight;
+    const cx = sw / 2;
+    const cy = sh / 2;
 
-    this._levelInfoContainer.add(this.add.bitmapText(cx, 40, "bigFont", levelData.title, 48).setOrigin(0.5, 0.5));
-    this._levelInfoContainer.add(this.add.bitmapText(cx, 75, "goldFont", "By " + (levelData.author || "Unknown"), 26).setOrigin(0.5, 0.5));
+    this._levelInfoBg = this.add.rectangle(cx, cy, sw, sh, 0x0066ff).setScrollFactor(0).setDepth(249);
+    const bgTex = this.textures.get("game_bg_01");
+    if (bgTex) {
+      const s = Math.max(sw / bgTex.source[0].width, sh / bgTex.source[0].height);
+      this._levelInfoBgImg = this.add.image(cx, cy, "game_bg_01").setScale(s).setTint(0x0044aa).setScrollFactor(0).setDepth(249);
+    }
+    this._levelInfoBlocker = this.add.rectangle(cx, cy, sw, sh, 0, 0).setScrollFactor(0).setDepth(249).setInteractive();
+    this._levelInfoContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(250);
+
+    this._levelInfoContainer.add(this.add.bitmapText(cx, 35, "bigFont", levelData.title, 48).setOrigin(0.5, 0.5));
+    this._levelInfoContainer.add(this.add.bitmapText(cx, 68, "goldFont", "By " + (levelData.author || "Unknown"), 26).setOrigin(0.5, 0.5));
 
     const diffMap = { 0: "difficulty_00_btn_001.png", 10: "difficulty_01_btn_001.png", 20: "difficulty_02_btn_001.png", 30: "difficulty_03_btn_001.png", 40: "difficulty_04_btn_001.png", 50: "difficulty_05_btn_001.png" };
     const diffVal = levelData.difficulty || 0;
     const diffFrame = diffMap[diffVal] || "difficulty_00_btn_001.png";
-    const diffIcon = this.add.image(cx - 240, cy - 60, "GJ_GameSheet03", diffFrame).setScale(1.2);
-    this._levelInfoContainer.add(diffIcon);
+    this._levelInfoContainer.add(this.add.image(cx - 260, cy - 70, "GJ_GameSheet03", diffFrame).setScale(1.3));
 
     if (levelData.stars > 0) {
-      const starIcon = this.add.image(cx - 220, cy - 10, "GJ_WebSheet", "GJ_bigStar_001.png").setScale(0.3);
-      const starText = this.add.bitmapText(cx - 235, cy - 10, "bigFont", String(levelData.stars), 24).setOrigin(1, 0.5);
-      this._levelInfoContainer.add([starIcon, starText]);
+      this._levelInfoContainer.add(this.add.image(cx - 240, cy - 15, "GJ_WebSheet", "GJ_bigStar_001.png").setScale(0.3));
+      this._levelInfoContainer.add(this.add.bitmapText(cx - 258, cy - 15, "bigFont", String(levelData.stars), 24).setOrigin(1, 0.5));
     }
 
-    const playBtn = this.add.image(cx, cy - 40, "GJ_GameSheet03", "GJ_playBtn2_001.png").setInteractive().setFlipY(true).setAngle(90).setScale(1.4);
+    const playBtn = this.add.image(cx, cy - 50, "GJ_GameSheet03", "GJ_playBtn2_001.png").setInteractive().setFlipY(true).setAngle(90).setScale(1.6);
     this._levelInfoContainer.add(playBtn);
-    this._makeBouncyButton(playBtn, 1.4, onPlay);
+    this._makeBouncyButton(playBtn, 1.6, onPlay);
 
-    const statsX = cx + 200;
-    const statsStartY = cy - 100;
-    const statsGap = 35;
+    const statsX = cx + 210;
+    const statsStartY = cy - 110;
+    const statsGap = 38;
+    const fmtNum = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-    const dlIcon = this.add.image(statsX - 60, statsStartY, "GJ_GameSheet03", "GJ_downloadsIcon_001.png").setScale(0.7);
-    const dlText = this.add.bitmapText(statsX - 35, statsStartY, "goldFont", String(levelData.downloads || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ","), 24).setOrigin(0, 0.5);
-    this._levelInfoContainer.add([dlIcon, dlText]);
+    this._levelInfoContainer.add(this.add.image(statsX - 60, statsStartY, "GJ_GameSheet03", "GJ_downloadsIcon_001.png").setScale(0.75));
+    this._levelInfoContainer.add(this.add.bitmapText(statsX - 35, statsStartY, "goldFont", fmtNum(levelData.downloads || 0), 24).setOrigin(0, 0.5));
 
-    const likeIcon = this.add.image(statsX - 60, statsStartY + statsGap, "GJ_GameSheet03", "GJ_likesIcon_001.png").setScale(0.7);
-    const likeText = this.add.bitmapText(statsX - 35, statsStartY + statsGap, "goldFont", String(levelData.likes || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ","), 24).setOrigin(0, 0.5);
-    this._levelInfoContainer.add([likeIcon, likeText]);
+    this._levelInfoContainer.add(this.add.image(statsX - 60, statsStartY + statsGap, "GJ_GameSheet03", "GJ_likesIcon_001.png").setScale(0.75));
+    this._levelInfoContainer.add(this.add.bitmapText(statsX - 35, statsStartY + statsGap, "goldFont", fmtNum(levelData.likes || 0), 24).setOrigin(0, 0.5));
 
     const lengthNames = ["Tiny", "Short", "Medium", "Long", "XL", "Plat."];
-    const lenIcon = this.add.image(statsX - 60, statsStartY + statsGap * 2, "GJ_GameSheet03", "GJ_timeIcon_001.png").setScale(0.7);
-    const lenText = this.add.bitmapText(statsX - 35, statsStartY + statsGap * 2, "goldFont", lengthNames[levelData.length] || "?", 24).setOrigin(0, 0.5);
-    this._levelInfoContainer.add([lenIcon, lenText]);
+    this._levelInfoContainer.add(this.add.image(statsX - 60, statsStartY + statsGap * 2, "GJ_GameSheet03", "GJ_timeIcon_001.png").setScale(0.75));
+    this._levelInfoContainer.add(this.add.bitmapText(statsX - 35, statsStartY + statsGap * 2, "goldFont", lengthNames[levelData.length] || "?", 24).setOrigin(0, 0.5));
 
     const savedId = "online_" + levelData.id;
     const bestNormal = parseFloat(localStorage.getItem("bestPercent_" + savedId) || "0");
     const bestPractice = parseFloat(localStorage.getItem("practiceBestPercent_" + savedId) || "0");
-
-    const barW = 400;
-    const barH = 28;
+    const barW = Math.min(500, sw - 200);
+    const barH = 30;
     const barX = cx - barW / 2;
-    const normalY = cy + 60;
-    this._levelInfoContainer.add(this.add.bitmapText(cx, normalY - 22, "bigFont", "Normal Mode", 22).setOrigin(0.5, 0.5));
-    const nBarBg = this.add.graphics().setScrollFactor(0).setDepth(251);
-    nBarBg.fillStyle(0x000000, 0.6);
-    nBarBg.fillRoundedRect(barX, normalY - barH / 2, barW, barH, barH / 2);
+
+    const normalY = cy + 55;
+    this._levelInfoContainer.add(this.add.bitmapText(cx, normalY - 25, "bigFont", "Normal Mode", 24).setOrigin(0.5, 0.5));
+    const nBarBg = this.add.graphics().setScrollFactor(0).setDepth(250);
+    nBarBg.fillStyle(0x000000, 0.6); nBarBg.fillRoundedRect(barX, normalY - barH / 2, barW, barH, barH / 2);
     this._levelInfoContainer.add(nBarBg);
     if (bestNormal > 0) {
-      const nBarFg = this.add.graphics().setScrollFactor(0).setDepth(252);
+      const nBarFg = this.add.graphics().setScrollFactor(0).setDepth(251);
       nBarFg.fillStyle(0x00FF00, 1);
       const fillW = Math.max(barH, barW * bestNormal / 100);
       const rr = bestNormal >= 100 ? barH / 2 : 0;
       nBarFg.fillRoundedRect(barX + 2, normalY - barH / 2 + 2, fillW - 4, barH - 4, { tl: barH / 2, bl: barH / 2, tr: rr, br: rr });
       this._levelInfoContainer.add(nBarFg);
     }
-    this._levelInfoContainer.add(this.add.bitmapText(cx, normalY, "bigFont", Math.round(bestNormal) + "%", 18).setOrigin(0.5, 0.5).setDepth(253));
+    this._levelInfoContainer.add(this.add.bitmapText(cx, normalY, "bigFont", Math.round(bestNormal) + "%", 18).setOrigin(0.5, 0.5).setDepth(252));
 
-    const practY = normalY + 55;
-    this._levelInfoContainer.add(this.add.bitmapText(cx, practY - 22, "bigFont", "Practice Mode", 22).setOrigin(0.5, 0.5));
-    const pBarBg = this.add.graphics().setScrollFactor(0).setDepth(251);
-    pBarBg.fillStyle(0x000000, 0.6);
-    pBarBg.fillRoundedRect(barX, practY - barH / 2, barW, barH, barH / 2);
+    const practY = normalY + 60;
+    this._levelInfoContainer.add(this.add.bitmapText(cx, practY - 25, "bigFont", "Practice Mode", 24).setOrigin(0.5, 0.5));
+    const pBarBg = this.add.graphics().setScrollFactor(0).setDepth(250);
+    pBarBg.fillStyle(0x000000, 0.6); pBarBg.fillRoundedRect(barX, practY - barH / 2, barW, barH, barH / 2);
     this._levelInfoContainer.add(pBarBg);
     if (bestPractice > 0) {
-      const pBarFg = this.add.graphics().setScrollFactor(0).setDepth(252);
+      const pBarFg = this.add.graphics().setScrollFactor(0).setDepth(251);
       pBarFg.fillStyle(0x00FFFF, 1);
       const fillW = Math.max(barH, barW * bestPractice / 100);
       const rr = bestPractice >= 100 ? barH / 2 : 0;
       pBarFg.fillRoundedRect(barX + 2, practY - barH / 2 + 2, fillW - 4, barH - 4, { tl: barH / 2, bl: barH / 2, tr: rr, br: rr });
       this._levelInfoContainer.add(pBarFg);
     }
-    this._levelInfoContainer.add(this.add.bitmapText(cx, practY, "bigFont", Math.round(bestPractice) + "%", 18).setOrigin(0.5, 0.5).setDepth(253));
+    this._levelInfoContainer.add(this.add.bitmapText(cx, practY, "bigFont", Math.round(bestPractice) + "%", 18).setOrigin(0.5, 0.5).setDepth(252));
 
-    const songBarY = screenHeight - 50;
-    const songBg = this.add.rectangle(cx, songBarY, screenWidth - 100, 55, 0x7c3813).setStrokeStyle(1, 0x000000);
-    const songTitle = window._onlineSongTitle || "Unknown";
-    const songArtist = window._onlineSongArtist || "Unknown";
-    const songText = this.add.bitmapText(cx, songBarY - 8, "bigFont", songTitle, 22).setOrigin(0.5, 0.5);
-    const songAuthor = this.add.bitmapText(cx, songBarY + 14, "goldFont", "By: " + songArtist, 20).setOrigin(0.5, 0.5);
-    this._levelInfoContainer.add([songBg, songText, songAuthor]);
+    const songBarY = sh - 45;
+    this._levelInfoContainer.add(this.add.rectangle(cx, songBarY, sw - 80, 55, 0x7c3813).setStrokeStyle(1, 0x000000));
+    this._levelInfoContainer.add(this.add.bitmapText(cx, songBarY - 9, "bigFont", window._onlineSongTitle || "Unknown", 22).setOrigin(0.5, 0.5));
+    this._levelInfoContainer.add(this.add.bitmapText(cx, songBarY + 14, "goldFont", "By: " + (window._onlineSongArtist || "Unknown"), 20).setOrigin(0.5, 0.5));
 
-    const closeBtn = this.add.image(screenWidth - 50, 40, "GJ_GameSheet03", "GJ_deleteBtn_001.png").setInteractive().setScale(0.9);
-    this._levelInfoContainer.add(closeBtn);
-    this._makeBouncyButton(closeBtn, 0.9, () => this._closeLevelInfoPage());
+    const backBtn = this.add.image(45, 40, "GJ_GameSheet03", "GJ_arrow_03_001.png").setInteractive();
+    this._levelInfoContainer.add(backBtn);
+    this._makeBouncyButton(backBtn, 1, () => this._closeLevelInfoPage());
   }
   _closeLevelInfoPage() {
     if (this._levelInfoContainer) { this._levelInfoContainer.destroy(); this._levelInfoContainer = null; }
-    if (this._levelInfoOverlay) { this._levelInfoOverlay.destroy(); this._levelInfoOverlay = null; }
+    if (this._levelInfoBg) { this._levelInfoBg.destroy(); this._levelInfoBg = null; }
+    if (this._levelInfoBgImg) { this._levelInfoBgImg.destroy(); this._levelInfoBgImg = null; }
+    if (this._levelInfoBlocker) { this._levelInfoBlocker.destroy(); this._levelInfoBlocker = null; }
   }
   _showAchievementsScreen() {
     if (this._achLayerInternal) return;
