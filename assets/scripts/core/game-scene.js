@@ -3324,7 +3324,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             const lvl = window.currentlevel; 
             const songID = lvl[0];
             const levelFileName = lvl[2];
-            const songFileName = lvl[4] ? lvl[4] : lvl[1].replaceAll(" ", "");
+            const songFileName = (typeof lvl[4] === "string") ? lvl[4] : lvl[1].replaceAll(" ", "");
             
             const loadingText = this.add.bitmapText(cx, cy, "goldFont", "Downloading Level Assets...", 20).setOrigin(0.5).setDepth(200);
             
