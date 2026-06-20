@@ -3460,13 +3460,14 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       try { savedCoins = JSON.parse(localStorage.getItem("coins_" + levelId) || "[]"); } catch(e) { savedCoins = []; }
       const coinCount = 3;
       const coinSpacing = 32;
-      const coinBaseX = cardW / 2 - (coinCount * coinSpacing) / 2 + coinSpacing / 2;
-      const coinY = cardH / 2 - 25;
+      const coinsGroupW = (coinCount - 1) * coinSpacing;
+      const coinBaseX = cardW / 2 - 50 - coinsGroupW / 2;
+      const coinY = cardH / 2 - 30;
       for (let i = 0; i < coinCount; i++) {
         const collected = savedCoins.includes(i);
-        const coinFrame = collected ? "secretCoinUI_001.png" : "secretCoinUI2_001.png";
+        const coinFrame = collected ? "GJ_coinsIcon_001.png" : "GJ_coinsIcon_gray_001.png";
         const coinIcon = this.add.image(coinBaseX + i * coinSpacing, coinY, "GJ_GameSheet03", coinFrame)
-          .setScrollFactor(0).setDepth(155).setScale(0.5);
+          .setScrollFactor(0).setDepth(155).setScale(0.7);
         cardContentObjs.push(coinIcon);
         cardBounceContainer.add(coinIcon);
       }
