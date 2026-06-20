@@ -4162,9 +4162,14 @@ _buildSettingsPopup() {
             (v) => window.macroBot = v
         );
 
-        createNumberInput(container, column2X, startY, "Speedhack", 
-            () => window.speedHack, 
+        createNumberInput(container, column2X, startY, "Speedhack",
+            () => window.speedHack,
             (v) => window.speedHack = v
+        );
+
+        createNumberInput(container, column2X, startY + spacingY, "Respawn Time",
+            () => window.respawnTime,
+            (v) => window.respawnTime = v
         );
     };
 
@@ -4275,7 +4280,8 @@ _buildSettingsPopup() {
         speedHack: window.speedHack,
         macroBot: window.macroBot,
         showEditorGlow: window.showEditorGlow,
-        showObjectGlow: window.showObjectGlow
+        showObjectGlow: window.showObjectGlow,
+        respawnTime: window.respawnTime
     };
     localStorage.setItem("gd_settings", JSON.stringify(settings));
   }
@@ -4299,7 +4305,8 @@ _buildSettingsPopup() {
         speedHack: 1.0,
         macroBot: false,
         showEditorGlow: false,
-        showObjectGlow: true
+        showObjectGlow: true,
+        respawnTime: 1.0
     };
 
     const data = saved ? JSON.parse(saved) : defaults;
@@ -4319,6 +4326,7 @@ _buildSettingsPopup() {
     window.macroBot = data.macroBot;
     window.showEditorGlow = data.showEditorGlow;
     window.showObjectGlow = data.showObjectGlow ?? true;
+    window.respawnTime = data.respawnTime ?? 1.0;
     window.createObjectIds = data.createObjectIds;
     window.showObjectIds = data.showObjectIds;
   }
@@ -6329,7 +6337,8 @@ _buildSettingsPopup() {
       }
       this._player.updateExplosionPieces(deltaTime);
       this._deathTimer += deltaTime;
-      let _0x237728 = this._hadNewBest ? 1400 : 1000;
+      const baseDelay = (window.respawnTime ?? 1.0) * 1000;
+      let _0x237728 = this._hadNewBest ? baseDelay + 400 : baseDelay;
       if (this._deathTimer > _0x237728) {
         if (this._practicedMode.practiceMode) {
           this._respawnFromCheckpoint();
