@@ -8981,8 +8981,18 @@ _applyMirrorEffect() {
       popBg.on("pointerdown", () => { this._infoPopupObjs.forEach(o => o.destroy()); this._infoPopupObjs = null; });
     });
 
-    c.add(this.add.image(0, sh, "GJ_GameSheet03", "GJ_table_corner_001.png").setOrigin(0, 1).setFlipY(true));
-    c.add(this.add.image(sw, sh, "GJ_GameSheet03", "GJ_table_corner_001.png").setOrigin(1, 1).setFlipX(true).setFlipY(true));
+    const gsSize = 40;
+    const stairs = [5, 4, 3, 2, 1];
+    for (let side = 0; side < 2; side++) {
+      for (let row = 0; row < stairs.length; row++) {
+        const cols = stairs[row];
+        for (let col = 0; col < cols; col++) {
+          const bx = side === 0 ? col * gsSize + gsSize / 2 : sw - col * gsSize - gsSize / 2;
+          const by = sh - row * gsSize - gsSize / 2;
+          c.add(this.add.image(bx, by, "groundSquare_00_001.png").setDisplaySize(gsSize, gsSize));
+        }
+      }
+    }
   }
   _closeLevelInfoPage() {
     if (this._levelInfoContainer) { this._levelInfoContainer.destroy(); this._levelInfoContainer = null; }
