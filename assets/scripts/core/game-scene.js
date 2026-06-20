@@ -388,6 +388,7 @@ class GameScene extends Phaser.Scene {
     this._totalDeaths = parseInt(localStorage.getItem("gd_totalDeaths") || "0", 10);
     window._completedLevels = parseInt(localStorage.getItem("gd_completedLevels") || "0", 10);
     window._totalStars = parseInt(localStorage.getItem("gd_totalStars") || "0", 10);
+    window._totalOrbs = parseInt(localStorage.getItem("gd_totalOrbs") || "0", 10);
     this._coinsCollected = 0;
     this._coinTotal = 0;
     this._playTime = 0;
@@ -8130,8 +8131,13 @@ _applyMirrorEffect() {
     this._coinsCollected++;
     this._audio.playEffect("highscoreGet02");
   }
+  _starsToOrbs(stars) {
+    const orbTable = { 1:50, 2:75, 3:125, 4:175, 5:225, 6:275, 7:350, 8:425, 9:500, 10:600, 11:700, 12:800, 13:900, 14:1000, 15:1200 };
+    return orbTable[stars] || stars * 50;
+  }
   _levelComplete() {
     this._starsAwarded = 0;
+    this._orbsAwarded = 0;
     if (!this._practicedMode.practiceMode) {
       this._bestPercent = 100;
       localStorage.setItem("bestPercent_" + (window.currentlevel[2] || "level_1"), 100);
@@ -8149,6 +8155,9 @@ _applyMirrorEffect() {
           this._starsAwarded = levelStars;
           window._totalStars = (window._totalStars || 0) + levelStars;
           localStorage.setItem("gd_totalStars", window._totalStars);
+          this._orbsAwarded = this._starsToOrbs(levelStars);
+          window._totalOrbs = (window._totalOrbs || 0) + this._orbsAwarded;
+          localStorage.setItem("gd_totalOrbs", window._totalOrbs);
         }
       }
       if (this._coinsCollected > 0 && this._coinTotal > 0) {
@@ -8752,7 +8761,7 @@ _applyMirrorEffect() {
       { label: "Total Attempts:",       value: String(this._attempts || 1) },
       { label: "Completed Levels:",     value: String(window._completedLevels || 0) },
       { label: "Total Deaths:",      value: String(this._totalDeaths || 0) },
-      { label: "???:", value: String(window._totalOrbs || '?') },
+      { label: "Mana Orbs:", value: String(window._totalOrbs || 0) },
 
     ];
     rows.forEach((row, index) => {
@@ -8851,6 +8860,29 @@ _applyMirrorEffect() {
         alpha: 1,
         duration: 300,
         delay: 100,
+        ease: "Bounce.Out"
+      });
+    }
+    const orbCount = this._orbsAwarded || 0;
+    if (orbCount > 0) {
+      const orbIcon = this.add.image(_0x4edc03, _0x5a0e9 + 75, "GJ_WebSheet", "GJ_bigDiamond_001.png").setScale(3).setAlpha(0);
+      this._endLayerInternal.add(orbIcon);
+      this.tweens.add({
+        targets: orbIcon,
+        scale: 0.5,
+        alpha: 1,
+        duration: 300,
+        delay: 300,
+        ease: "Bounce.Out"
+      });
+      const orbLabel = this.add.bitmapText(_0x4edc03, _0x5a0e9 + 105, "bigFont", "+" + orbCount, 24).setOrigin(0.5, 0.5).setScale(3).setAlpha(0).setTint(0x00ffff);
+      this._endLayerInternal.add(orbLabel);
+      this.tweens.add({
+        targets: orbLabel,
+        scale: 1,
+        alpha: 1,
+        duration: 300,
+        delay: 400,
         ease: "Bounce.Out"
       });
     }
