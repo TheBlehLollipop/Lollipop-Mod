@@ -387,6 +387,7 @@ class GameScene extends Phaser.Scene {
     this._totalJumps = parseInt(localStorage.getItem("gd_totalJumps") || "0", 10);
     this._totalDeaths = parseInt(localStorage.getItem("gd_totalDeaths") || "0", 10);
     window._completedLevels = parseInt(localStorage.getItem("gd_completedLevels") || "0", 10);
+    window._totalStars = parseInt(localStorage.getItem("gd_totalStars") || "0", 10);
     this._playTime = 0;
     this._menuActive = true;
     this._slideIn = false;
@@ -505,6 +506,8 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     this._makeBouncyButton(this._menuNewgroundsBtn, 1, () => {
       this._buildNewgroundsPopup();
     }, () => this._menuActive && !this._newgroundsPopup);
+    this._menuStarIcon = this.add.image(0, 0, "GJ_WebSheet", "GJ_bigStar_001.png").setScrollFactor(0).setDepth(30).setScale(0.4);
+    this._menuStarText = this.add.bitmapText(0, 0, "bigFont", String(window._totalStars || 0), 28).setScrollFactor(0).setDepth(30).setOrigin(0, 0.5);
     this._menuGlitter = this.add.particles(0, 0, "GJ_WebSheet", {
       frame: "square.png",
       speed: 0,
@@ -3433,6 +3436,25 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       nameLabel.setPosition(groupStartX + scaledIconW + scaledGap - cardX, 0);
       cardContentObjs.push(nameLabel);
       cardBounceContainer.add(nameLabel);
+      const levelStars = lvl[4] || 0;
+      if (levelStars > 0) {
+        const starY = cardH / 2 + 20;
+        const starIconScale = 0.35;
+        const starIcon = this.add.image(0, starY, "GJ_WebSheet", "GJ_bigStar_001.png")
+          .setScrollFactor(0).setDepth(155).setScale(starIconScale);
+        const starText = this.add.bitmapText(18, starY, "bigFont", String(levelStars), 24)
+          .setScrollFactor(0).setDepth(155).setOrigin(0, 0.5);
+        const completedSet = JSON.parse(localStorage.getItem("gd_completedSet") || "[]");
+        if (completedSet.includes(levelId)) {
+          starIcon.setTint(0xffff00);
+          starText.setTint(0xffff00);
+        } else {
+          starIcon.setTint(0xaaaaaa);
+          starText.setTint(0xaaaaaa);
+        }
+        cardContentObjs.push(starIcon, starText);
+        cardBounceContainer.add([starIcon, starText]);
+      }
     };
     const barAreaY = cardY + cardH / 2 + 100;
     const barW2 = Math.min(600, sw - 200);
@@ -5171,6 +5193,12 @@ _buildSettingsPopup() {
     if (this._menuStatsBtn) {
       this._menuStatsBtn.setVisible(false);
     }
+    if (this._menuStarIcon) {
+      this._menuStarIcon.setVisible(false);
+    }
+    if (this._menuStarText) {
+      this._menuStarText.setVisible(false);
+    }
     if (this._playBtn) {
       this.tweens.killTweensOf(this._playBtn);
       this.tweens.add({
@@ -5519,6 +5547,14 @@ _buildSettingsPopup() {
     const _0x1e5db8 = screenWidth / 2;
     if (this._logo) {
       this._logo.x = _0x1e5db8;
+    }
+    if (this._menuStarIcon) {
+      this._menuStarIcon.x = _0x1e5db8 - 30;
+      this._menuStarIcon.y = 200;
+    }
+    if (this._menuStarText) {
+      this._menuStarText.x = _0x1e5db8 - 8;
+      this._menuStarText.y = 200;
     }
     if (this._menuInfoBtn) {
       this._menuInfoBtn.x = screenWidth - 30 - 3;
@@ -7853,6 +7889,7 @@ _applyMirrorEffect() {
     this._player.playEndAnimation(this._level.endXPos, () => this._levelComplete(), this._endPortalGameY);
   }
   _levelComplete() {
+    this._starsAwarded = 0;
     if (!this._practicedMode.practiceMode) {
       this._bestPercent = 100;
       localStorage.setItem("bestPercent_" + (window.currentlevel[2] || "level_1"), 100);
@@ -7865,6 +7902,12 @@ _applyMirrorEffect() {
         localStorage.setItem(completedKey, JSON.stringify(completedSet));
         window._completedLevels = completedSet.length;
         localStorage.setItem("gd_completedLevels", window._completedLevels);
+        const levelStars = window.currentlevel[4] || 0;
+        if (levelStars > 0) {
+          this._starsAwarded = levelStars;
+          window._totalStars = (window._totalStars || 0) + levelStars;
+          localStorage.setItem("gd_totalStars", window._totalStars);
+        }
       }
     } else {
       this._practiceBestPercent = 100;
@@ -8450,13 +8493,13 @@ _applyMirrorEffect() {
     const _rowH = (_rowPanelBottom - _rowPanelTop) / _rowCount;
 
     const rows = [
+      { label: "Total Stars:",          value: String(window._totalStars || 0) },
       { label: "Total Jumps:",         value: String(this._totalJumps || 0) },
       { label: "Total Attempts:",       value: String(this._attempts || 1) },
       { label: "Completed Levels:",     value: String(window._completedLevels || 0) },
       { label: "Total Deaths:",      value: String(this._totalDeaths || 0) },
-      { label: "???:",   value: String(window._totalDiamonds || '?') },
       { label: "???:", value: String(window._totalOrbs || '?') },
-      
+
     ];
     rows.forEach((row, index) => {
       const rowCenterY = _rowPanelTop + index * _rowH + _rowH / 2;
@@ -8534,6 +8577,7 @@ _applyMirrorEffect() {
     }
     const _0x4edc03 = this._endStarX;
     const _0x5a0e9 = this._endStarY;
+    const starCount = this._starsAwarded || 0;
     const _0x453043 = this.add.image(_0x4edc03, _0x5a0e9, "GJ_WebSheet", "GJ_bigStar_001.png").setScale(3).setAlpha(0);
     this._endLayerInternal.add(_0x453043);
     this.tweens.add({
@@ -8544,6 +8588,18 @@ _applyMirrorEffect() {
       delay: 0,
       ease: "Bounce.Out"
     });
+    if (starCount > 0) {
+      const starLabel = this.add.bitmapText(_0x4edc03, _0x5a0e9 + 35, "bigFont", "+" + starCount, 28).setOrigin(0.5, 0.5).setScale(3).setAlpha(0);
+      this._endLayerInternal.add(starLabel);
+      this.tweens.add({
+        targets: starLabel,
+        scale: 1,
+        alpha: 1,
+        duration: 300,
+        delay: 100,
+        ease: "Bounce.Out"
+      });
+    }
     this.time.delayedCall(100, () => {
       this._audio.playEffect("highscoreGet02");
       const _0x1204d3 = _0x4edc03;
