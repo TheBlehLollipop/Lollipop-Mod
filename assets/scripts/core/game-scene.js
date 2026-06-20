@@ -8979,7 +8979,14 @@ _applyMirrorEffect() {
     const btnX = sw - 45;
     const closeBtn = this.add.image(btnX, 35, "GJ_GameSheet03", "GJ_deleteBtn_001.png").setInteractive().setScale(0.85);
     c.add(closeBtn);
-    this._makeBouncyButton(closeBtn, 0.85, () => this._closeLevelInfoPage());
+    this._makeBouncyButton(closeBtn, 0.85, () => {
+      try {
+        const saved = JSON.parse(localStorage.getItem("saved_levels") || "[]");
+        const filtered = saved.filter(l => l.savedId !== "online_" + levelData.id);
+        localStorage.setItem("saved_levels", JSON.stringify(filtered));
+      } catch(e) {}
+      this._closeLevelInfoPage();
+    });
 
     const infoBtn = this.add.image(btnX, 100, "GJ_GameSheet03", "GJ_infoBtn_001.png").setInteractive().setScale(0.85);
     c.add(infoBtn);
