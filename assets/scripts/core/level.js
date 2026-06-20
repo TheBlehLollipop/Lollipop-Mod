@@ -297,7 +297,6 @@ window.LevelObject = class LevelObject {
     this._audioScaleSprites = [];
     this._orbSprites = [];
     this._coinSprites = [];
-    this._teleportExits = [];
     this._sawSprites = [];
     this._enterEffectTriggers = [];
     this._enterEffectTriggerIdx = 0;
@@ -1070,13 +1069,6 @@ window.LevelObject = class LevelObject {
         this._coinSprites.push(sprite);
       }
 
-      if (levelObj.id === 749) {
-        const exitGroups = levelObj.groups
-          ? levelObj.groups.split(".").map(Number).filter(n => n > 0)
-          : [];
-        this._teleportExits.push({ x: worldX, y: worldY, groups: exitGroups });
-      }
-
       if (frameName.indexOf("sawblade") >= 0) {
         sprite.setTint(0x000000);
         sprite._isSaw = true;
@@ -1458,22 +1450,14 @@ window.LevelObject = class LevelObject {
     }
 
     for (const obj of this.objects) {
-      if (obj.type !== "portal_teleport") continue;
-      const tg = obj._teleportTargetGroup;
-      if (tg > 0) {
-        const exit = this._teleportExits.find(e => e.groups.includes(tg));
-        if (exit) { obj.teleportY = exit.y; continue; }
-      }
-      let nearest = null;
-      let nearestDist = Infinity;
-      for (const exit of this._teleportExits) {
-        const dx = exit.x - obj.x;
-        if (dx > 0 && dx < nearestDist) {
-          nearestDist = dx;
-          nearest = exit;
+      if (obj.type === "portal_teleport" && obj._teleportTargetGroup > 0) {
+        const targetSprites = this._groupSprites[obj._teleportTargetGroup];
+        if (targetSprites && targetSprites.length > 0) {
+          const targetSpr = targetSprites[0];
+          const screenY = targetSpr._eeBaseY !== undefined ? targetSpr._eeBaseY : targetSpr.y;
+          obj.teleportY = 460 - screenY;
         }
       }
-      if (nearest) { obj.teleportY = nearest.y; }
     }
 
     this._colorTriggers.sort((a, b) => a.x - b.x);
