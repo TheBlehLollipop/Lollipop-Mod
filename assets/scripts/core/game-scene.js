@@ -2233,10 +2233,10 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
 
       this._iconOverlayObjects = [overlay, blocker, titleTxt];
 
-      const starIcon = this.add.image(sw - 55, 40, "GJ_WebSheet", "GJ_bigStar_001.png")
+      const starText = this.add.bitmapText(sw - 20, 60, "bigFont", String(window._totalStars || 0), 28)
+        .setScrollFactor(0).setDepth(105).setOrigin(1, 0.5);
+      const starIcon = this.add.image(starText.x - starText.width - 18, 60, "GJ_WebSheet", "GJ_bigStar_001.png")
         .setScrollFactor(0).setDepth(105).setScale(0.4);
-      const starText = this.add.bitmapText(sw - 33, 40, "bigFont", String(window._totalStars || 0), 28)
-        .setScrollFactor(0).setDepth(105).setOrigin(0, 0.5);
       this._iconOverlayObjects.push(starIcon, starText);
 
       const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_03_001.png")
