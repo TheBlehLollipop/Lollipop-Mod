@@ -8899,11 +8899,12 @@ _applyMirrorEffect() {
         const isEarned = earned.includes(ach.id);
         const bg = this.add.rectangle(cx, y, rowWidth, rowH, i % 2 === 0 ? 0xac531e : 0xcf6d30).setOrigin(0.5, 0.5);
         const lockFrame = isEarned ? "GJ_lock_open_001.png" : "GJ_lock_001.png";
-        const lockIcon = this.add.image(rowLeft + 40, y, "GJ_GameSheet03", lockFrame).setScale(0.7);
-        const nameText = this.add.bitmapText(rowLeft + 80, y - 18, "bigFont", ach.name, 28).setOrigin(0, 0.5).setTint(isEarned ? 0xffff00 : 0xffff00);
-        const descText = this.add.bitmapText(rowLeft + 80, y + 18, "goldFont", ach.desc, 24).setOrigin(0, 0.5);
-        this._achLayerInternal.add([bg, lockIcon, nameText, descText]);
-        this._achRowObjs.push(bg, lockIcon, nameText, descText);
+        const lockIcon = this.add.image(rowLeft + 40, y, "GJ_GameSheet03", lockFrame).setScale(1.1).setAngle(90).setFlipY(true);
+        const cubeIcon = this.add.image(rowLeft + 40, y, "GJ_GameSheetIcons", "player_01_001.png").setScale(0.7).setTint(0x888888).setAlpha(0.5);
+        const nameText = this.add.bitmapText(rowLeft + 90, y - 18, "bigFont", ach.name, 28).setOrigin(0, 0.5).setTint(0xffff00);
+        const descText = this.add.bitmapText(rowLeft + 90, y + 18, "goldFont", ach.desc, 24).setOrigin(0, 0.5);
+        this._achLayerInternal.add([bg, cubeIcon, lockIcon, nameText, descText]);
+        this._achRowObjs.push(bg, cubeIcon, lockIcon, nameText, descText);
         if (i > 0) {
           const line = this.add.rectangle(cx, rowTop + i * rowH, rowWidth, 1, 0x000000, 0.3).setOrigin(0.5, 0.5);
           this._achLayerInternal.add(line);
