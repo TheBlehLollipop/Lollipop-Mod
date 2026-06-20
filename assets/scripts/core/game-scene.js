@@ -8874,22 +8874,20 @@ _applyMirrorEffect() {
     c.add(this.add.bitmapText(cx, 62, "goldFont", "By " + (levelData.author || "Unknown"), 26).setOrigin(0.5, 0.5));
 
     const diffMap = { 0: "difficulty_00_btn_001.png", 10: "difficulty_01_btn_001.png", 20: "difficulty_02_btn_001.png", 30: "difficulty_03_btn_001.png", 40: "difficulty_04_btn_001.png", 50: "difficulty_05_btn_001.png" };
-    const diffNames = { 0: "NA", 10: "Easy", 20: "Normal", 30: "Hard", 40: "Harder", 50: "Insane" };
     const diffVal = levelData.difficulty || 0;
     const diffFrame = diffMap[diffVal] || "difficulty_00_btn_001.png";
     const leftX = cx - 250;
 
-    c.add(this.add.image(leftX, cy - 80, "GJ_GameSheet03", diffFrame).setScale(1.1));
-    c.add(this.add.bitmapText(leftX, cy - 30, "goldFont", diffNames[diffVal] || "NA", 22).setOrigin(0.5, 0.5).setTint(0x00ff00));
+    c.add(this.add.image(leftX, cy - 65, "GJ_GameSheet03", diffFrame).setScale(0.85));
 
     if (levelData.stars > 0) {
       c.add(this.add.bitmapText(leftX - 15, cy - 5, "bigFont", String(levelData.stars), 26).setOrigin(1, 0.5));
       c.add(this.add.image(leftX + 5, cy - 5, "GJ_WebSheet", "GJ_bigStar_001.png").setScale(0.3));
     }
 
-    const playBtn = this.add.image(cx, cy - 55, "GJ_GameSheet03", "GJ_playBtn2_001.png").setInteractive().setFlipY(true).setAngle(90).setScale(1.5);
+    const playBtn = this.add.image(cx, cy - 55, "GJ_GameSheet03", "GJ_playBtn2_001.png").setInteractive().setFlipY(true).setAngle(90).setScale(1.2);
     c.add(playBtn);
-    this._makeBouncyButton(playBtn, 1.5, onPlay);
+    this._makeBouncyButton(playBtn, 1.2, onPlay);
 
     const rightX = cx + 180;
     const ry = cy - 110;
@@ -8961,16 +8959,16 @@ _applyMirrorEffect() {
     const songId = levelData.isCustomSong ? levelData.customSongID : levelData.officialSong;
     c.add(this.add.bitmapText(cx + songBarW / 2 - 20, songBarY, "goldFont", "SongID: " + songId, 18).setOrigin(1, 0.5));
 
+    const backArrow = this.add.image(45, 40, "GJ_GameSheet03", "GJ_arrow_03_001.png").setInteractive().setTint(0x00ff00);
+    c.add(backArrow);
+    this._makeBouncyButton(backArrow, 1, () => this._closeLevelInfoPage());
+
     const btnX = sw - 45;
-    const closeBtn = this.add.image(btnX, 35, "GJ_GameSheet03", "GJ_closeBtn_001.png").setInteractive().setScale(0.85);
+    const closeBtn = this.add.image(btnX, 35, "GJ_GameSheet03", "GJ_closeBtn_001.png").setInteractive().setScale(0.85).setTint(0xff4444);
     c.add(closeBtn);
     this._makeBouncyButton(closeBtn, 0.85, () => this._closeLevelInfoPage());
 
-    const backBtn = this.add.image(btnX, 100, "GJ_GameSheet03", "GJ_backBtn_001.png").setInteractive().setScale(0.85);
-    c.add(backBtn);
-    this._makeBouncyButton(backBtn, 0.85, () => this._closeLevelInfoPage());
-
-    const infoBtn = this.add.image(btnX, 165, "GJ_GameSheet03", "GJ_infoBtn_001.png").setInteractive().setScale(0.85);
+    const infoBtn = this.add.image(btnX, 100, "GJ_GameSheet03", "GJ_infoBtn_001.png").setInteractive().setScale(0.85);
     c.add(infoBtn);
     this._makeBouncyButton(infoBtn, 0.85, () => {
       const desc = levelData.description || "No description.";
@@ -8982,6 +8980,9 @@ _applyMirrorEffect() {
       this._infoPopupObjs = [popBg, popTitle, popDesc];
       popBg.on("pointerdown", () => { this._infoPopupObjs.forEach(o => o.destroy()); this._infoPopupObjs = null; });
     });
+
+    c.add(this.add.image(0, sh, "GJ_GameSheet03", "GJ_table_corner_001.png").setOrigin(0, 1).setFlipY(true));
+    c.add(this.add.image(sw, sh, "GJ_GameSheet03", "GJ_table_corner_001.png").setOrigin(1, 1).setFlipX(true).setFlipY(true));
   }
   _closeLevelInfoPage() {
     if (this._levelInfoContainer) { this._levelInfoContainer.destroy(); this._levelInfoContainer = null; }
