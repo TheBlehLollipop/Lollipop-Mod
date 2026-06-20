@@ -320,6 +320,7 @@ class PlayerObject {
     this.p = _0x3f50cc;
     this._gameLayer = _0x2811e1;
     this._rotation = 0;
+    this._slopeGroundAngle = null;
     this.rotateActionActive = false;
     this.rotateActionTime = 0;
     this.rotateActionDuration = 0;
@@ -1617,6 +1618,10 @@ if (this.p.isFlying || this.p.isUfo) {
     this._rotation = this.rotateActionStart + this.rotateActionTotal * _0xb1cb91;
   }
   convertToClosestRotation() {
+    // match the slope surface angle if standing on one
+    if (this._slopeGroundAngle !== null) {
+      return this._slopeGroundAngle;
+    }
     let _0x5f531c = Math.PI / 2;
     return Math.round(this._rotation / _0x5f531c) * _0x5f531c;
   }
@@ -1950,6 +1955,7 @@ _updateWaveJump() {
     this.p.touchingRing = false;
     let _0x30410f = false;
     let _boostedThisStep = false;
+    this._slopeGroundAngle = null;
     const _0x198534 = this._gameLayer.getNearbySectionObjects(pieceWidth);
     for (let gameObj of _0x198534) {
       let left = gameObj.x - gameObj.w / 2;
@@ -2499,6 +2505,63 @@ _updateWaveJump() {
               continue;
             }
           }
+        } else if (_colType === slopeType) {
+          // --- slope physics ---
+          const surfaceY = gameObj.getSlopeSurfaceY(pieceWidth);
+          if (surfaceY === null) continue;
+
+          // same tight-hitbox approach as solid collision
+          const pLow      = playersY - playerSize + gamemodeAddition;
+          const pHigh     = playersY + playerSize - gamemodeAddition;
+          const pLastLow  = playersLastY - playerSize + gamemodeAddition;
+          const pLastHigh = playersLastY + playerSize - gamemodeAddition;
+
+          const isCeilSlope = gameObj.slopeFlipY;
+          const gFlip       = this.p.gravityFlipped;
+
+          // slope acts as a walkable floor when:
+          //   normal gravity + floor slope, OR flipped gravity + ceiling slope
+          const actsAsFloor = (!isCeilSlope && !gFlip) || (isCeilSlope && gFlip);
+
+          if (actsAsFloor) {
+            // player was at or above the surface, falling or standing
+            if ((pLastLow >= surfaceY || this.p.onGround) &&
+                (this.p.yVelocity <= 0 || this.p.onGround)) {
+              // only snap if within a reasonable range (avoids teleporting from far below)
+              if (pLow >= surfaceY - playerSize) {
+                this.p.y = surfaceY + playerSize;
+                this.hitGround();
+                _0x30410f = true;
+                this.p.collideBottom = surfaceY;
+                // cube tilts to match the slope it's standing on
+                this._slopeGroundAngle = -gameObj.getSlopeAngleRad();
+                if (!this.p.isFlying) this._checkSnapJump(gameObj);
+                continue;
+              }
+            } else if (pLow < surfaceY - 2 && pLastLow < surfaceY - 2) {
+              // player is inside the solid part of the slope
+              if (window.noClip) { this.p.diedThisFrame = true; continue; }
+              this.killPlayer();
+              return;
+            }
+          } else {
+            // ceiling slope — player approaches from below
+            if ((pLastHigh <= surfaceY || this.p.onGround) &&
+                (this.p.yVelocity >= 0 || this.p.onGround)) {
+              if (pHigh <= surfaceY + playerSize) {
+                this.p.y = surfaceY - playerSize;
+                this.hitGround();
+                _0x30410f = true;
+                this.p.onCeiling = true;
+                this.p.collideTop = surfaceY;
+                continue;
+              }
+            } else if (pHigh > surfaceY + 2 && pLastHigh > surfaceY + 2) {
+              if (window.noClip) { this.p.diedThisFrame = true; continue; }
+              this.killPlayer();
+              return;
+            }
+          }
         }
       }
     }
@@ -2633,6 +2696,24 @@ _updateWaveJump() {
       graphics.lineStyle(2, hitboxColor, 0.7);
       if (nearObject.hitbox_radius !== undefined && nearObject.hitbox_radius !== null) {
         graphics.strokeCircle(xPos, objYCenter, nearObject.hitbox_radius);
+      } else if (nearObject.type === slopeType) {
+        // draw a triangle for slope hitboxes
+        const hw = nearObject.w / 2;
+        const hh = nearObject.h / 2;
+        // right-angle corner position in screen space (slopes are never rotated)
+        const raX = nearObject.slopeDir > 0 ? hw : -hw;
+        const raY = nearObject.slopeFlipY ? -hh : hh;
+        const pts = [
+          { x: isFlipped ? -raX : raX,   y: raY },   // right angle
+          { x: isFlipped ? raX : -raX,   y: raY },   // same screen-Y, opposite X
+          { x: isFlipped ? -raX : raX,   y: -raY }   // same screen-X, opposite Y
+        ];
+        graphics.beginPath();
+        graphics.moveTo(xPos + pts[0].x, objYCenter + pts[0].y);
+        graphics.lineTo(xPos + pts[1].x, objYCenter + pts[1].y);
+        graphics.lineTo(xPos + pts[2].x, objYCenter + pts[2].y);
+        graphics.closePath();
+        graphics.strokePath();
       } else {
         let rot = Phaser.Math.DegToRad(nearObject.rotationDegrees);
         let cos = Math.cos(rot);
