@@ -508,8 +508,6 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     this._makeBouncyButton(this._menuNewgroundsBtn, 1, () => {
       this._buildNewgroundsPopup();
     }, () => this._menuActive && !this._newgroundsPopup);
-    this._menuStarIcon = this.add.image(0, 0, "GJ_WebSheet", "GJ_bigStar_001.png").setScrollFactor(0).setDepth(30).setScale(0.4);
-    this._menuStarText = this.add.bitmapText(0, 0, "bigFont", String(window._totalStars || 0), 28).setScrollFactor(0).setDepth(30).setOrigin(0, 0.5);
     this._menuGlitter = this.add.particles(0, 0, "GJ_WebSheet", {
       frame: "square.png",
       speed: 0,
@@ -2234,6 +2232,12 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         .setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(105);
 
       this._iconOverlayObjects = [overlay, blocker, titleTxt];
+
+      const starIcon = this.add.image(sw - 55, 40, "GJ_WebSheet", "GJ_bigStar_001.png")
+        .setScrollFactor(0).setDepth(105).setScale(0.4);
+      const starText = this.add.bitmapText(sw - 33, 40, "bigFont", String(window._totalStars || 0), 28)
+        .setScrollFactor(0).setDepth(105).setOrigin(0, 0.5);
+      this._iconOverlayObjects.push(starIcon, starText);
 
       const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_03_001.png")
         .setScrollFactor(0).setDepth(104).setFlipY(true)
@@ -5401,12 +5405,6 @@ _buildSettingsPopup() {
     if (this._menuStatsBtn) {
       this._menuStatsBtn.setVisible(false);
     }
-    if (this._menuStarIcon) {
-      this._menuStarIcon.setVisible(false);
-    }
-    if (this._menuStarText) {
-      this._menuStarText.setVisible(false);
-    }
     if (this._playBtn) {
       this.tweens.killTweensOf(this._playBtn);
       this.tweens.add({
@@ -5757,14 +5755,6 @@ _buildSettingsPopup() {
     const _0x1e5db8 = screenWidth / 2;
     if (this._logo) {
       this._logo.x = _0x1e5db8;
-    }
-    if (this._menuStarIcon) {
-      this._menuStarIcon.x = 30;
-      this._menuStarIcon.y = 30;
-    }
-    if (this._menuStarText) {
-      this._menuStarText.x = 52;
-      this._menuStarText.y = 30;
     }
     if (this._menuInfoBtn) {
       this._menuInfoBtn.x = screenWidth - 30 - 3;
