@@ -3456,20 +3456,22 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         cardContentObjs.push(starIcon, starText);
         cardBounceContainer.add([starIcon, starText]);
       }
-      let savedCoins;
-      try { savedCoins = JSON.parse(localStorage.getItem("coins_" + levelId) || "[]"); } catch(e) { savedCoins = []; }
-      const coinCount = 3;
-      const coinSpacing = 32;
-      const coinsGroupW = (coinCount - 1) * coinSpacing;
-      const coinBaseX = cardW / 2 - 50 - coinsGroupW / 2;
-      const coinY = cardH / 2 - 30;
-      for (let i = 0; i < coinCount; i++) {
-        const collected = savedCoins.includes(i);
-        const coinFrame = collected ? "GJ_coinsIcon_001.png" : "GJ_coinsIcon_gray_001.png";
-        const coinIcon = this.add.image(coinBaseX + i * coinSpacing, coinY, "GJ_GameSheet03", coinFrame)
-          .setScrollFactor(0).setDepth(155).setScale(0.7);
-        cardContentObjs.push(coinIcon);
-        cardBounceContainer.add(coinIcon);
+      const levelCoinCount = lvl[5] || 0;
+      if (levelCoinCount > 0) {
+        let savedCoins;
+        try { savedCoins = JSON.parse(localStorage.getItem("coins_" + levelId) || "[]"); } catch(e) { savedCoins = []; }
+        const coinSpacing = 36;
+        const coinsGroupW = (levelCoinCount - 1) * coinSpacing;
+        const coinBaseX = cardW / 2 - 50 - coinsGroupW / 2;
+        const coinY = cardH / 2 - 30;
+        for (let i = 0; i < levelCoinCount; i++) {
+          const collected = savedCoins.includes(i);
+          const coinFrame = collected ? "GJ_coinsIcon_001.png" : "GJ_coinsIcon_gray_001.png";
+          const coinIcon = this.add.image(coinBaseX + i * coinSpacing, coinY, "GJ_GameSheet03", coinFrame)
+            .setScrollFactor(0).setDepth(155).setScale(0.9);
+          cardContentObjs.push(coinIcon);
+          cardBounceContainer.add(coinIcon);
+        }
       }
     };
     const barAreaY = cardY + cardH / 2 + 100;
@@ -3686,10 +3688,6 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     }).setOrigin(1, 0).setScrollFactor(0).setDepth(999).setVisible(false);
     this._fpsAccum = 0;
     this._fpsFrames = 0;
-    this._coinHudIcon = this.add.image(30, 30, "GJ_GameSheet03", "secretCoinUI_001.png")
-      .setScrollFactor(0).setDepth(30).setScale(0.5).setVisible(false);
-    this._coinHudText = this.add.bitmapText(52, 30, "bigFont", "0/0", 22)
-      .setScrollFactor(0).setDepth(30).setOrigin(0, 0.5).setVisible(false);
   }
   _createStartPosGui() {
         const centerX = screenWidth / 2;
@@ -5443,14 +5441,6 @@ _buildSettingsPopup() {
     this._positionAttemptsLabel();
     this._coinsCollected = 0;
     this._coinTotal = this._level._coinSprites.length;
-    if (this._coinTotal > 0) {
-      this._coinHudIcon.setVisible(true);
-      this._coinHudText.setText("0/" + this._coinTotal);
-      this._coinHudText.setVisible(true);
-    } else {
-      this._coinHudIcon.setVisible(false);
-      this._coinHudText.setVisible(false);
-    }
     let gamemode = parseInt(window.settingsMap["kA2"] || "0");
     if (gamemode == 1) {
       this._player.enterShipMode();
@@ -5728,9 +5718,6 @@ _buildSettingsPopup() {
     this._level.resetVisibility();
     this._level._updateGlowVisibility();
     this._coinsCollected = 0;
-    if (this._coinHudText && this._coinTotal > 0) {
-      this._coinHudText.setText("0/" + this._coinTotal);
-    }
     if (this._orbGfx) { this._orbGfx.clear(); }
     this._colorManager.reset();
     this._player.noclipStats.totalFrames = 0;
@@ -7924,9 +7911,6 @@ _applyMirrorEffect() {
   }
   _onCoinCollected() {
     this._coinsCollected++;
-    if (this._coinHudText) {
-      this._coinHudText.setText(this._coinsCollected + "/" + this._coinTotal);
-    }
     this._audio.playEffect("highscoreGet02");
   }
   _levelComplete() {
@@ -8142,8 +8126,6 @@ _applyMirrorEffect() {
         duration: 300
       });
     }
-    if (this._coinHudIcon) this._coinHudIcon.setVisible(false);
-    if (this._coinHudText) this._coinHudText.setVisible(false);
     const containerX = screenWidth / 2;
     const _0x1aa656 = 320;
     this._endLayerOverlay = this.add.rectangle(containerX, _0x1aa656, screenWidth, screenHeight, 0, 0).setScrollFactor(0).setDepth(200).setInteractive();
