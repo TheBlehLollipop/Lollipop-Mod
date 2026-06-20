@@ -4147,6 +4147,12 @@ _buildSettingsPopup() {
             (v) => window.showCPS = v
         );
 
+      createToggle(container, column2X, startY, "Object Glow",
+            () => window.showObjectGlow,
+            (v) => window.showObjectGlow = v,
+            (v) => { this._level._updateGlowVisibility(); }
+        );
+
         createToggle(container, column2X, startY, "Create Object ID labels", 
             () => window.createObjectIds, 
             (v) => window.createObjectIds = v,
