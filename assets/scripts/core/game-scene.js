@@ -280,27 +280,28 @@ class MacroBot {
 }
 
 {
-  let _fsHoldTimer = null;
+  let _escPressTime = 0;
+  let _wantFullscreen = false;
   const _FS_HOLD_MS = 600;
 
   document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
-    if (_fsHoldTimer) return;
-
-    _fsHoldTimer = setTimeout(async () => {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      }
-      _fsHoldTimer = null;
-    }, _FS_HOLD_MS);
+    if (e.key === 'Escape' && _wantFullscreen) {
+      _escPressTime = Date.now();
+    }
   });
 
-  document.addEventListener('keyup', (e) => {
-    if (e.key !== 'Escape') return;
-    if (!_fsHoldTimer) return;
-
-    clearTimeout(_fsHoldTimer);
-    _fsHoldTimer = null;
+  document.addEventListener('fullscreenchange', () => {
+    if (document.fullscreenElement) {
+      _wantFullscreen = true;
+    } else if (_wantFullscreen) {
+      const held = Date.now() - _escPressTime;
+      if (_escPressTime > 0 && held < _FS_HOLD_MS) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        _wantFullscreen = false;
+        _escPressTime = 0;
+      }
+    }
   });
 }
 
