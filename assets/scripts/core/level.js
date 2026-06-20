@@ -1357,7 +1357,8 @@ window.LevelObject = class LevelObject {
         const collider = new Collider(portalColliderType, worldX, worldY, portalW, portalH, levelObj.rot || 0);
         collider.portalY = worldY;
         if (portalColliderType === "portal_teleport") {
-          collider._teleportTargetGroup = parseInt(levelObj._raw["51"] || "0", 10);
+          const targetY = parseFloat(levelObj._raw["51"] || "0");
+          collider.teleportY = targetY > 0 ? targetY : worldY;
         }
         registerCollider(collider);
         this.objects.push(collider);
@@ -1447,17 +1448,6 @@ window.LevelObject = class LevelObject {
     const colTypeCounts = {};
     for (const obj of this.objects) {
       colTypeCounts[obj.type] = (colTypeCounts[obj.type] || 0) + 1;
-    }
-
-    for (const obj of this.objects) {
-      if (obj.type === "portal_teleport" && obj._teleportTargetGroup > 0) {
-        const targetSprites = this._groupSprites[obj._teleportTargetGroup];
-        if (targetSprites && targetSprites.length > 0) {
-          const targetSpr = targetSprites[0];
-          const screenY = targetSpr._eeBaseY !== undefined ? targetSpr._eeBaseY : targetSpr.y;
-          obj.teleportY = 460 - screenY;
-        }
-      }
     }
 
     this._colorTriggers.sort((a, b) => a.x - b.x);
