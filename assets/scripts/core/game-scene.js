@@ -623,6 +623,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         const isFeaturedButton = frame === "GJ_featuredBtn_001.png";
         const isEditorButton = frame === "GJ_createBtn_001.png";
         const isSavedButton = frame === "GJ_savedBtn_001.png";
+        const isScoresButton = frame === "GJ_highscoreBtn_001.png";
         if (isSearchButton) {
           btn.setInteractive();
           this._makeBouncyButton(btn, btnScale, () => {
@@ -646,6 +647,11 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
           this._makeBouncyButton(btn, btnScale, () => {
             this._closeCreatorMenu(true);
             this._openSavedMenu();
+          }, () => true);
+        } else if (isScoresButton) {
+          btn.setInteractive();
+          this._makeBouncyButton(btn, btnScale, () => {
+            window.open("https://webdemonlist.org/leaderboard", "_blank");
           }, () => true);
         } else {
           btn.setTint(0x666666);
