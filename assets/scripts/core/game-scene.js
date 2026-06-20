@@ -279,38 +279,6 @@ class MacroBot {
   }
 }
 
-{
-  let _escPressTime = 0;
-  let _wantFullscreen = false;
-  let _fsElement = null;
-  const _FS_HOLD_MS = 600;
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && document.fullscreenElement) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      _escPressTime = Date.now();
-    }
-  }, true);
-
-  document.addEventListener('fullscreenchange', () => {
-    if (document.fullscreenElement) {
-      _wantFullscreen = true;
-      _fsElement = document.fullscreenElement;
-    } else if (_wantFullscreen) {
-      const held = Date.now() - _escPressTime;
-      if (_escPressTime > 0 && held < _FS_HOLD_MS && _fsElement) {
-        _fsElement.requestFullscreen().catch(() => {
-          _wantFullscreen = false;
-        });
-      } else {
-        _wantFullscreen = false;
-      }
-      _escPressTime = 0;
-    }
-  });
-}
-
 class GameScene extends Phaser.Scene {
   constructor() {
     super({
