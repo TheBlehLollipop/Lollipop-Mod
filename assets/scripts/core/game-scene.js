@@ -3520,7 +3520,10 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       if (levelStars > 0) {
         const maxOrbs = this._starsToOrbs(levelStars);
         const bestPct = parseFloat(localStorage.getItem("bestPercent_" + levelId) || "0");
-        const earnedOrbs = Math.floor(maxOrbs * bestPct / 100);
+        const completedSet2 = JSON.parse(localStorage.getItem("gd_completedSet") || "[]");
+        const progressOrbs = Math.round(maxOrbs * 0.8 * bestPct / 100);
+        const completionOrbs = completedSet2.includes(levelId) ? Math.round(maxOrbs * 0.2) : 0;
+        const earnedOrbs = progressOrbs + completionOrbs;
         const orbText = this.add.bitmapText(-cardW / 2 + 65, cardH / 2 - 30, "bigFont", earnedOrbs + "/" + maxOrbs, 20)
           .setScrollFactor(0).setDepth(155).setOrigin(0, 0.5).setTint(0x00ccff);
         const orbIcon = this.add.image(-cardW / 2 + 45, cardH / 2 - 30, "GJ_GameSheet03", "currencyOrbIcon_001.png")
@@ -6547,8 +6550,9 @@ _buildSettingsPopup() {
           const levelStars = window.currentlevel[4] || 0;
           if (levelStars > 0) {
             const maxOrbs = this._starsToOrbs(levelStars);
-            const prevOrbs = Math.floor(maxOrbs * prevBest / 100);
-            const newOrbs = Math.floor(maxOrbs * this._lastPercent / 100);
+            const progressPool = maxOrbs * 0.8;
+            const prevOrbs = Math.round(progressPool * prevBest / 100);
+            const newOrbs = Math.round(progressPool * this._lastPercent / 100);
             const orbDelta = newOrbs - prevOrbs;
             if (orbDelta > 0) {
               window._totalOrbs = (window._totalOrbs || 0) + orbDelta;
@@ -8189,8 +8193,11 @@ _applyMirrorEffect() {
           window._totalStars = (window._totalStars || 0) + levelStars;
           localStorage.setItem("gd_totalStars", window._totalStars);
           const maxOrbs = this._starsToOrbs(levelStars);
-          const alreadyEarned = Math.floor(maxOrbs * prevBest / 100);
-          this._orbsAwarded = maxOrbs - alreadyEarned;
+          const progressPool = maxOrbs * 0.8;
+          const completionBonus = Math.round(maxOrbs * 0.2);
+          const alreadyEarned = Math.round(progressPool * prevBest / 100);
+          const remainingProgress = Math.round(progressPool) - alreadyEarned;
+          this._orbsAwarded = remainingProgress + completionBonus;
           if (this._orbsAwarded > 0) {
             window._totalOrbs = (window._totalOrbs || 0) + this._orbsAwarded;
             localStorage.setItem("gd_totalOrbs", window._totalOrbs);
