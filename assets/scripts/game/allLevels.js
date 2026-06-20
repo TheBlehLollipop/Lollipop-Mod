@@ -4,147 +4,148 @@ window.allLevels = [
 	    "Stereo Madness", // proper level name
 	    "level_1",        // level id in assets/levels
 	    ["RobTop", "Forever Bound"],   // person who made the level, person who made the song
-	    1                 // stars awarded on completion
+	    1,                // stars awarded on completion
+	    3                 // number of secret coins
     ],
     [
         "back_on_track",
 	    "Back On Track",
 	    "level_2",
 	    ["RobTop", "DJVI" ],
-	    2
+	    2, 3
     ],
     [
         "polargeist",
 	    "Polargeist",
 	    "level_3",
 	    ["RobTop", "Step"],
-	    3
+	    3, 3
     ],
     [
         "dry_out",
 	    "Dry Out",
 	    "level_4",
 	    ["RobTop", "DJVI" ],
-	    4
+	    4, 3
     ],
     [
         "base_after_base",
 	    "Base After Base",
 	    "level_5",
 	    ["RobTop", "DJVI"],
-	    5
+	    5, 3
     ],
     [
         "cant_let_go",
 	    "Cant Let Go",
 	    "level_6",
 	    ["RobTop", "DJVI"],
-	    6
+	    6, 3
     ],
     [
         "jumper",
 	    "Jumper",
 	    "level_7",
 	    ["RobTop", "Waterflame"],
-	    7
+	    7, 3
     ],
     [
         "time_machine",
 	    "Time Machine",
 	    "level_8",
 	    ["RobTop", "Waterflame"],
-	    8
+	    8, 3
     ],
     [
         "cycles",
 	    "Cycles",
 	    "level_9",
 	    ["RobTop", "DJVI"],
-	    9
+	    9, 3
     ],
     [
         "xstep",
 	    "xStep",
 	    "level_10",
 	    ["RobTop", "DJVI"],
-	    10
+	    10, 3
     ],
     [
         "clutterfunk",
 	    "Clutterfunk",
 	    "level_11",
 	    ["RobTop", "Waterflame"],
-	    11
+	    11, 3
     ],
     [
         "theory_of_everything",
 	    "Theory Of Everything",
 	    "level_12",
 	    ["RobTop", "DJ-Nate"],
-	    12
+	    12, 3
     ],
     [
         "electroman_adventures",
 	    "Electroman Adventures",
 	    "level_13",
 	    ["RobTop", "Waterflame"],
-	    13
+	    13, 3
     ],
     [
         "clubstep",
 	    "Clubstep",
 	    "level_14",
 	    ["RobTop", "DJ-Nate"],
-	    14
+	    14, 3
     ],
     [
         "electrodynamix",
 	    "Electrodynamix",
 	    "level_15",
 	    ["RobTop", "DJ-Nate"],
-	    13
+	    13, 3
     ],
     [
         "hexagon_force",
 	    "Hexagon Force",
 	    "level_16",
 	    ["RobTop", "Waterflame"],
-	    12
+	    12, 3
     ],
     [
         "blast_processing",
 	    "Blast Processing",
 	    "level_17",
 	    ["RobTop", "Waterflame"],
-	    10
+	    10, 3
     ],
     [
         "theory_of_everything_2",
 	    "Theory Of Everything 2",
 	    "level_18",
 	    ["RobTop", "DJ-Nate"],
-	    14
+	    14, 3
     ],
     [
         "geometrical_dominator",
 	    "Geometrical Dominator",
 	    "level_19",
 	    ["RobTop", "Waterflame"],
-	    10
+	    10, 3
     ],
     [
         "deadlocked",
 	    "Deadlocked",
 	    "level_20",
 	    ["RobTop", "F-777"],
-	    15
+	    15, 3
     ],
     [
         "fingerdash",
 	    "Fingerdash",
 	    "level_21",
 	    ["RobTop", "MDK"],
-	    12
+	    12, 3
     ],/*
     [
         "dash",
