@@ -5759,12 +5759,12 @@ _buildSettingsPopup() {
       this._logo.x = _0x1e5db8;
     }
     if (this._menuStarIcon) {
-      this._menuStarIcon.x = _0x1e5db8 - 30;
-      this._menuStarIcon.y = 200;
+      this._menuStarIcon.x = 30;
+      this._menuStarIcon.y = 30;
     }
     if (this._menuStarText) {
-      this._menuStarText.x = _0x1e5db8 - 8;
-      this._menuStarText.y = 200;
+      this._menuStarText.x = 52;
+      this._menuStarText.y = 30;
     }
     if (this._menuInfoBtn) {
       this._menuInfoBtn.x = screenWidth - 30 - 3;
