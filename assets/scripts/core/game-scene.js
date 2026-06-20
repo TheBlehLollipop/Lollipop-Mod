@@ -8977,7 +8977,7 @@ _applyMirrorEffect() {
     this._makeBouncyButton(backArrow, 1, () => this._closeLevelInfoPage());
 
     const btnX = sw - 45;
-    const closeBtn = this.add.image(btnX, 35, "GJ_GameSheet03", "GJ_closeBtn_001.png").setInteractive().setScale(0.85).setTint(0xff4444);
+    const closeBtn = this.add.image(btnX, 35, "GJ_GameSheet03", "GJ_deleteBtn_001.png").setInteractive().setScale(0.85);
     c.add(closeBtn);
     this._makeBouncyButton(closeBtn, 0.85, () => this._closeLevelInfoPage());
 
