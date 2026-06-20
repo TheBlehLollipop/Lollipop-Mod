@@ -1215,11 +1215,28 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
           }
         } else {
           const songId = level.songId;
+          const LOCAL_SONGS = {
+            "467339": { file: "Bloodbath.mp3", artist: "Dimrain47" }
+          };
+
+          if (LOCAL_SONGS[String(songId)]) {
+            const localSong = LOCAL_SONGS[String(songId)];
+            const localKey = `local_song_${songId}`;
+            window.currentlevel[0] = localKey;
+            if (!this.cache.audio.exists(localKey)) {
+              await new Promise((resolve) => {
+                this.load.audio(localKey, "assets/music/" + localSong.file);
+                this.load.once("complete", resolve);
+                this.load.start();
+              });
+            }
+            window.currentlevel[3] = ["Local", localSong.artist];
+          } else {
           const songKey = `ng_song_${songId}`;
           window.currentlevel[0] = songKey;
-          
+
           if (PROXY_BASE && songId > 0) {
-              try {                  
+              try {
                   const ngRes = await fetch(`${PROXY_BASE}/getGJSongInfo.php`, {
                       method: "POST",
                       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -1254,6 +1271,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
               } catch (err) {
                   console.warn("Failed to load custom song", err);
               }
+          }
           }
         }
         this.scene.restart();
@@ -1824,8 +1842,26 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         window.currentlevel[0] = songKey;
         window._onlineSongOffset = levelData.offset;
         
-        if (levelData.isCustomSong) {
-          window._onlineSongBuffer = null; 
+        const LOCAL_SONGS = {
+          "467339": { file: "Bloodbath.mp3", artist: "Dimrain47" }
+        };
+
+        if (levelData.isCustomSong && LOCAL_SONGS[levelData.customSongID]) {
+          const localSong = LOCAL_SONGS[levelData.customSongID];
+          const localKey = `local_song_${levelData.customSongID}`;
+          window.currentlevel[0] = localKey;
+          window._onlineSongBuffer = null;
+          window._onlineSongKey = null;
+          if (!this.cache.audio.exists(localKey)) {
+            await new Promise((resolve) => {
+              this.load.audio(localKey, "assets/music/" + localSong.file);
+              this.load.once("complete", resolve);
+              this.load.start();
+            });
+          }
+          window.currentlevel[3] = [window.currentlevel[3][0], localSong.artist];
+        } else if (levelData.isCustomSong) {
+          window._onlineSongBuffer = null;
           window._onlineSongKey    = null;
             const ngRes = await fetch(`${PROXY_BASE}/getGJSongInfo.php`, {
                 method: "POST",
