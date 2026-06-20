@@ -6540,9 +6540,22 @@ _buildSettingsPopup() {
         let _0x169d53 = this._playerWorldX;
         this._lastPercent = Math.min(99, Math.max(0, Math.floor(_0x169d53 / _0x435587 * 100)));
         if (this._lastPercent > this._bestPercent && !this._practicedMode.practiceMode) {
+          const prevBest = this._bestPercent;
           this._bestPercent = this._lastPercent;
           localStorage.setItem("bestPercent_" + (window.currentlevel[2] || "level_1"), this._bestPercent);
           this._hadNewBest = true;
+          const levelStars = window.currentlevel[4] || 0;
+          if (levelStars > 0) {
+            const maxOrbs = this._starsToOrbs(levelStars);
+            const prevOrbs = Math.floor(maxOrbs * prevBest / 100);
+            const newOrbs = Math.floor(maxOrbs * this._lastPercent / 100);
+            const orbDelta = newOrbs - prevOrbs;
+            if (orbDelta > 0) {
+              window._totalOrbs = (window._totalOrbs || 0) + orbDelta;
+              localStorage.setItem("gd_totalOrbs", window._totalOrbs);
+              this._newBestOrbDelta = orbDelta;
+            }
+          }
           this._showNewBest();
         }
         if (this._practicedMode.practiceMode) {
@@ -8112,7 +8125,15 @@ _applyMirrorEffect() {
     let _0x9f2437 = screenWidth / 2;
     let _0x12bde3 = this.add.image(0, 0, "GJ_WebSheet", "GJ_newBest_001.png").setOrigin(0.5, 1);
     let _0x544c9c = this.add.bitmapText(0, 2, "bigFont", this._lastPercent + "%", 65).setOrigin(0.5, 0).setScale(1.1);
-    let _0x326cb9 = this.add.container(_0x9f2437, 300, [_0x12bde3, _0x544c9c]).setScrollFactor(0).setDepth(60).setScale(0.01);
+    const containerChildren = [_0x12bde3, _0x544c9c];
+    const orbDelta = this._newBestOrbDelta || 0;
+    if (orbDelta > 0) {
+      const orbIcon = this.add.image(-30, 80, "GJ_GameSheet03", "currencyOrbIcon_001.png").setOrigin(0.5, 0.5).setScale(0.5);
+      const orbText = this.add.bitmapText(-8, 80, "bigFont", "+" + orbDelta, 28).setOrigin(0, 0.5).setTint(0x00ffff);
+      containerChildren.push(orbIcon, orbText);
+      this._newBestOrbDelta = 0;
+    }
+    let _0x326cb9 = this.add.container(_0x9f2437, 300, containerChildren).setScrollFactor(0).setDepth(60).setScale(0.01);
     this.tweens.add({
       targets: _0x326cb9,
       scale: 1,
@@ -8150,6 +8171,7 @@ _applyMirrorEffect() {
     this._starsAwarded = 0;
     this._orbsAwarded = 0;
     if (!this._practicedMode.practiceMode) {
+      const prevBest = this._bestPercent || 0;
       this._bestPercent = 100;
       localStorage.setItem("bestPercent_" + (window.currentlevel[2] || "level_1"), 100);
       const completedKey = "gd_completedSet";
@@ -8166,9 +8188,13 @@ _applyMirrorEffect() {
           this._starsAwarded = levelStars;
           window._totalStars = (window._totalStars || 0) + levelStars;
           localStorage.setItem("gd_totalStars", window._totalStars);
-          this._orbsAwarded = this._starsToOrbs(levelStars);
-          window._totalOrbs = (window._totalOrbs || 0) + this._orbsAwarded;
-          localStorage.setItem("gd_totalOrbs", window._totalOrbs);
+          const maxOrbs = this._starsToOrbs(levelStars);
+          const alreadyEarned = Math.floor(maxOrbs * prevBest / 100);
+          this._orbsAwarded = maxOrbs - alreadyEarned;
+          if (this._orbsAwarded > 0) {
+            window._totalOrbs = (window._totalOrbs || 0) + this._orbsAwarded;
+            localStorage.setItem("gd_totalOrbs", window._totalOrbs);
+          }
         }
       }
       if (this._coinsCollected > 0 && this._coinTotal > 0) {
