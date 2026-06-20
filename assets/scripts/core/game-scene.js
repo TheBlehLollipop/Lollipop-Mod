@@ -8870,8 +8870,8 @@ _applyMirrorEffect() {
     const c = this._levelInfoContainer;
     const fmtNum = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-    c.add(this.add.bitmapText(cx, 30, "bigFont", levelData.title, 48).setOrigin(0.5, 0.5));
-    c.add(this.add.bitmapText(cx, 62, "goldFont", "By " + (levelData.author || "Unknown"), 26).setOrigin(0.5, 0.5));
+    c.add(this.add.bitmapText(cx, 45, "bigFont", levelData.title, 48).setOrigin(0.5, 0.5));
+    c.add(this.add.bitmapText(cx, 78, "goldFont", "By " + (levelData.author || "Unknown"), 26).setOrigin(0.5, 0.5));
 
     const diffMap = { 0: "difficulty_00_btn_001.png", 10: "difficulty_01_btn_001.png", 20: "difficulty_02_btn_001.png", 30: "difficulty_03_btn_001.png", 40: "difficulty_04_btn_001.png", 50: "difficulty_05_btn_001.png" };
     const diffVal = levelData.difficulty || 0;
@@ -8916,7 +8916,7 @@ _applyMirrorEffect() {
     const barH = 26;
     const barX = cx - barW / 2;
 
-    const normalY = cy + 40;
+    const normalY = cy + 55;
     c.add(this.add.bitmapText(cx, normalY - 20, "bigFont", "Normal Mode", 22).setOrigin(0.5, 0.5));
     const nBarBg = this.add.graphics().setScrollFactor(0).setDepth(250);
     nBarBg.fillStyle(0x000000, 0.6); nBarBg.fillRoundedRect(barX, normalY - barH / 2, barW, barH, barH / 2);
@@ -8981,18 +8981,8 @@ _applyMirrorEffect() {
       popBg.on("pointerdown", () => { this._infoPopupObjs.forEach(o => o.destroy()); this._infoPopupObjs = null; });
     });
 
-    const gsSize = 40;
-    const stairs = [5, 4, 3, 2, 1];
-    for (let side = 0; side < 2; side++) {
-      for (let row = 0; row < stairs.length; row++) {
-        const cols = stairs[row];
-        for (let col = 0; col < cols; col++) {
-          const bx = side === 0 ? col * gsSize + gsSize / 2 : sw - col * gsSize - gsSize / 2;
-          const by = sh - row * gsSize - gsSize / 2;
-          c.add(this.add.image(bx, by, "groundSquare_00_001.png").setDisplaySize(gsSize, gsSize));
-        }
-      }
-    }
+    c.add(this.add.image(0, sh, "GJ_GameSheet03", "GJ_sideArt_001.png").setOrigin(1, 1).setFlipY(true).setAngle(90));
+    c.add(this.add.image(sw, sh, "GJ_GameSheet03", "GJ_sideArt_001.png").setOrigin(1, 0).setAngle(90));
   }
   _closeLevelInfoPage() {
     if (this._levelInfoContainer) { this._levelInfoContainer.destroy(); this._levelInfoContainer = null; }
