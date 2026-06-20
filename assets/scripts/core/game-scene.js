@@ -8859,12 +8859,20 @@ _applyMirrorEffect() {
     const cx = sw / 2;
     const cy = sh / 2;
 
-    this._levelInfoBg = this.add.rectangle(cx, cy, sw, sh, 0x111133).setScrollFactor(0).setDepth(249);
-    const bgTex = this.textures.get("game_bg_01");
-    if (bgTex) {
-      const s = Math.max(sw / bgTex.source[0].width, sh / bgTex.source[0].height);
-      this._levelInfoBgImg = this.add.image(cx, cy, "game_bg_01").setScale(s).setTint(0x0a0a2a).setScrollFactor(0).setDepth(249);
+    this._levelInfoBg = this.add.graphics().setScrollFactor(0).setDepth(249);
+    const gradientSteps = 80;
+    for (let gi = 0; gi < gradientSteps; gi++) {
+      const t = gi / (gradientSteps - 1);
+      const r1 = Math.round(0x00 + (0x01 - 0x00) * t);
+      const g1 = Math.round(0x65 + (0x2c - 0x65) * t);
+      const b1 = Math.round(0xff + (0x71 - 0xff) * t);
+      const bandColor = (r1 << 16) | (g1 << 8) | b1;
+      const bandY = Math.floor(gi * sh / gradientSteps);
+      const bandH = Math.ceil(sh / gradientSteps) + 1;
+      this._levelInfoBg.fillStyle(bandColor, 1);
+      this._levelInfoBg.fillRect(0, bandY, sw, bandH);
     }
+    this._levelInfoBgImg = null;
     this._levelInfoBlocker = this.add.rectangle(cx, cy, sw, sh, 0, 0).setScrollFactor(0).setDepth(249).setInteractive();
     this._levelInfoContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(250);
     const c = this._levelInfoContainer;
