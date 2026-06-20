@@ -5977,11 +5977,29 @@ _buildSettingsPopup() {
   _onFullscreenChange(_0x310c5b) {
     if (_0x310c5b) {
       try { navigator.keyboard.lock(["Escape"]).catch(() => {}); } catch(e) {}
+      this._showFullscreenHint();
     } else {
       try { navigator.keyboard.unlock(); } catch(e) {}
       l(1138);
     }
     this.time.delayedCall(200, () => this._applyScreenResize());
+  }
+  _showFullscreenHint() {
+    const hint = this.add.text(screenWidth / 2, 40, "Hold ESC to exit fullscreen", {
+      fontSize: "20px",
+      color: "#ffffff",
+      fontFamily: "Arial",
+      backgroundColor: "#00000099",
+      padding: { x: 16, y: 8 }
+    }).setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(999).setAlpha(0);
+    this.tweens.add({
+      targets: hint,
+      alpha: 1,
+      duration: 300,
+      hold: 2500,
+      yoyo: true,
+      onComplete: () => hint.destroy()
+    });
   }
   _applyScreenResize() {
     if (this.scale.isFullscreen) {
