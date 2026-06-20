@@ -117,7 +117,7 @@ const ringType = "ring";
 const triggerType = "trigger";
 const speedType = "speed";
 const slopeType = "slope";
-// ── Slope ID registry ──
+// slope id registry ig
 const _SLOPE_DATA = {
   289:{gw:1,gh:1,angle:45,sq:false},291:{gw:2,gh:1,angle:22.5,sq:false},
   294:{gw:1,gh:1,angle:45,sq:false},295:{gw:2,gh:1,angle:22.5,sq:false},
@@ -227,13 +227,11 @@ const _SLOPE_DATA = {
   1906:{gw:1,gh:1,angle:45,sq:false},1907:{gw:2,gh:1,angle:22.5,sq:false},
 };
 
-// wrap allobjects so slope objects report type="slope" everywhere (editor + game)
 const _origAllobjects = window.allobjects;
 window.allobjects = function() {
     const result = _origAllobjects();
     for (const id in _SLOPE_DATA) {
         const sd = _SLOPE_DATA[id];
-        // sq:true are small corner-fill pieces, leave them as-is
         if (sd && !sd.sq && result[id]) {
             result[id] = Object.assign({}, result[id], { type: slopeType });
         }
@@ -1427,12 +1425,9 @@ window.LevelObject = class LevelObject {
         const col = new Collider(slopeType, worldX, worldY, w, h, 0);
         col.objid = levelObj.id;
         col.slopeAngleDeg = sd.angle;
-        // slopeDir=1: surface rises going right (classic GD slope, default no-flip)
-        // slopeDir=-1: surface descends going right (flipX)
         const rot = Math.round((levelObj.rot || 0) % 360);
         let sDir = levelObj.flipX ? -1 : 1;
         let sFY = !!levelObj.flipY;
-        // rot 180 is equivalent to flipX + flipY combined
         if (rot === 180 || rot === -180) { sDir = -sDir; sFY = !sFY; }
         col.slopeDir = sDir;
         col.slopeFlipY = sFY;
