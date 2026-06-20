@@ -1306,9 +1306,9 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
               const _tryFetchAudio = async (url) => {
                   const audioCtx = this.game.sound.context;
                   if (audioCtx.state === "suspended") await audioCtx.resume();
-                  const proxiedUrl = `${PROXY_BASE}/audio-proxy?url=${encodeURIComponent(url)}`;
-                  const audioRes = await fetch(proxiedUrl);
-                  if (!audioRes.ok) throw new Error(`audio proxy returned ${audioRes.status}`);
+                  const corsProxy = window.ApiWrapper ? window.ApiWrapper.getProxy() : "https://proxy.corsfix.com/?";
+                  const audioRes = await fetch(corsProxy + url);
+                  if (!audioRes.ok) throw new Error(`cors proxy returned ${audioRes.status}`);
                   const arrayBuf = await audioRes.arrayBuffer();
                   return await audioCtx.decodeAudioData(arrayBuf);
               };
@@ -1994,9 +1994,9 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             const _tryFetchAudio = async (url) => {
                 const audioCtx = this.game.sound.context;
                 if (audioCtx.state === "suspended") await audioCtx.resume();
-                const proxiedUrl = `${PROXY_BASE}/audio-proxy?url=${encodeURIComponent(url)}`;
-                const audioRes = await fetch(proxiedUrl);
-                if (!audioRes.ok) throw new Error(`audio proxy returned ${audioRes.status}`);
+                const corsProxy = window.ApiWrapper ? window.ApiWrapper.getProxy() : "https://proxy.corsfix.com/?";
+                const audioRes = await fetch(corsProxy + url);
+                if (!audioRes.ok) throw new Error(`cors proxy returned ${audioRes.status}`);
                 const arrayBuf = await audioRes.arrayBuffer();
                 return await audioCtx.decodeAudioData(arrayBuf);
             };
