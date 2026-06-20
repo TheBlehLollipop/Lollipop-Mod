@@ -3438,12 +3438,11 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       cardBounceContainer.add(nameLabel);
       const levelStars = lvl[4] || 0;
       if (levelStars > 0) {
-        const starY = cardH / 2 + 20;
         const starIconScale = 0.35;
-        const starIcon = this.add.image(0, starY, "GJ_WebSheet", "GJ_bigStar_001.png")
+        const starIcon = this.add.image(cardW / 2 - 30, -cardH / 2 + 28, "GJ_WebSheet", "GJ_bigStar_001.png")
           .setScrollFactor(0).setDepth(155).setScale(starIconScale);
-        const starText = this.add.bitmapText(18, starY, "bigFont", String(levelStars), 24)
-          .setScrollFactor(0).setDepth(155).setOrigin(0, 0.5);
+        const starText = this.add.bitmapText(cardW / 2 - 48, -cardH / 2 + 28, "bigFont", String(levelStars), 28)
+          .setScrollFactor(0).setDepth(155).setOrigin(1, 0.5);
         const completedSet = JSON.parse(localStorage.getItem("gd_completedSet") || "[]");
         if (completedSet.includes(levelId)) {
           starIcon.setTint(0xffff00);
