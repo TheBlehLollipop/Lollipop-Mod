@@ -766,12 +766,11 @@ window.LevelObject = class LevelObject {
   _updateGlowVisibility = () => {
       if (!this._glowSprites) return;
       for (const glow of this._glowSprites) {
-        if (window.isEditor) {
+          if (window.isEditor) {
               glow.setVisible(window.showEditorGlow);
           } else {
               glow.setVisible(window.showObjectGlow !== false);
           }
-          glow.setVisible(!window.isEditor || window.showEditorGlow);
       }
   };
   _addGlowSprite(scene, x, y, frameName, objectData, worldX) {

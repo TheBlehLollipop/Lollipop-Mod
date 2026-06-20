@@ -4147,7 +4147,7 @@ _buildSettingsPopup() {
             (v) => window.showCPS = v
         );
 
-      createToggle(container, column2X, startY, "Object Glow",
+        createToggle(container, column2X, startY, "Object Glow",
             () => window.showObjectGlow,
             (v) => window.showObjectGlow = v,
             (v) => { this._level._updateGlowVisibility(); }
@@ -4213,7 +4213,8 @@ _buildSettingsPopup() {
         showCPS: window.showCPS,
         speedHack: window.speedHack,
         macroBot: window.macroBot,
-        showEditorGlow: window.showEditorGlow
+        showEditorGlow: window.showEditorGlow,
+        showObjectGlow: window.showObjectGlow
     };
     localStorage.setItem("gd_settings", JSON.stringify(settings));
   }
@@ -4236,7 +4237,8 @@ _buildSettingsPopup() {
         showCPS: false,
         speedHack: 1.0,
         macroBot: false,
-        showEditorGlow: false
+        showEditorGlow: false,
+        showObjectGlow: true
     };
 
     const data = saved ? JSON.parse(saved) : defaults;
@@ -4255,6 +4257,7 @@ _buildSettingsPopup() {
     window.speedHack = data.speedHack;
     window.macroBot = data.macroBot;
     window.showEditorGlow = data.showEditorGlow;
+    window.showObjectGlow = data.showObjectGlow ?? true;
     window.createObjectIds = data.createObjectIds;
     window.showObjectIds = data.showObjectIds;
   }
