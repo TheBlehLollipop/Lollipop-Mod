@@ -8878,19 +8878,19 @@ _applyMirrorEffect() {
     const diffFrame = diffMap[diffVal] || "difficulty_00_btn_001.png";
     const leftX = cx - 250;
 
-    c.add(this.add.image(leftX, cy - 65, "GJ_GameSheet03", diffFrame).setScale(0.85));
+    c.add(this.add.image(leftX, cy - 80, "GJ_GameSheet03", diffFrame).setScale(0.85));
 
     if (levelData.stars > 0) {
-      c.add(this.add.bitmapText(leftX - 15, cy - 5, "bigFont", String(levelData.stars), 26).setOrigin(1, 0.5));
-      c.add(this.add.image(leftX + 5, cy - 5, "GJ_WebSheet", "GJ_bigStar_001.png").setScale(0.3));
+      c.add(this.add.bitmapText(leftX - 15, cy - 20, "bigFont", String(levelData.stars), 26).setOrigin(1, 0.5));
+      c.add(this.add.image(leftX + 5, cy - 20, "GJ_WebSheet", "GJ_bigStar_001.png").setScale(0.3));
     }
 
-    const playBtn = this.add.image(cx, cy - 55, "GJ_GameSheet03", "GJ_playBtn2_001.png").setInteractive().setFlipY(true).setAngle(90).setScale(1.2);
+    const playBtn = this.add.image(cx, cy - 70, "GJ_GameSheet03", "GJ_playBtn2_001.png").setInteractive().setFlipY(true).setAngle(90).setScale(1.0);
     c.add(playBtn);
-    this._makeBouncyButton(playBtn, 1.2, onPlay);
+    this._makeBouncyButton(playBtn, 1.0, onPlay);
 
     const rightX = cx + 180;
-    const ry = cy - 110;
+    const ry = cy - 125;
     const gap = 32;
 
     c.add(this.add.image(rightX, ry, "GJ_GameSheet03", "GJ_downloadsIcon_001.png").setScale(0.65));
