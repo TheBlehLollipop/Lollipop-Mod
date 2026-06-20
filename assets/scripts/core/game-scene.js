@@ -658,6 +658,11 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
           this._makeBouncyButton(btn, btnScale, () => {
             window.open("https://webdemonlist.org/leaderboard", "_blank");
           }, () => true);
+        } else if (frame === "GJ_dailyBtn_001.png") {
+          btn.setInteractive();
+          this._makeBouncyButton(btn, btnScale, () => {
+            this._buildQuestPopup();
+          }, () => true);
         } else {
           btn.setTint(0x666666);
         }
@@ -2919,6 +2924,11 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         this._closeCreatorMenu();
         return;
       }
+      if (this._questPopup) {
+        this._questPopup.destroy();
+        this._questPopup = null;
+        return;
+      }
       if (this._settingsPopup) {
         this._settingsPopup.destroy();
         this._settingsPopup = null;
@@ -4339,6 +4349,168 @@ _buildSettingsPopup() {
     window.respawnTime = data.respawnTime ?? 1.0;
     window.createObjectIds = data.createObjectIds;
     window.showObjectIds = data.showObjectIds;
+  }
+  _getActiveQuests() {
+    const QUEST_DURATION = 4 * 60 * 60 * 1000;
+    const QUEST_POOL = [
+      { name: "Star Collector", desc: "Collect {n} Stars.", stat: "stars", targets: [5, 10, 15, 20], rewards: [10, 15, 20, 25] },
+      { name: "Level Master", desc: "Complete {n} Levels.", stat: "completedLevels", targets: [1, 2, 3, 5], rewards: [10, 15, 20, 30] },
+      { name: "Jump King", desc: "Jump {n} Times.", stat: "jumps", targets: [100, 200, 500, 1000], rewards: [5, 10, 15, 20] },
+      { name: "Never Give Up", desc: "Die {n} Times.", stat: "deaths", targets: [10, 25, 50, 100], rewards: [5, 10, 15, 20] },
+      { name: "Try Again", desc: "Make {n} Attempts.", stat: "attempts", targets: [10, 25, 50, 100], rewards: [5, 10, 15, 20] },
+    ];
+
+    const now = Date.now();
+    let saved;
+    try { saved = JSON.parse(localStorage.getItem("gd_quests")); } catch(e) { saved = null; }
+    const timestamp = parseInt(localStorage.getItem("gd_questsTimestamp") || "0", 10);
+
+    if (saved && saved.length === 3 && timestamp > 0 && (now - timestamp) < QUEST_DURATION) {
+      return { quests: saved, expiresAt: timestamp + QUEST_DURATION };
+    }
+
+    const currentStats = {
+      stars: window._totalStars || 0,
+      completedLevels: window._completedLevels || 0,
+      jumps: parseInt(localStorage.getItem("gd_totalJumps") || "0", 10),
+      deaths: parseInt(localStorage.getItem("gd_totalDeaths") || "0", 10),
+      attempts: parseInt(localStorage.getItem("gd_totalAttempts") || "0", 10),
+    };
+
+    const shuffled = [...QUEST_POOL].sort(() => Math.random() - 0.5);
+    const picked = shuffled.slice(0, 3);
+    const quests = picked.map(q => {
+      const tierIdx = Math.floor(Math.random() * q.targets.length);
+      const target = q.targets[tierIdx];
+      return {
+        name: q.name,
+        desc: q.desc.replace("{n}", target),
+        stat: q.stat,
+        target: target,
+        reward: q.rewards[tierIdx],
+        startValue: currentStats[q.stat]
+      };
+    });
+
+    localStorage.setItem("gd_quests", JSON.stringify(quests));
+    localStorage.setItem("gd_questsTimestamp", String(now));
+    return { quests, expiresAt: now + QUEST_DURATION };
+  }
+  _buildQuestPopup() {
+    if (this._questPopup) return;
+
+    const centerX = screenWidth / 2;
+    const centerY = 320;
+    const panelWidth = 700;
+    const panelHeight = 500;
+
+    this._questPopup = this.add.container(0, 0).setScrollFactor(0).setDepth(250);
+
+    const dim = this.add.rectangle(centerX, centerY, screenWidth, screenHeight, 0, 150 / 255).setInteractive();
+    this._questPopup.add(dim);
+
+    const innerContainer = this.add.container(centerX, centerY).setScale(0);
+    this._questPopup.add(innerContainer);
+
+    const corner = 0.325 * this.textures.get("GJ_square01").source[0].width;
+    const panel = this._drawScale9(0, 0, panelWidth, panelHeight, 'GJ_square01', corner, 16777215, 1);
+    innerContainer.add(panel);
+
+    const closeBtn = this.add.image(-(panelWidth / 2) + 10, -(panelHeight / 2) + 10, 'GJ_WebSheet', "GJ_closeBtn_001.png").setScale(0.8).setInteractive();
+    innerContainer.add(closeBtn);
+    this._makeBouncyButton(closeBtn, 0.8, () => {
+      this._questPopup.destroy();
+      this._questPopup = null;
+    });
+
+    const title = this.add.bitmapText(0, -(panelHeight / 2) + 40, "bigFont", "Quests", 40).setOrigin(0.5);
+    innerContainer.add(title);
+
+    const { quests, expiresAt } = this._getActiveQuests();
+
+    const currentStats = {
+      stars: window._totalStars || 0,
+      completedLevels: window._completedLevels || 0,
+      jumps: parseInt(localStorage.getItem("gd_totalJumps") || "0", 10),
+      deaths: parseInt(localStorage.getItem("gd_totalDeaths") || "0", 10),
+      attempts: parseInt(localStorage.getItem("gd_totalAttempts") || "0", 10),
+    };
+
+    const rowH = 120;
+    const rowW = panelWidth - 80;
+    const startY = -100;
+
+    quests.forEach((quest, idx) => {
+      const ry = startY + idx * (rowH + 15);
+
+      const rowBg = this.add.graphics();
+      rowBg.fillStyle(0x3333AA, 0.9);
+      rowBg.fillRoundedRect(-rowW / 2, ry - rowH / 2, rowW, rowH, 12);
+      rowBg.lineStyle(2, 0x5555CC, 1);
+      rowBg.strokeRoundedRect(-rowW / 2, ry - rowH / 2, rowW, rowH, 12);
+      innerContainer.add(rowBg);
+
+      const nameText = this.add.bitmapText(-rowW / 2 + 20, ry - 35, "bigFont", quest.name, 24).setOrigin(0, 0.5);
+      innerContainer.add(nameText);
+
+      const descText = this.add.bitmapText(-rowW / 2 + 20, ry - 10, "goldFont", quest.desc, 18).setOrigin(0, 0.5);
+      innerContainer.add(descText);
+
+      const progress = Math.max(0, currentStats[quest.stat] - quest.startValue);
+      const clamped = Math.min(progress, quest.target);
+      const pct = clamped / quest.target;
+
+      const barW = 340;
+      const barH = 20;
+      const barX = -rowW / 2 + 20;
+      const barY = ry + 15;
+
+      const barBg = this.add.graphics();
+      barBg.fillStyle(0x111133, 1);
+      barBg.fillRoundedRect(barX, barY, barW, barH, barH / 2);
+      innerContainer.add(barBg);
+
+      if (pct > 0) {
+        const barFg = this.add.graphics();
+        const fillColor = clamped >= quest.target ? 0x00FF00 : 0x00AAFF;
+        barFg.fillStyle(fillColor, 1);
+        const fillW = Math.max(barH, barW * pct);
+        const rightR = pct >= 1 ? barH / 2 : 0;
+        barFg.fillRoundedRect(barX, barY, fillW, barH, { tl: barH / 2, bl: barH / 2, tr: rightR, br: rightR });
+        innerContainer.add(barFg);
+      }
+
+      const progressText = this.add.bitmapText(barX + barW / 2, barY + barH / 2, "goldFont", clamped + " / " + quest.target, 16)
+        .setOrigin(0.5);
+      innerContainer.add(progressText);
+
+      const rewardText = this.add.bitmapText(rowW / 2 - 40, ry - 10, "bigFont", quest.reward + "x", 30)
+        .setOrigin(1, 0.5);
+      innerContainer.add(rewardText);
+
+      const diamondIcon = this.add.image(rowW / 2 - 20, ry - 10, "GJ_GameSheet03", "GJ_diamondsIcon_001.png")
+        .setScale(0.8);
+      innerContainer.add(diamondIcon);
+
+      if (clamped >= quest.target) {
+        nameText.setTint(0x00FF00);
+      }
+    });
+
+    const remaining = Math.max(0, expiresAt - Date.now());
+    const hours = Math.floor(remaining / 3600000);
+    const mins = Math.floor((remaining % 3600000) / 60000);
+    const timerText = this.add.bitmapText(0, panelHeight / 2 - 35, "goldFont", "New quests in: " + hours + "h " + mins + "min", 22)
+      .setOrigin(0.5);
+    innerContainer.add(timerText);
+
+    this.tweens.add({
+      targets: innerContainer,
+      scale: 1,
+      duration: 660,
+      ease: "Elastic.Out",
+      easeParams: [1, 0.6]
+    });
   }
   _buildMacroPopup() {
       if (this._macroPopup) return;
