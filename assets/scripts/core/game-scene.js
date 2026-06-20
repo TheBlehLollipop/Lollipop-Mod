@@ -2907,10 +2907,6 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         this._closeOnlineLevelsScene();
         return;
       }
-      if (this._mapPackLevelsOverlay) {
-        this._mapPackLevelsOverlay = null;
-        return;
-      }
       if (this._mapPacksOverlay) {
         this._closeMapPacksOverlay();
         this._openCreatorMenu();
@@ -8786,9 +8782,7 @@ _applyMirrorEffect() {
       const hitZone = this.add.zone(cx, ry + rowH / 2, panelW, rowH).setInteractive();
       container.add(hitZone);
       this._makeBouncyButton(hitZone, 1, () => {
-        closeOverlay();
-        this._mapPacksOverlay = null;
-        this._openMapPackLevels(pack);
+        this._openMapPackLevels(pack, closeOverlay);
       }, () => true);
 
       addRow();
@@ -8805,13 +8799,12 @@ _applyMirrorEffect() {
       shell.redrawStripes(scrollY);
     });
   }
-  _openMapPackLevels(pack) {
+  _openMapPackLevels(pack, parentClose) {
     const sw = screenWidth;
     const sh = screenHeight;
     const rowH = 70;
     const shell = this._openListScene(pack.name + " Pack", rowH, () => {
       this._mapPackLevelsOverlay = null;
-      this._openMapPacksScene();
     });
     const { objects, listLeft, listTop, panelW, panelH, panelCX, addRow, closeOverlay } = shell;
     this._mapPackLevelsOverlay = shell.overlay;
@@ -8913,6 +8906,7 @@ _applyMirrorEffect() {
           window._onlineLevelId = "online_" + levelId;
           this.game.registry.set("autoStartGame", true);
           closeOverlay();
+          if (parentClose) parentClose();
           this.scene.restart();
         } catch (err) {
           nameText.setText("Failed to load");
