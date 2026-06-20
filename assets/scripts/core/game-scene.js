@@ -1423,7 +1423,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       container.add(this.add.image(centerX, tableY + tableH + 20, "GJ_WebSheet", "GJ_table_bottom_001.png"));
       container.add(this.add.bitmapText(centerX, tableY - 15, "bigFont", folder ? folder : "Saved Levels", 42).setOrigin(0.5).setScale(1.1));
 
-      const newFolderBtn = this.add.image(sw - 60, sh - 55, "GJ_GameSheet03", "GJ_newBtn_001.png")
+      const newFolderBtn = this.add.image(sw - 60, sh - 55, "GJ_GameSheet03", "gj_folderBtn_001.png")
         .setScale(0.9).setScrollFactor(0).setDepth(104).setInteractive();
       this._makeBouncyButton(newFolderBtn, 0.9, () => {
         const name = prompt("Folder name:");
