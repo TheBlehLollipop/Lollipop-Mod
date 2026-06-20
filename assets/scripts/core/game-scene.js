@@ -2879,6 +2879,21 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         this._closeOnlineLevelsScene();
         return;
       }
+      if (this._savedOverlay) {
+        if (this._savedCurrentFolder) {
+          this._closeSavedMenu(true);
+          this._openSavedMenu();
+        } else {
+          this._closeSavedMenu();
+          this._openCreatorMenu();
+        }
+        return;
+      }
+      if (this._editorOverlay) {
+        this._closeEditorMenu();
+        this._openCreatorMenu();
+        return;
+      }
       if (this._creatorOverlay) {
         this._closeCreatorMenu();
         return;
