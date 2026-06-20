@@ -8850,8 +8850,8 @@ _applyMirrorEffect() {
   }
   _showAchievementsScreen() {
     if (this._achLayerInternal) return;
-    const containerX = screenWidth / 2;
-    this._achLayerOverlay = this.add.rectangle(containerX, 320, screenWidth, screenHeight, 0, 0).setScrollFactor(0).setDepth(200).setInteractive();
+    const cx = screenWidth / 2;
+    this._achLayerOverlay = this.add.rectangle(cx, 320, screenWidth, screenHeight, 0, 0).setScrollFactor(0).setDepth(200).setInteractive();
     this._achLayerInternal = this.add.container(0, -640).setScrollFactor(0).setDepth(201);
     this.tweens.add({ targets: this._achLayerOverlay, alpha: 100 / 255, duration: 500 });
     const slideObj = { p: 0 };
@@ -8869,20 +8869,18 @@ _applyMirrorEffect() {
     this._achLayerInternal.add(this.add.image(panelX + panelW + 40, 80, "GJ_WebSheet", "GJ_table_side_001.png").setOrigin(1, 0).setFlipX(true).setScale(1, sideScale));
     this._achLayerInternal.add(this.add.image(panelX + 356, 70, "GJ_WebSheet", "GJ_table_top_001.png"));
     this._achLayerInternal.add(this.add.image(panelX + 356, 560, "GJ_WebSheet", "GJ_table_bottom_001.png"));
-    this._achLayerInternal.add(this.add.image(containerX - 312, 35, "GJ_WebSheet", "chain_01_001.png").setOrigin(0.5, 1));
-    this._achLayerInternal.add(this.add.image(containerX + 312, 35, "GJ_WebSheet", "chain_01_001.png").setOrigin(0.5, 1));
-    this._achLayerInternal.add(this.add.bitmapText(containerX, 65, "bigFont", "Achievements", 45).setOrigin(0.5, 0.5));
+    this._achLayerInternal.add(this.add.image(cx - 312, 35, "GJ_WebSheet", "chain_01_001.png").setOrigin(0.5, 1));
+    this._achLayerInternal.add(this.add.image(cx + 312, 35, "GJ_WebSheet", "chain_01_001.png").setOrigin(0.5, 1));
+    this._achLayerInternal.add(this.add.bitmapText(cx, 65, "bigFont", "Achievements", 45).setOrigin(0.5, 0.5));
 
     let earned;
     try { earned = JSON.parse(localStorage.getItem("gd_achievements") || "[]"); } catch(e) { earned = []; }
     const allAch = this._getAchievements();
-    const earnedCount = allAch.filter(a => earned.includes(a.id)).length;
-    this._achLayerInternal.add(this.add.bitmapText(containerX, 95, "goldFont", earnedCount + "/" + allAch.length, 28).setOrigin(0.5, 0.5));
 
     this._achPage = 0;
-    const rowTop = 115;
-    const rowBottom = 530;
-    const rowsPerPage = 7;
+    const rowTop = 100;
+    const rowBottom = 540;
+    const rowsPerPage = 3;
     const rowLeft = panelX + 7.8;
     const rowRight = panelX + panelW - 7.8;
     const rowWidth = rowRight - rowLeft;
@@ -8893,44 +8891,48 @@ _applyMirrorEffect() {
       for (const o of this._achRowObjs) o.destroy();
       this._achRowObjs = [];
       const start = this._achPage * rowsPerPage;
-      const pageItems = allAch.slice(start, start + rowsPerPage);
+      const end = Math.min(start + rowsPerPage, allAch.length);
+      const pageItems = allAch.slice(start, end);
+
       pageItems.forEach((ach, i) => {
         const y = rowTop + i * rowH + rowH / 2;
         const isEarned = earned.includes(ach.id);
-        const bg = this.add.rectangle(containerX, y, rowWidth, rowH, i % 2 === 0 ? 0xac531e : 0xcf6d30).setOrigin(0.5, 0.5);
-        const name = this.add.bitmapText(rowLeft + 15, y - 10, "bigFont", ach.name, 20).setOrigin(0, 0.5).setTint(isEarned ? 0xffff00 : 0x888888);
-        const desc = this.add.bitmapText(rowLeft + 15, y + 12, "goldFont", ach.desc, 18).setOrigin(0, 0.5).setTint(isEarned ? 0xffffff : 0x666666);
-        const check = this.add.bitmapText(rowRight - 15, y, "bigFont", isEarned ? "+" : "-", 28).setOrigin(1, 0.5).setTint(isEarned ? 0x00ff00 : 0xff0000);
-        this._achLayerInternal.add([bg, name, desc, check]);
-        this._achRowObjs.push(bg, name, desc, check);
+        const bg = this.add.rectangle(cx, y, rowWidth, rowH, i % 2 === 0 ? 0xac531e : 0xcf6d30).setOrigin(0.5, 0.5);
+        const lockFrame = isEarned ? "GJ_lock_open_001.png" : "GJ_lock_001.png";
+        const lockIcon = this.add.image(rowLeft + 40, y, "GJ_GameSheet03", lockFrame).setScale(0.7);
+        const nameText = this.add.bitmapText(rowLeft + 80, y - 18, "bigFont", ach.name, 28).setOrigin(0, 0.5).setTint(isEarned ? 0xffff00 : 0xffff00);
+        const descText = this.add.bitmapText(rowLeft + 80, y + 18, "goldFont", ach.desc, 24).setOrigin(0, 0.5);
+        this._achLayerInternal.add([bg, lockIcon, nameText, descText]);
+        this._achRowObjs.push(bg, lockIcon, nameText, descText);
         if (i > 0) {
-          const line = this.add.rectangle(containerX, rowTop + i * rowH, rowWidth, 0.5, 0x000000).setOrigin(0.5, 0.5);
+          const line = this.add.rectangle(cx, rowTop + i * rowH, rowWidth, 1, 0x000000, 0.3).setOrigin(0.5, 0.5);
           this._achLayerInternal.add(line);
           this._achRowObjs.push(line);
         }
       });
-      if (this._achPageLabel) this._achPageLabel.destroy();
+
+      if (this._achCountLabel) this._achCountLabel.destroy();
       const totalPages = Math.ceil(allAch.length / rowsPerPage);
-      this._achPageLabel = this.add.bitmapText(containerX, 555, "goldFont", (this._achPage + 1) + "/" + totalPages, 24).setOrigin(0.5, 0.5);
-      this._achLayerInternal.add(this._achPageLabel);
-      this._achRowObjs.push(this._achPageLabel);
+      this._achCountLabel = this.add.bitmapText(cx + 340, 20, "bigFont", (start + 1) + " to " + end + " of " + allAch.length, 22).setOrigin(1, 0.5).setTint(0xffff00);
+      this._achLayerInternal.add(this._achCountLabel);
+      this._achRowObjs.push(this._achCountLabel);
     };
     buildAchPage();
 
-    const backBtn = this.add.image(containerX - 535, 30, "GJ_GameSheet03", "GJ_arrow_03_001.png").setInteractive();
+    const backBtn = this.add.image(cx - 535, 30, "GJ_GameSheet03", "GJ_arrow_03_001.png").setInteractive();
     this._achLayerInternal.add(backBtn);
     this._makeBouncyButton(backBtn, 1, () => this._hideAchievementsScreen());
 
-    const prevBtn = this.add.image(containerX - 80, 555, "GJ_GameSheet03", "GJ_arrow_03_001.png").setInteractive().setScale(0.7);
-    this._achLayerInternal.add(prevBtn);
-    this._makeBouncyButton(prevBtn, 0.7, () => {
-      if (this._achPage > 0) { this._achPage--; buildAchPage(); }
-    });
-    const nextBtn = this.add.image(containerX + 80, 555, "GJ_GameSheet03", "GJ_arrow_03_001.png").setInteractive().setScale(0.7).setFlipX(true);
+    const nextBtn = this.add.image(cx + 535, 310, "GJ_GameSheet03", "GJ_arrow_03_001.png").setInteractive().setFlipX(true).setScale(1.2);
     this._achLayerInternal.add(nextBtn);
-    this._makeBouncyButton(nextBtn, 0.7, () => {
+    this._makeBouncyButton(nextBtn, 1.2, () => {
       const totalPages = Math.ceil(allAch.length / rowsPerPage);
       if (this._achPage < totalPages - 1) { this._achPage++; buildAchPage(); }
+    });
+    const prevBtn = this.add.image(cx - 535, 310, "GJ_GameSheet03", "GJ_arrow_03_001.png").setInteractive().setScale(1.2);
+    this._achLayerInternal.add(prevBtn);
+    this._makeBouncyButton(prevBtn, 1.2, () => {
+      if (this._achPage > 0) { this._achPage--; buildAchPage(); }
     });
   }
   _hideAchievementsScreen() {
