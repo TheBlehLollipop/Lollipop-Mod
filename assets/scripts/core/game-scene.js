@@ -658,7 +658,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
           this._makeBouncyButton(btn, btnScale, () => {
             window.open("https://webdemonlist.org/leaderboard", "_blank");
           }, () => true);
-        } else if (frame === "GJ_dailyBtn_001.png") {
+        } else if (frame === "GJ_challengeBtn_001.png") {
           btn.setInteractive();
           this._makeBouncyButton(btn, btnScale, () => {
             this._buildQuestPopup();
