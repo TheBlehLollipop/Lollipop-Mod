@@ -8946,7 +8946,7 @@ _applyMirrorEffect() {
     }
     c.add(this.add.bitmapText(cx, practY, "bigFont", Math.round(bestPractice) + "%", 16).setOrigin(0.5, 0.5).setDepth(252));
 
-    const songCardW = sw - 80;
+    const songCardW = Math.min(550, sw - 200);
     const songCardH = 80;
     const songCardX = cx;
     const songCardY = sh - 55;
