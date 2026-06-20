@@ -8916,7 +8916,7 @@ _applyMirrorEffect() {
     const barH = 26;
     const barX = cx - barW / 2;
 
-    const normalY = cy + 55;
+    const normalY = cy + 65;
     c.add(this.add.bitmapText(cx, normalY - 20, "bigFont", "Normal Mode", 22).setOrigin(0.5, 0.5));
     const nBarBg = this.add.graphics().setScrollFactor(0).setDepth(250);
     nBarBg.fillStyle(0x000000, 0.6); nBarBg.fillRoundedRect(barX, normalY - barH / 2, barW, barH, barH / 2);
@@ -8947,7 +8947,7 @@ _applyMirrorEffect() {
     c.add(this.add.bitmapText(cx, practY, "bigFont", Math.round(bestPractice) + "%", 16).setOrigin(0.5, 0.5).setDepth(252));
 
     const songCardW = Math.min(550, sw - 200);
-    const songCardH = 80;
+    const songCardH = 95;
     const songCardX = cx;
     const songCardY = sh - 55;
     const songBg = this.add.graphics().setScrollFactor(0).setDepth(250);
