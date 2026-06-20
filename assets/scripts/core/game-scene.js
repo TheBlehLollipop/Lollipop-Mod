@@ -5976,7 +5976,7 @@ _buildSettingsPopup() {
   }
   _onFullscreenChange(_0x310c5b) {
     if (_0x310c5b) {
-      try { navigator.keyboard.lock(["Escape"]).catch(() => {}); } catch(e) {}
+      try { navigator.keyboard.lock().catch(() => {}); } catch(e) {}
     } else {
       try { navigator.keyboard.unlock(); } catch(e) {}
       l(1138);
