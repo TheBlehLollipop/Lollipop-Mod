@@ -2372,6 +2372,9 @@ _updateWaveJump() {
                   }
                 });
               }
+              if (this._scene && this._scene._onCoinCollected) {
+                this._scene._onCoinCollected();
+              }
             } catch(e) {}
           }
         } else if (_colType === hazardType) {
