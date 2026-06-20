@@ -4153,14 +4153,14 @@ _buildSettingsPopup() {
             (v) => { this._level._updateGlowVisibility(); }
         );
 
-        createToggle(container, column2X, startY, "Create Object ID labels", 
-            () => window.createObjectIds, 
+        createToggle(container, column2X, startY + (spacingY), "Create Object ID labels",
+            () => window.createObjectIds,
             (v) => window.createObjectIds = v,
             null, 17
         );
 
-        createToggle(container, column2X, startY + (spacingY), "Show Object ID labels", 
-            () => window.showObjectIds, 
+        createToggle(container, column2X, startY + (spacingY * 2), "Show Object ID labels",
+            () => window.showObjectIds,
             (v) => window.showObjectIds = v,
             null, 17
         );
