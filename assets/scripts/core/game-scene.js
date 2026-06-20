@@ -8977,7 +8977,7 @@ _applyMirrorEffect() {
     this._makeBouncyButton(backArrow, 1, () => this._closeLevelInfoPage());
 
     const btnX = sw - 45;
-    const closeBtn = this.add.image(btnX, 35, "GJ_GameSheet03", "GJ_deleteBtn_001.png").setInteractive().setScale(0.85).setAngle(90);
+    const closeBtn = this.add.image(btnX, 48, "GJ_GameSheet03", "GJ_deleteBtn_001.png").setInteractive().setScale(0.85).setAngle(90);
     c.add(closeBtn);
     this._makeBouncyButton(closeBtn, 0.85, () => {
       try {
@@ -8988,7 +8988,7 @@ _applyMirrorEffect() {
       this._closeLevelInfoPage();
     });
 
-    const infoBtn = this.add.image(btnX, 120, "GJ_GameSheet03", "GJ_infoBtn_001.png").setInteractive().setScale(0.85).setAngle(90);
+    const infoBtn = this.add.image(btnX, 133, "GJ_GameSheet03", "GJ_infoBtn_001.png").setInteractive().setScale(0.85).setAngle(90);
     c.add(infoBtn);
     this._makeBouncyButton(infoBtn, 0.85, () => {
       const desc = levelData.description || "No description.";
