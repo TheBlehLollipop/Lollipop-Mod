@@ -9031,8 +9031,7 @@ _applyMirrorEffect() {
             try {
               const audioCtx = this.game.sound.context;
               if (audioCtx.state === "suspended") await audioCtx.resume();
-              const corsProxy = window.ApiWrapper ? window.ApiWrapper.getProxy() : "https://proxy.corsfix.com/?";
-              const audioRes = await fetch(corsProxy + song.downloadUrl);
+              const audioRes = await fetch(song.downloadUrl);
               if (!audioRes.ok) throw new Error("Failed: " + audioRes.status);
               const arrayBuf = await audioRes.arrayBuffer();
               const decoded = await audioCtx.decodeAudioData(arrayBuf);
