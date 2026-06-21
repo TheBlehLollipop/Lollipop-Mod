@@ -9025,7 +9025,8 @@ _applyMirrorEffect() {
           const rowBg = this.add.rectangle(cx, y, popW - 30, rowH - 4, i % 2 === 0 ? 0x222244 : 0x2a2a55).setScrollFactor(0).setDepth(271);
           const name = this.add.bitmapText(cx - popW / 2 + 30, y - 8, "bigFont", (song.songName || "Unknown").substring(0, 40), 18).setOrigin(0, 0.5).setScrollFactor(0).setDepth(272);
           const dl = this.add.bitmapText(cx - popW / 2 + 30, y + 12, "goldFont", (song.state || "") + " | " + (song.downloads || 0) + " downloads", 14).setOrigin(0, 0.5).setScrollFactor(0).setDepth(272).setTint(0xaaaaaa);
-          const useBtn = this.add.bitmapText(cx + popW / 2 - 30, y, "bigFont", "Use", 20).setOrigin(1, 0.5).setScrollFactor(0).setDepth(272).setInteractive().setTint(0x00ff00);
+          const isActive = window._activeNongId === song._id;
+          const useBtn = this.add.bitmapText(cx + popW / 2 - 30, y, "bigFont", isActive ? "Active" : "Use", 20).setOrigin(1, 0.5).setScrollFactor(0).setDepth(272).setInteractive().setTint(isActive ? 0xffff00 : 0x00ff00);
           useBtn.on("pointerdown", async () => {
             useBtn.setText("...");
             try {
@@ -9035,11 +9036,10 @@ _applyMirrorEffect() {
               if (!audioRes.ok) throw new Error("Failed: " + audioRes.status);
               const arrayBuf = await audioRes.arrayBuffer();
               const decoded = await audioCtx.decodeAudioData(arrayBuf);
-              const nongKey = "nong_" + song._id;
               window._onlineSongBuffer = decoded;
-              window._onlineSongKey = nongKey;
+              window._onlineSongKey = window.currentlevel[0];
               window._onlineSongTitle = song.songName || "NONG";
-              window.currentlevel[0] = nongKey;
+              window._activeNongId = song._id;
               useBtn.setText("OK!").setTint(0xffff00);
             } catch (e) {
               console.error("NONG download failed:", e.message);
