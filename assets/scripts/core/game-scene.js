@@ -8996,7 +8996,7 @@ _applyMirrorEffect() {
     this._nongPopupObjs.push(closeBtn);
 
     try {
-      const res = await fetch(`https://api.songfilehub.com/songs?songId=${songId}`);
+      const res = await fetch(`https://api.songfilehub.com/songs?songID=${songId}`);
       if (!res.ok) throw new Error("API returned " + res.status);
       const songs = await res.json();
       loadingText.destroy();
