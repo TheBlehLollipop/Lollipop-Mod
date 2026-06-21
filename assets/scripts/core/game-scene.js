@@ -8939,9 +8939,11 @@ _applyMirrorEffect() {
     const sArtist = window._onlineSongArtist || "Unknown";
     const songId = levelData.isCustomSong ? levelData.customSongID : levelData.officialSong;
     const sLeft = songCardX - songCardW / 2 + 20;
-    c.add(this.add.bitmapText(sLeft, songCardY - 20, "bigFont", sTitle, 24).setOrigin(0, 0.5));
+    const songTitleText = this.add.bitmapText(sLeft, songCardY - 20, "bigFont", sTitle, 24).setOrigin(0, 0.5).setInteractive();
+    c.add(songTitleText);
     c.add(this.add.bitmapText(sLeft, songCardY + 5, "goldFont", "By: " + sArtist, 20).setOrigin(0, 0.5));
     c.add(this.add.bitmapText(sLeft, songCardY + 27, "goldFont", "SongID: " + songId, 16).setOrigin(0, 0.5).setTint(0xcccccc));
+    songTitleText.on("pointerdown", () => this._showNongPopup(songId, songKey));
 
     const backArrow = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_01_001.png").setInteractive();
     c.add(backArrow);
@@ -8975,12 +8977,103 @@ _applyMirrorEffect() {
     c.add(this.add.image(0, sh, "GJ_GameSheet03", "GJ_sideArt_001.png").setOrigin(1, 1).setFlipY(true).setAngle(90));
     c.add(this.add.image(sw, sh, "GJ_GameSheet03", "GJ_sideArt_001.png").setOrigin(1, 0).setAngle(90));
   }
+  async _showNongPopup(songId, songKey) {
+    if (this._nongPopupObjs) { this._nongPopupObjs.forEach(o => o.destroy()); this._nongPopupObjs = null; return; }
+    const sw = screenWidth;
+    const sh = screenHeight;
+    const cx = sw / 2;
+    const cy = sh / 2;
+    const popW = 600;
+    const popH = 400;
+
+    const bg = this.add.rectangle(cx, cy, popW, popH, 0x1a1a2e, 0.95).setScrollFactor(0).setDepth(270).setStrokeStyle(2, 0x4444ff).setInteractive();
+    const title = this.add.bitmapText(cx, cy - popH / 2 + 25, "bigFont", "NONGs for Song " + songId, 24).setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(271);
+    const loadingText = this.add.bitmapText(cx, cy, "goldFont", "Loading...", 22).setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(271);
+    this._nongPopupObjs = [bg, title, loadingText];
+
+    const closeBtn = this.add.bitmapText(cx + popW / 2 - 20, cy - popH / 2 + 15, "bigFont", "X", 28).setOrigin(1, 0).setScrollFactor(0).setDepth(272).setInteractive().setTint(0xff4444);
+    closeBtn.on("pointerdown", () => { this._nongPopupObjs.forEach(o => o.destroy()); this._nongPopupObjs = null; });
+    this._nongPopupObjs.push(closeBtn);
+
+    try {
+      const res = await fetch(`https://api.songfilehub.com/songs?songId=${songId}`);
+      if (!res.ok) throw new Error("API returned " + res.status);
+      const songs = await res.json();
+      loadingText.destroy();
+
+      if (!songs || songs.length === 0) {
+        const noSongs = this.add.bitmapText(cx, cy, "goldFont", "No NONGs found for this song.", 22).setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(271);
+        this._nongPopupObjs.push(noSongs);
+        return;
+      }
+
+      const listTop = cy - popH / 2 + 55;
+      const listBottom = cy + popH / 2 - 15;
+      const rowH = 50;
+      const maxVisible = Math.floor((listBottom - listTop) / rowH);
+      let page = 0;
+      const totalPages = Math.ceil(songs.length / maxVisible);
+      const rowObjs = [];
+
+      const buildPage = () => {
+        rowObjs.forEach(o => o.destroy());
+        rowObjs.length = 0;
+        const start = page * maxVisible;
+        const pageItems = songs.slice(start, start + maxVisible);
+        pageItems.forEach((song, i) => {
+          const y = listTop + i * rowH + rowH / 2;
+          const rowBg = this.add.rectangle(cx, y, popW - 30, rowH - 4, i % 2 === 0 ? 0x222244 : 0x2a2a55).setScrollFactor(0).setDepth(271);
+          const name = this.add.bitmapText(cx - popW / 2 + 30, y - 8, "bigFont", (song.songName || "Unknown").substring(0, 40), 18).setOrigin(0, 0.5).setScrollFactor(0).setDepth(272);
+          const dl = this.add.bitmapText(cx - popW / 2 + 30, y + 12, "goldFont", (song.state || "") + " | " + (song.downloads || 0) + " downloads", 14).setOrigin(0, 0.5).setScrollFactor(0).setDepth(272).setTint(0xaaaaaa);
+          const useBtn = this.add.bitmapText(cx + popW / 2 - 30, y, "bigFont", "Use", 20).setOrigin(1, 0.5).setScrollFactor(0).setDepth(272).setInteractive().setTint(0x00ff00);
+          useBtn.on("pointerdown", async () => {
+            useBtn.setText("...");
+            try {
+              const audioCtx = this.game.sound.context;
+              if (audioCtx.state === "suspended") await audioCtx.resume();
+              const corsProxy = window.ApiWrapper ? window.ApiWrapper.getProxy() : "https://proxy.corsfix.com/?";
+              const audioRes = await fetch(corsProxy + song.downloadUrl);
+              if (!audioRes.ok) throw new Error("Failed: " + audioRes.status);
+              const arrayBuf = await audioRes.arrayBuffer();
+              const decoded = await audioCtx.decodeAudioData(arrayBuf);
+              window._onlineSongBuffer = decoded;
+              window._onlineSongKey = songKey;
+              window._onlineSongTitle = song.songName || "NONG";
+              useBtn.setText("OK!").setTint(0xffff00);
+            } catch (e) {
+              console.error("NONG download failed:", e.message);
+              useBtn.setText("Fail").setTint(0xff0000);
+            }
+          });
+          rowObjs.push(rowBg, name, dl, useBtn);
+          this._nongPopupObjs.push(rowBg, name, dl, useBtn);
+        });
+        if (totalPages > 1) {
+          const pgText = this.add.bitmapText(cx, listBottom + 5, "goldFont", (page + 1) + "/" + totalPages, 18).setOrigin(0.5, 0).setScrollFactor(0).setDepth(272);
+          rowObjs.push(pgText);
+          this._nongPopupObjs.push(pgText);
+        }
+      };
+      buildPage();
+
+      if (totalPages > 1) {
+        bg.on("wheel", (p, dx, dy) => {
+          if (dy > 0 && page < totalPages - 1) { page++; buildPage(); }
+          else if (dy < 0 && page > 0) { page--; buildPage(); }
+        });
+      }
+    } catch (e) {
+      loadingText.setText("Failed to load NONGs.");
+      console.error("SongFileHub error:", e.message);
+    }
+  }
   _closeLevelInfoPage() {
     if (this._levelInfoContainer) { this._levelInfoContainer.destroy(); this._levelInfoContainer = null; }
     if (this._levelInfoBg) { this._levelInfoBg.destroy(); this._levelInfoBg = null; }
     if (this._levelInfoBgImg) { this._levelInfoBgImg.destroy(); this._levelInfoBgImg = null; }
     if (this._levelInfoBlocker) { this._levelInfoBlocker.destroy(); this._levelInfoBlocker = null; }
     if (this._infoPopupObjs) { this._infoPopupObjs.forEach(o => o.destroy()); this._infoPopupObjs = null; }
+    if (this._nongPopupObjs) { this._nongPopupObjs.forEach(o => o.destroy()); this._nongPopupObjs = null; }
   }
   _showAchievementsScreen() {
     if (this._achLayerInternal) return;
