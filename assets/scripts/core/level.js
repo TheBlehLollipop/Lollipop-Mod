@@ -1345,6 +1345,7 @@ window.LevelObject = class LevelObject {
         wave: portalWaveType,
         ufo: portalUfoType,
         spider: "portal_spider",
+        robot: "portal_robot",
         mirrora: "portal_mirror_on",
         mirrorb: "portal_mirror_off",
         shrink: "portal_mini_on",
