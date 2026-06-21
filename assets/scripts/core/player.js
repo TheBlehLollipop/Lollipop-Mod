@@ -804,6 +804,15 @@ class PlayerObject {
     const _0x7f0705 = mirrorOffset !== undefined ? mirrorOffset : centerX;
     const _0x1a433c = b(this.p.y) + cameraY;
     const playerRotation = this._rotation;
+    // cosmetic-only tilt layered on top of the real rotation state, never written
+    // back into _rotation so jump/landing rotation logic stays untouched
+    let visualTilt = 0;
+    if (this._slopeGroundAngle !== null) {
+      visualTilt = this._slopeGroundAngle;
+    } else if (this.p.isUfo && !this.p.isFlying) {
+      visualTilt = Math.max(-0.05, Math.min(0.05, -(this.p.y - this.p.lastY) * 0.008));
+    }
+    const tiltedRotation = playerRotation + visualTilt;
     this._lastCameraX = cameraX;
     this._lastCameraY = cameraY;
     this._aboveContainer.x = -cameraX;
@@ -826,7 +835,7 @@ if (this.p.isFlying || this.p.isUfo) {
             const _miniS = this.p.isMini ? 0.6 : 1;
             layer.sprite.x = _0x7f0705 + _0x1b1d28;
             layer.sprite.y = _0x1a433c + _0x185f91 + (this.p.gravityFlipped ? (-20 * _miniS) : 0)
-            layer.sprite.rotation = this.p.mirrored ? -playerRotation : playerRotation;
+            layer.sprite.rotation = this.p.mirrored ? -tiltedRotation : tiltedRotation;
             layer.sprite.scaleY = this.p.gravityFlipped ? -_miniS : _miniS;
             layer.sprite.scaleX = this.p.mirrored ? -_miniS : _miniS;
           }
@@ -838,7 +847,7 @@ if (this.p.isFlying || this.p.isUfo) {
             layer.sprite.setVisible(true);
             layer.sprite.x = _0x7f0705 + _0x1b1d28;
             layer.sprite.y = _0x1a433c + _0x185f91 + (this.p.gravityFlipped ? -15 : 5);
-            layer.sprite.rotation = this.p.mirrored ? -playerRotation : playerRotation;
+            layer.sprite.rotation = this.p.mirrored ? -tiltedRotation : tiltedRotation;
             const _miniS = this.p.isMini ? 0.6 : 1;
             layer.sprite.scaleY = this.p.gravityFlipped ? -_miniS : _miniS;
             layer.sprite.scaleX = this.p.mirrored ? -_miniS : _miniS;
@@ -851,26 +860,10 @@ if (this.p.isFlying || this.p.isUfo) {
           const _miniS = this.p.isMini ? 0.6 : 1;
           playerLayerItem.sprite.x = _0x7f0705 + _0x562424;
           playerLayerItem.sprite.y = (_0x1a433c + _0x3011c9) + (this.p.isMini ? (8 * _miniS) : 0) + (this.p.gravityFlipped ? (-20 * _miniS) : 0);
-          playerLayerItem.sprite.rotation = this.p.mirrored ? -playerRotation : playerRotation;
+          playerLayerItem.sprite.rotation = this.p.mirrored ? -tiltedRotation : tiltedRotation;
           const _shipCubeS = _miniS * 0.55;
           playerLayerItem.sprite.scaleY = this.p.gravityFlipped ? -_shipCubeS : _shipCubeS;
           playerLayerItem.sprite.scaleX = this.p.mirrored ? -_shipCubeS : _shipCubeS;
-        }
-      }
-      if (_ufoMode) {
-        // tilt to match the slope surface when standing on one, like real gd
-        const _ufoTilt = this._slopeGroundAngle !== null
-          ? this._slopeGroundAngle
-          : Math.max(-0.05, Math.min(0.05, -(this.p.y - this.p.lastY) * 0.008));
-        for (const layer of this._birdLayers) {
-          if (layer) {
-            layer.sprite.rotation = this.p.mirrored ? -_ufoTilt : _ufoTilt;
-          }
-        }
-		  for (const playerLayerItem of this._playerLayers) {
-          if (playerLayerItem) {
-            playerLayerItem.sprite.rotation = this.p.mirrored ? -_ufoTilt : _ufoTilt;
-          }
         }
       }
     } else {
@@ -885,7 +878,7 @@ if (this.p.isFlying || this.p.isUfo) {
             playerLayer.sprite.x = _0x7f0705;
             playerLayer.sprite.y = _0x1a433c;
             const isBallLayer = this._ballLayers.includes(playerLayer);
-            playerLayer.sprite.rotation = isBallLayer ? playerRotation : (this.p.mirrored ? -playerRotation : playerRotation);
+            playerLayer.sprite.rotation = isBallLayer ? playerRotation : (this.p.mirrored ? -tiltedRotation : tiltedRotation);
             let _miniS = this.p.isMini ? 0.6 : 1;
             if (this.p.isWave && this._waveLayers.includes(playerLayer)) {
               _miniS *= 0.94; //fix wave size
@@ -905,7 +898,7 @@ if (this.p.isFlying || this.p.isUfo) {
             playerLayer.sprite.x = _0x7f0705;
             playerLayer.sprite.y = _0x1a433c;
             const isBallLayer = this._ballLayers.includes(playerLayer);
-            playerLayer.sprite.rotation = isBallLayer ? playerRotation : (this.p.mirrored ? -playerRotation : playerRotation);
+            playerLayer.sprite.rotation = isBallLayer ? playerRotation : (this.p.mirrored ? -tiltedRotation : tiltedRotation);
             let _miniS = this.p.isMini ? 0.6 : 1;
             if (this.p.isWave && this._waveLayers.includes(playerLayer)) {
               _miniS *= 0.94; //fix wave size
@@ -2882,7 +2875,7 @@ _updateWaveJump() {
     const _0x47ae60 = _0x501b73;
     const _0x1f2e19 = _0x4a45d7 + 80;
     const _0x8bc9f4 = _0x568b25 + 300;
-    const _0x11b580 = [this._playerSpriteLayer, this._playerGlowLayer, this._playerOverlayLayer, this._playerExtraLayer, this._ballSpriteLayer, this._ballGlowLayer, this._ballOverlayLayer, this._waveSpriteLayer, this._waveOverlayLayer, this._waveExtraLayer, this._waveGlowLayer, this._shipSpriteLayer, this._shipGlowLayer, this._shipOverlayLayer, this._shipExtraLayer].filter(_0x3e9c62 => _0x3e9c62 && _0x3e9c62.sprite.visible).map(_0x5cedeb => _0x5cedeb.sprite);
+    const _0x11b580 = [this._playerSpriteLayer, this._playerGlowLayer, this._playerOverlayLayer, this._playerExtraLayer, this._ballSpriteLayer, this._ballGlowLayer, this._ballOverlayLayer, this._waveSpriteLayer, this._waveOverlayLayer, this._waveExtraLayer, this._waveGlowLayer, this._shipSpriteLayer, this._shipGlowLayer, this._shipOverlayLayer, this._shipExtraLayer, ...(this._birdLayers || []), ...(this._playerLayers || [])].filter(_0x3e9c62 => _0x3e9c62 && _0x3e9c62.sprite.visible).map(_0x5cedeb => _0x5cedeb.sprite);
     this._startPercent = (this._scene._playerWorldX / this._scene._level.endXPos) * 100;
     this._particleEmitter.stop();
     this._flyParticleEmitter.stop();
