@@ -65,7 +65,8 @@ class AudioManager {
   _playOnlineBuffer(audioBuffer, startOffset = 0) {
     const soundMgr = this._scene.game.sound;
     const ctx = soundMgr.context;
-    if (!ctx) return;
+    console.log("[NONG debug] _playOnlineBuffer called, ctx:", ctx?.state, "duration:", audioBuffer?.duration, "offset:", startOffset, "volume:", this._effectiveVolume());
+    if (!ctx) { console.log("[NONG debug] no audio context!"); return; }
     if (this._onlineSource) {
       try { this._onlineSource.stop(); } catch(e) {}
       try { this._onlineSource.disconnect(); } catch(e) {}
