@@ -41,6 +41,7 @@ class AudioManager {
         return;
       }
     }
+    console.log("[NONG debug] buffer:", !!window._onlineSongBuffer, "songKey:", window._onlineSongKey, "cl0:", window.currentlevel && window.currentlevel[0], "activeNong:", window._activeNongId);
     if (window._onlineSongBuffer && window._onlineSongKey === window.currentlevel[0]) {
       const startOffset = window.settingsMap['kA13'] ? new Number(window.settingsMap['kA13']) : 0;
       this._playOnlineBuffer(window._onlineSongBuffer, startOffset + StartPosOffset);
