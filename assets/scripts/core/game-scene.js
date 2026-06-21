@@ -1189,8 +1189,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         window._onlineLevelString = level.levelString;
         window._onlineLevelName = level.levelName;
         window._onlineLevelId = level.createdId;
-        window._onlineSongBuffer = null;
-        window._onlineSongKey = null;
+        if (!window._activeNongId) { window._onlineSongBuffer = null; window._onlineSongKey = null; }
         window._onlineSongOffset = 0;
         if (isEditor){
           window.isEditor = true;
@@ -1277,6 +1276,9 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
               }
           }
           }
+        }
+        if (window._activeNongId && window._onlineSongBuffer) {
+          window._onlineSongKey = window.currentlevel[0];
         }
         this.scene.restart();
     };
@@ -2045,7 +2047,12 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
           flash.fillRect(0, 0, sw, sh);
           this.tweens.add({
             targets: flash, alpha: 1, duration: 250, ease: "Linear",
-            onComplete: () => this.scene.restart()
+            onComplete: () => {
+              if (window._activeNongId && window._onlineSongBuffer) {
+                window._onlineSongKey = window.currentlevel[0];
+              }
+              this.scene.restart();
+            }
           });
         };
 
