@@ -858,7 +858,10 @@ if (this.p.isFlying || this.p.isUfo) {
         }
       }
       if (_ufoMode) {
-        const _ufoTilt = Math.max(-0.05, Math.min(0.05, -(this.p.y - this.p.lastY) * 0.008));
+        // tilt to match the slope surface when standing on one, like real gd
+        const _ufoTilt = this._slopeGroundAngle !== null
+          ? this._slopeGroundAngle
+          : Math.max(-0.05, Math.min(0.05, -(this.p.y - this.p.lastY) * 0.008));
         for (const layer of this._birdLayers) {
           if (layer) {
             layer.sprite.rotation = this.p.mirrored ? -_ufoTilt : _ufoTilt;
@@ -1618,10 +1621,6 @@ if (this.p.isFlying || this.p.isUfo) {
     this._rotation = this.rotateActionStart + this.rotateActionTotal * _0xb1cb91;
   }
   convertToClosestRotation() {
-    // match the slope surface angle if standing on one
-    if (this._slopeGroundAngle !== null) {
-      return this._slopeGroundAngle;
-    }
     let _0x5f531c = Math.PI / 2;
     return Math.round(this._rotation / _0x5f531c) * _0x5f531c;
   }
@@ -2442,6 +2441,8 @@ _updateWaveJump() {
           }
           if (pieceWidth + playerSize - 5 > left && pieceWidth - playerSize + 5 < right) {
             if (!this.p.gravityFlipped && (_0x146a97 >= bottom || _0x869e42 >= bottom) && (this.p.yVelocity <= 0 || this.p.onGround)) {
+              // if a slope already claimed a higher landing spot this frame, keep that one
+              if (this.p.collideBottom !== 0 && this.p.collideBottom >= bottom) continue;
               this.p.y = bottom + playerSize;
               this.hitGround();
               _0x30410f = true;
@@ -2452,6 +2453,7 @@ _updateWaveJump() {
               continue;
             }
             if (this.p.gravityFlipped && !this.p.isFlying && (_0x3e7199 <= top || _0x135a9d <= top) && (this.p.yVelocity >= 0 || this.p.onGround)) {
+              if (this.p.collideTop !== 0 && this.p.collideTop <= top) continue;
               this.p.y = top - playerSize;
               this.hitGround();
               _0x30410f = true;
@@ -2506,7 +2508,42 @@ _updateWaveJump() {
             }
           }
         } else if (_colType === slopeType) {
-          // --- slope physics ---
+          // wave doesn't slide along slopes, it just bonks into them like a normal block
+          if (this.p.isWave) {
+            const wLow      = playersY - playerSize + gamemodeAddition;
+            const wHigh     = playersY + playerSize - gamemodeAddition;
+            const wLastLow  = playersLastY - playerSize + gamemodeAddition;
+            const wLastHigh = playersLastY + playerSize - gamemodeAddition;
+            const wLandBot = (this.p.yVelocity <= 0 || this.p.onGround) && (wLow >= bottom || wLastLow >= bottom);
+            const wLandTop = (this.p.yVelocity >= 0 || this.p.onGround) && (wHigh <= top || wLastHigh <= top);
+            const wStanding = this.p.gravityFlipped ? wLandTop : wLandBot;
+            const wColliding = pieceWidth + 9 > left && pieceWidth - 9 < right && playersY + 9 > top && playersY - 9 < bottom;
+            if (wColliding && !wStanding) {
+              if (window.noClip) { this.p.diedThisFrame = true; continue; }
+              this.killPlayer();
+              return;
+            }
+            if (!this.p.gravityFlipped && wLandBot) {
+              if (this.p.collideBottom !== 0 && this.p.collideBottom >= bottom) continue;
+              this.p.y = bottom + playerSize;
+              this.hitGround();
+              _0x30410f = true;
+              this.p.collideBottom = bottom;
+              continue;
+            }
+            if (this.p.gravityFlipped && wLandTop) {
+              if (this.p.collideTop !== 0 && this.p.collideTop <= top) continue;
+              this.p.y = top - playerSize;
+              this.hitGround();
+              _0x30410f = true;
+              this.p.onCeiling = true;
+              this.p.collideTop = top;
+              continue;
+            }
+            continue;
+          }
+
+          // --- slope physics (cube, ball, ufo, ship) ---
           const surfaceY = gameObj.getSlopeSurfaceY(pieceWidth);
           if (surfaceY === null) continue;
 
@@ -2516,7 +2553,7 @@ _updateWaveJump() {
           const pLastLow  = playersLastY - playerSize + gamemodeAddition;
           const pLastHigh = playersLastY + playerSize - gamemodeAddition;
 
-          const isCeilSlope = gameObj.slopeFlipY;
+          const isCeilSlope = !gameObj.slopeSolidBelow;
           const gFlip       = this.p.gravityFlipped;
 
           // slope acts as a walkable floor when:
@@ -2529,11 +2566,13 @@ _updateWaveJump() {
                 (this.p.yVelocity <= 0 || this.p.onGround)) {
               // only snap if within a reasonable range (avoids teleporting from far below)
               if (pLow >= surfaceY - playerSize) {
+                // if something else already put us on a higher surface this frame, keep that one
+                if (this.p.collideBottom !== 0 && this.p.collideBottom >= surfaceY) continue;
                 this.p.y = surfaceY + playerSize;
                 this.hitGround();
                 _0x30410f = true;
                 this.p.collideBottom = surfaceY;
-                // cube tilts to match the slope it's standing on
+                // tracked so ufo can tilt to match the slope it's standing on
                 this._slopeGroundAngle = -gameObj.getSlopeAngleRad();
                 if (!this.p.isFlying) this._checkSnapJump(gameObj);
                 continue;
@@ -2549,6 +2588,7 @@ _updateWaveJump() {
             if ((pLastHigh <= surfaceY || this.p.onGround) &&
                 (this.p.yVelocity >= 0 || this.p.onGround)) {
               if (pHigh <= surfaceY + playerSize) {
+                if (this.p.collideTop !== 0 && this.p.collideTop <= surfaceY) continue;
                 this.p.y = surfaceY - playerSize;
                 this.hitGround();
                 _0x30410f = true;
@@ -2697,21 +2737,20 @@ _updateWaveJump() {
       if (nearObject.hitbox_radius !== undefined && nearObject.hitbox_radius !== null) {
         graphics.strokeCircle(xPos, objYCenter, nearObject.hitbox_radius);
       } else if (nearObject.type === slopeType) {
-        // draw a triangle for slope hitboxes
-        const hw = nearObject.w / 2;
-        const hh = nearObject.h / 2;
-        // right-angle corner position in screen space (slopes are never rotated)
-        const raX = nearObject.slopeDir > 0 ? hw : -hw;
-        const raY = nearObject.slopeFlipY ? -hh : hh;
-        const pts = [
-          { x: isFlipped ? -raX : raX,   y: raY },   // right angle
-          { x: isFlipped ? raX : -raX,   y: raY },   // same screen-Y, opposite X
-          { x: isFlipped ? -raX : raX,   y: -raY }   // same screen-X, opposite Y
-        ];
+        // draw a triangle for slope hitboxes — vertices are already final world
+        // offsets (post flip, post rotation), just need world-y -> screen-y
+        const verts = [
+          { x: nearObject.hypoAx, y: nearObject.hypoAy },
+          { x: nearObject.hypoBx, y: nearObject.hypoBy },
+          { x: nearObject.rightAx, y: nearObject.rightAy }
+        ].map(p => ({
+          x: xPos + (isFlipped ? -p.x : p.x),
+          y: objYCenter - p.y
+        }));
         graphics.beginPath();
-        graphics.moveTo(xPos + pts[0].x, objYCenter + pts[0].y);
-        graphics.lineTo(xPos + pts[1].x, objYCenter + pts[1].y);
-        graphics.lineTo(xPos + pts[2].x, objYCenter + pts[2].y);
+        graphics.moveTo(verts[0].x, verts[0].y);
+        graphics.lineTo(verts[1].x, verts[1].y);
+        graphics.lineTo(verts[2].x, verts[2].y);
         graphics.closePath();
         graphics.strokePath();
       } else {
