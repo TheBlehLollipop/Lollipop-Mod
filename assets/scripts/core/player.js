@@ -807,7 +807,8 @@ class PlayerObject {
     const playerRotation = this._rotation;
     // smooth cosmetic tilt — lerps toward slope angle when on slope, back to 0 otherwise
     // never written back to _rotation so jump/landing logic stays untouched
-    const tiltTarget = this._slopeGroundAngle !== null ? this._slopeGroundAngle
+    // ship is excluded — its rotation is already velocity-driven via updateShipRotation
+    const tiltTarget = (!this.p.isFlying && this._slopeGroundAngle !== null) ? this._slopeGroundAngle
       : (this.p.isUfo && !this.p.isFlying ? Math.max(-0.05, Math.min(0.05, -(this.p.y - this.p.lastY) * 0.008)) : 0);
     // fast ease-in, slower ease-out back to flat so it feels natural
     const tiltSpeed = Math.abs(tiltTarget) > Math.abs(this._visualTilt) ? 0.25 : 0.12;
@@ -2543,7 +2544,33 @@ _updateWaveJump() {
             continue;
           }
 
-          // --- slope physics (cube, ball, ufo, ship) ---
+          // ship treats slopes exactly like solid blocks — no diagonal surface conforming,
+          // just land on the bounding box top/ceiling. Ship rotation is velocity-driven,
+          // not slope-driven, so don't set _slopeGroundAngle for it either.
+          if (this.p.isFlying && !this.p.isUfo) {
+            if (pieceWidth + playerSize - 5 > left && pieceWidth - playerSize + 5 < right) {
+              if (!this.p.gravityFlipped && (playersY - playerSize + gamemodeAddition >= bottom || playersLastY - playerSize + gamemodeAddition >= bottom) && (this.p.yVelocity <= 0 || this.p.onGround)) {
+                if (this.p.collideBottom !== 0 && this.p.collideBottom >= bottom) continue;
+                this.p.y = bottom + playerSize;
+                this.hitGround();
+                _0x30410f = true;
+                this.p.collideBottom = bottom;
+                continue;
+              }
+              if (this.p.gravityFlipped && (playersY + playerSize - gamemodeAddition <= top || playersLastY + playerSize - gamemodeAddition <= top) && (this.p.yVelocity >= 0 || this.p.onGround)) {
+                if (this.p.collideTop !== 0 && this.p.collideTop <= top) continue;
+                this.p.y = top - playerSize;
+                this.hitGround();
+                _0x30410f = true;
+                this.p.onCeiling = true;
+                this.p.collideTop = top;
+                continue;
+              }
+            }
+            continue;
+          }
+
+          // --- slope physics (cube, ball, ufo, spider) ---
           const surfaceY = gameObj.getSlopeSurfaceY(pieceWidth);
           if (surfaceY === null) continue;
 
@@ -2572,8 +2599,8 @@ _updateWaveJump() {
                 this.hitGround();
                 _0x30410f = true;
                 this.p.collideBottom = surfaceY;
-                // tracked so ufo can tilt to match the slope it's standing on
-                this._slopeGroundAngle = -gameObj.getSlopeAngleRad();
+                // tracked so grounded modes (cube/ball/ufo) can tilt to match the slope
+                if (!this.p.isFlying) this._slopeGroundAngle = -gameObj.getSlopeAngleRad();
                 if (!this.p.isFlying) this._checkSnapJump(gameObj);
                 continue;
               }
