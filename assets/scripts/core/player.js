@@ -2544,27 +2544,34 @@ _updateWaveJump() {
             continue;
           }
 
-          // ship treats slopes exactly like solid blocks — no diagonal surface conforming,
-          // just land on the bounding box top/ceiling. Ship rotation is velocity-driven,
-          // not slope-driven, so don't set _slopeGroundAngle for it either.
+          // ship follows the diagonal surface like cube, but never dies inside slope
+          // and never gets slope-rotation applied (ship uses velocity-driven rotation)
           if (this.p.isFlying && !this.p.isUfo) {
-            if (pieceWidth + playerSize - 5 > left && pieceWidth - playerSize + 5 < right) {
-              if (!this.p.gravityFlipped && (playersY - playerSize + gamemodeAddition >= bottom || playersLastY - playerSize + gamemodeAddition >= bottom) && (this.p.yVelocity <= 0 || this.p.onGround)) {
-                if (this.p.collideBottom !== 0 && this.p.collideBottom >= bottom) continue;
-                this.p.y = bottom + playerSize;
+            const surfaceY = gameObj.getSlopeSurfaceY(pieceWidth);
+            if (surfaceY === null) continue;
+            const pLow      = playersY - playerSize + gamemodeAddition;
+            const pLastLow  = playersLastY - playerSize + gamemodeAddition;
+            const pHigh     = playersY + playerSize - gamemodeAddition;
+            const pLastHigh = playersLastY + playerSize - gamemodeAddition;
+            const isCeilSlope = !gameObj.slopeSolidBelow;
+            const gFlip       = this.p.gravityFlipped;
+            const actsAsFloor = (!isCeilSlope && !gFlip) || (isCeilSlope && gFlip);
+            if (actsAsFloor) {
+              if (pLow < surfaceY + playerSize * 1.5) {
+                if (this.p.collideBottom !== 0 && this.p.collideBottom >= surfaceY) continue;
+                this.p.y = surfaceY + playerSize;
                 this.hitGround();
                 _0x30410f = true;
-                this.p.collideBottom = bottom;
-                continue;
+                this.p.collideBottom = surfaceY;
               }
-              if (this.p.gravityFlipped && (playersY + playerSize - gamemodeAddition <= top || playersLastY + playerSize - gamemodeAddition <= top) && (this.p.yVelocity >= 0 || this.p.onGround)) {
-                if (this.p.collideTop !== 0 && this.p.collideTop <= top) continue;
-                this.p.y = top - playerSize;
+            } else {
+              if (pHigh > surfaceY - playerSize * 1.5) {
+                if (this.p.collideTop !== 0 && this.p.collideTop <= surfaceY) continue;
+                this.p.y = surfaceY - playerSize;
                 this.hitGround();
                 _0x30410f = true;
                 this.p.onCeiling = true;
-                this.p.collideTop = top;
-                continue;
+                this.p.collideTop = surfaceY;
               }
             }
             continue;
