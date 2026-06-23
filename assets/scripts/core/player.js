@@ -187,8 +187,7 @@ class WaveTrail {
     const n = pts.length;
     const upper = new Array(n);
     const lower = new Array(n);
-
-    // precompute per-segment normals
+	  
     const segNx = new Array(n - 1);
     const segNy = new Array(n - 1);
     for (let i = 0; i < n - 1; i++) {
@@ -208,18 +207,18 @@ class WaveTrail {
       } else if (i === n - 1) {
         nx = segNx[n - 2]; ny = segNy[n - 2];
       } else {
-        // miter: intersect the two offset edge lines for a sharp corner
+        // ez
         const n1x = segNx[i - 1], n1y = segNy[i - 1];
         const n2x = segNx[i],     n2y = segNy[i];
 
-        // upper edge intersection
+        // dont even think code is fun
         const u1 = { x: pts[i - 1].x + n1x * halfW, y: pts[i - 1].y + n1y * halfW };
         const u2 = { x: p.x          + n1x * halfW, y: p.y          + n1y * halfW };
         const u3 = { x: p.x          + n2x * halfW, y: p.y          + n2y * halfW };
         const u4 = { x: pts[i + 1].x + n2x * halfW, y: pts[i + 1].y + n2y * halfW };
         const mu = this._intersect(u1, u2, u3, u4);
 
-        // lower edge intersection
+        // yeah this is shit
         const l1 = { x: pts[i - 1].x - n1x * halfW, y: pts[i - 1].y - n1y * halfW };
         const l2 = { x: p.x          - n1x * halfW, y: p.y          - n1y * halfW };
         const l3 = { x: p.x          - n2x * halfW, y: p.y          - n2y * halfW };
@@ -805,17 +804,14 @@ class PlayerObject {
     const _0x7f0705 = mirrorOffset !== undefined ? mirrorOffset : centerX;
     const _0x1a433c = b(this.p.y) + cameraY;
     const playerRotation = this._rotation;
-    // smooth cosmetic tilt — lerps toward slope angle when on slope, back to 0 otherwise
-    // never written back to _rotation so jump/landing logic stays untouched
-    // ship is excluded — its rotation is already velocity-driven via updateShipRotation
+    // WHEN DOES IT END??
     const tiltTarget = (!this.p.isFlying && this._slopeGroundAngle !== null) ? this._slopeGroundAngle
       : (this.p.isUfo && !this.p.isFlying ? Math.max(-0.05, Math.min(0.05, -(this.p.y - this.p.lastY) * 0.008)) : 0);
-    // fast ease-in, slower ease-out back to flat so it feels natural
+    // impossible
     const tiltSpeed = Math.abs(tiltTarget) > Math.abs(this._visualTilt) ? 0.25 : 0.12;
     this._visualTilt += (tiltTarget - this._visualTilt) * tiltSpeed;
     if (Math.abs(this._visualTilt) < 0.001) this._visualTilt = 0;
-    // when on a slope, snap base to nearest 90° first so a mid-spin landing
-    // doesn't add the slope lean on top of a wild in-flight angle
+    // why does copilot write a message at every piece of code i make, like i didnt ask him shit
     const halfPi = Math.PI / 2;
     const renderBase = this._slopeGroundAngle !== null && !this.p.isFlying
       ? Math.round(playerRotation / halfPi) * halfPi
@@ -948,7 +944,7 @@ if (this.p.isFlying || this.p.isUfo) {
     this.exitWaveMode();
     this.p.isFlying = true;
     this._scene.toggleGlitter(true);
-    if (!fromCheckpoint){ // dont mess with y velocity if ur loading a checkpoint
+    if (!fromCheckpoint){ // hi web dasher
       this.p.yVelocity *= 0.5;
     }
     this.p.onGround = false;
@@ -1102,7 +1098,7 @@ if (this.p.isFlying || this.p.isUfo) {
     this.p._spiderTeleportPending = false;
     this.stopRotation();
     this._rotation = 0;
-    // use cube icon for spider mode (spider icon not ready yet)
+    // use cube icon for spider mode bc spider is NOT done
     this.setCubeVisible(true);
     this.setBallVisible(false);
     this.setShipVisible(false);
@@ -1133,7 +1129,7 @@ if (this.p.isFlying || this.p.isUfo) {
     this.exitShipMode();
     this.p.isUfo = true;
     this._scene.toggleGlitter(true);
-    if (!fromCheckpoint){ // dont mess with y velocity if ur loading a checkpoint
+    if (!fromCheckpoint){ // random comment
       this.p.yVelocity *= 0.4;
     }
     this.p.onGround = false;
@@ -2442,7 +2438,7 @@ _updateWaveJump() {
           }
           if (pieceWidth + playerSize - 5 > left && pieceWidth - playerSize + 5 < right) {
             if (!this.p.gravityFlipped && (_0x146a97 >= bottom || _0x869e42 >= bottom) && (this.p.yVelocity <= 0 || this.p.onGround)) {
-              // if a slope already claimed a higher landing spot this frame, keep that one
+              // copilot stop adding messages i need to change EVERYTHING
               if (this.p.collideBottom !== 0 && this.p.collideBottom >= bottom) continue;
               this.p.y = bottom + playerSize;
               this.hitGround();
@@ -2509,7 +2505,7 @@ _updateWaveJump() {
             }
           }
         } else if (_colType === slopeType) {
-          // wave doesn't slide along slopes, it just bonks into them like a normal block
+          // wave doesn't slide along slopes, it just bonks into them like a normal block -- I DONT CARE COPILOT
           if (this.p.isWave) {
             const wLow      = playersY - playerSize + gamemodeAddition;
             const wHigh     = playersY + playerSize - gamemodeAddition;
@@ -2544,8 +2540,7 @@ _updateWaveJump() {
             continue;
           }
 
-          // ship follows the diagonal surface like cube, but never dies inside slope
-          // and never gets slope-rotation applied (ship uses velocity-driven rotation)
+          // ship follows the diagonal surface like cube, but never dies inside slope -- how do i make this guy shut up?
           if (this.p.isFlying && !this.p.isUfo) {
             const surfaceY = gameObj.getSlopeSurfaceY(pieceWidth);
             if (surfaceY === null) continue;
@@ -2581,7 +2576,6 @@ _updateWaveJump() {
           const surfaceY = gameObj.getSlopeSurfaceY(pieceWidth);
           if (surfaceY === null) continue;
 
-          // same tight-hitbox approach as solid collision
           const pLow      = playersY - playerSize + gamemodeAddition;
           const pHigh     = playersY + playerSize - gamemodeAddition;
           const pLastLow  = playersLastY - playerSize + gamemodeAddition;
@@ -2590,35 +2584,28 @@ _updateWaveJump() {
           const isCeilSlope = !gameObj.slopeSolidBelow;
           const gFlip       = this.p.gravityFlipped;
 
-          // slope acts as a walkable floor when:
-          //   normal gravity + floor slope, OR flipped gravity + ceiling slope
           const actsAsFloor = (!isCeilSlope && !gFlip) || (isCeilSlope && gFlip);
 
           if (actsAsFloor) {
-            // player was at or above the surface, falling or standing
             if ((pLastLow >= surfaceY || this.p.onGround) &&
                 (this.p.yVelocity <= 0 || this.p.onGround)) {
-              // only snap if within a reasonable range (avoids teleporting from far below)
               if (pLow >= surfaceY - playerSize) {
-                // if something else already put us on a higher surface this frame, keep that one
                 if (this.p.collideBottom !== 0 && this.p.collideBottom >= surfaceY) continue;
                 this.p.y = surfaceY + playerSize;
                 this.hitGround();
                 _0x30410f = true;
                 this.p.collideBottom = surfaceY;
-                // tracked so grounded modes (cube/ball/ufo) can tilt to match the slope
                 if (!this.p.isFlying) this._slopeGroundAngle = -gameObj.getSlopeAngleRad();
                 if (!this.p.isFlying) this._checkSnapJump(gameObj);
                 continue;
               }
             } else if (pLow < surfaceY - 2 && pLastLow < surfaceY - 2) {
-              // player is inside the solid part of the slope
               if (window.noClip) { this.p.diedThisFrame = true; continue; }
               this.killPlayer();
               return;
             }
           } else {
-            // ceiling slope — player approaches from below
+			// idk if i put a space here or no but i just did it so ok
             if ((pLastHigh <= surfaceY || this.p.onGround) &&
                 (this.p.yVelocity >= 0 || this.p.onGround)) {
               if (pHigh <= surfaceY + playerSize) {
@@ -2771,8 +2758,6 @@ _updateWaveJump() {
       if (nearObject.hitbox_radius !== undefined && nearObject.hitbox_radius !== null) {
         graphics.strokeCircle(xPos, objYCenter, nearObject.hitbox_radius);
       } else if (nearObject.type === slopeType) {
-        // draw a triangle for slope hitboxes — vertices are already final world
-        // offsets (post flip, post rotation), just need world-y -> screen-y
         const verts = [
           { x: nearObject.hypoAx, y: nearObject.hypoAy },
           { x: nearObject.hypoBx, y: nearObject.hypoBy },
