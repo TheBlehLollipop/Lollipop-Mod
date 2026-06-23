@@ -7,35 +7,30 @@ class Collider {
     this.h = height;
     this.activated = false;
     this.rotationDegrees = rotation;
-    // hypotenuse endpoints, stored as offsets from x/y (world units, any rotation)
     this.hypoAx = 0; this.hypoAy = 0;
     this.hypoBx = 0; this.hypoBy = 0;
-    // the right-angle corner, only used for drawing the hitbox triangle
     this.rightAx = 0; this.rightAy = 0;
     this.slopeSolidBelow = true;
   }
-  // surface height at a given world x, following the hypotenuse line, works for any rotation
   getSlopeSurfaceY(worldX) {
     if (this.type !== slopeType) return null;
     const ax = this.x + this.hypoAx, ay = this.y + this.hypoAy;
     const bx = this.x + this.hypoBx, by = this.y + this.hypoBy;
     const lo = ax <= bx ? { x: ax, y: ay } : { x: bx, y: by };
     const hi = ax <= bx ? { x: bx, y: by } : { x: ax, y: ay };
-    if (hi.x - lo.x < 0.01) return null; // near-vertical hypotenuse, no floor function
+    if (hi.x - lo.x < 0.01) return null;
     if (worldX < lo.x || worldX > hi.x) return null;
     const t = (worldX - lo.x) / (hi.x - lo.x);
     return lo.y + t * (hi.y - lo.y);
   }
-  // angle of the hypotenuse line in world space (internal y-up convention)
+  
   getSlopeAngleRad() {
     if (this.type !== slopeType) return 0;
     return Math.atan2(this.hypoBy - this.hypoAy, this.hypoBx - this.hypoAx);
   }
 }
 
-// rotates a local point around the origin to match how the sprite is rotated on screen
 function rotateSlopePoint(localX, localY, rotDeg) {
-  // screen rotation is clockwise-positive, internal coords are y-up, so negate
   const theta = -rotDeg * Math.PI / 180;
   const cosT = Math.cos(theta), sinT = Math.sin(theta);
   return { x: localX * cosT - localY * sinT, y: localX * sinT + localY * cosT };
@@ -128,7 +123,7 @@ const ringType = "ring";
 const triggerType = "trigger";
 const speedType = "speed";
 const slopeType = "slope";
-// ── Slope ID registry ──
+// this is slope id registry
 const _SLOPE_DATA = {
   289:{gw:1,gh:1,angle:45,sq:false},291:{gw:2,gh:1,angle:22.5,sq:false},
   294:{gw:1,gh:1,angle:45,sq:false},295:{gw:2,gh:1,angle:22.5,sq:false},
@@ -238,13 +233,11 @@ const _SLOPE_DATA = {
   1906:{gw:1,gh:1,angle:45,sq:false},1907:{gw:2,gh:1,angle:22.5,sq:false},
 };
 
-// wrap allobjects so slope objects report type="slope" everywhere (editor + game)
 const _origAllobjects = window.allobjects;
 window.allobjects = function() {
     const result = _origAllobjects();
     for (const id in _SLOPE_DATA) {
         const sd = _SLOPE_DATA[id];
-        // sq:true are small corner-fill pieces, leave them as-is
         if (sd && !sd.sq && result[id]) {
             result[id] = Object.assign({}, result[id], { type: slopeType });
         }
@@ -1435,16 +1428,13 @@ window.LevelObject = class LevelObject {
       if (sd) {
         const hw0 = (sd.gw * a) / 2;
         const hh0 = (sd.gh * a) / 2;
-        // local triangle before flip/rotate: right-angle corner + the two hypotenuse ends
         let vRight = { x: hw0, y: -hh0 };
         let vLo    = { x: -hw0, y: -hh0 };
         let vHi    = { x: hw0, y: hh0 };
-        // mirror in local space same as the sprite's flipX/flipY
         const fx = levelObj.flipX ? -1 : 1;
         const fy = levelObj.flipY ? -1 : 1;
         const flip = p => ({ x: p.x * fx, y: p.y * fy });
         vRight = flip(vRight); vLo = flip(vLo); vHi = flip(vHi);
-        // then rotate to match however the sprite is rotated in the editor
         const rotDeg = levelObj.rot || 0;
         vRight = rotateSlopePoint(vRight.x, vRight.y, rotDeg);
         vLo = rotateSlopePoint(vLo.x, vLo.y, rotDeg);
@@ -1453,18 +1443,16 @@ window.LevelObject = class LevelObject {
         const ys = [vRight.y, vLo.y, vHi.y];
         const w = Math.max(...xs) - Math.min(...xs);
         const h = Math.max(...ys) - Math.min(...ys);
-        // NOTE: pass rotationDegrees=0 — slope w/h are already derived from rotated
-        // vertices, so the broad-phase bounding box is already correct. Passing rotDeg
-        // here would cause the broad-phase to double-rotate and miss collisions.
+        // this is impossible bruv
         const col = new Collider(slopeType, worldX, worldY, w, h, 0);
         col.objid = levelObj.id;
         col.hypoAx = vLo.x; col.hypoAy = vLo.y;
         col.hypoBx = vHi.x; col.hypoBy = vHi.y;
         col.rightAx = vRight.x; col.rightAy = vRight.y;
-        // is the right-angle corner below or above the hypotenuse line? tells us floor vs ceiling
+        // 3 hours for all ts above and under
         const hypoDx = vHi.x - vLo.x;
         col.slopeSolidBelow = Math.abs(hypoDx) < 0.01
-          ? vRight.x < vLo.x // near-vertical hypotenuse, fall back to left/right side check
+          ? vRight.x < vLo.x
           : vRight.y < (vLo.y + ((vRight.x - vLo.x) / hypoDx) * (vHi.y - vLo.y));
         registerCollider(col);
         this.objects.push(col);
