@@ -413,7 +413,7 @@ class GameScene extends Phaser.Scene {
       { frame: "gj_twIcon_001.png",      url: "https://x.com/rohanis0000gd",                          angle: -90, flipX: true, row: 1, col: 0 },
       { frame: "gj_ytIcon_001.png",      url: "https://www.youtube.com/@rohanis0000gd",               angle: 0,                row: 1, col: 1 },
       { frame: "gj_tiktokIcon_001.png",  url: "https://www.tiktok.com/@rohanis00000",                 angle: -90, flipX: true, row: 1, col: 2 },
-      { frame: "gj_githubIcon_001.png",  url: "https://github.com/web-dashers/web-dashers.github.io", angle: 0,                row: 1, col: 3 },
+      { frame: "gj_githubIcon_001.png",  url: "https://github.com/TheBlehLollipop/Lollipop-Mod", angle: 0,                row: 1, col: 3 },
 
       {frame:  "",                       url: "",                                                     angle: 0,                row: 2, col: 0 },
       {frame:  "",                       url: "",                                                     angle: 0,                row: 2, col: 1 },
@@ -2192,6 +2192,17 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         "bird_46_001.png", "bird_47_001.png", "bird_48_001.png", "bird_49_001.png", "bird_50_001.png",
         "bird_51_001.png",
       ],
+	  robot: [
+  "robot_01_01_001.png", "robot_02_01_001.png", "robot_03_01_001.png", "robot_04_01_001.png", "robot_05_01_001.png",
+  "robot_06_01_001.png", "robot_07_01_001.png", "robot_08_01_001.png", "robot_09_01_001.png", "robot_10_01_001.png",
+  "robot_11_01_001.png", "robot_12_01_001.png", "robot_13_01_001.png", "robot_14_01_001.png", "robot_15_01_001.png",
+  "robot_16_01_001.png", "robot_17_01_001.png", "robot_18_01_001.png", "robot_19_01_001.png", "robot_20_01_001.png",
+  "robot_21_01_001.png", "robot_22_01_001.png", "robot_23_01_001.png", "robot_24_01_001.png", "robot_25_01_001.png",
+  "robot_26_01_001.png",
+],
+	  swing: [
+        "swing_01_001.png",
+      ],  
     };
 
 
@@ -2201,6 +2212,8 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       ball: "currentBall",
       wave: "currentWave",
       ufo: "currentBird",
+	  robot: "currentRobot",
+	  swing: "currentSwing",
     };
 
     const _iconAtlas = {
@@ -2209,6 +2222,8 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       ball: "GJ_GameSheetIcons",
       wave: "GJ_GameSheetIcons",
       ufo: "GJ_GameSheetIcons",
+	  robot: "GJ_GameSheetIcons",
+	  swing: "GJ_GameSheetIcons",
     };
 
     const _tabBtnFrames = {
@@ -2217,6 +2232,17 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       ball: { on: "gj_ballBtn_on_001.png",  off: "gj_ballBtn_off_001.png"  },
       wave: { on: "gj_dartBtn_on_001.png",  off: "gj_dartBtn_off_001.png"  },
       ufo:  { on: "gj_birdBtn_on_001.png",  off: "gj_birdBtn_off_001.png"  },
+      robot: { on: "gj_robotBtn_on_001.png",  off: "gj_robotBtn_off_001.png"  },
+      swing:  { on: "gj_swingBtn_on_001.png",  off: "gj_swingBtn_off_001.png"  },
+    };
+	const convertIconFrameToGameFrame = (frame, tab) => {
+      if (tab === "robot") {
+        return frame.replace(/_01_001\.png$/, "_001.png");
+      }
+      return frame;
+    };
+    const getCanonicalIconName = (frame, tab) => {
+      return convertIconFrameToGameFrame(frame, tab).replace("_001.png", "");
     };
 
     this._openIconSelector = (startTab = "icon") => {
@@ -2436,6 +2462,8 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
               safeSetTint(this._player._shipSpriteLayer?.sprite, color);
               safeSetTint(this._player._ballSpriteLayer?.sprite, color);
               safeSetTint(this._player._waveSpriteLayer?.sprite, color);
+			  safeSetTint(this._player._robotSpriteLayer?.sprite, color);
+              safeSetTint(this._player._swingSpriteLayer?.sprite, color);
               if (this._player._particleEmitter) {
                 try {
                   this._player._particleEmitter.tint = color;
@@ -2487,7 +2515,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       const _getPreviewFrame = (tab) => {
         const prop   = _iconWindowProps[tab];
         const frames = _iconFrameSets[tab];
-        const match  = frames.find(f => f.replace("_001.png", "") === window[prop]);
+        const match  = frames.find(f => getCanonicalIconName(f, tab) === window[prop]);
         return match || frames[0];
       };
 
@@ -2509,18 +2537,20 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       this._iconOverlayObjects.push(selectedIconExtra, selectedIcon);
 
       const tabBtnY = containerY - 40;
-      const tabKeys = ["icon", "ship", "ball", "ufo", "wave"];
+      const tabKeys = ["icon", "ship", "ball", "ufo", "wave", "robot", "swing"];
       const tabSpacing = 65;
       const tabOffsets = {
-        icon: -tabSpacing * 2,
-        ship: -tabSpacing,
-        ball: 0,
-        ufo: tabSpacing,
-        wave: tabSpacing * 2,
+        icon: -tabSpacing * 3,
+        ship: -tabSpacing * 2,
+        ball: -tabSpacing,
+        ufo: 0,
+        wave: tabSpacing,
+        robot: tabSpacing * 2,
+        swing: tabSpacing * 3,
       };
-      const tabRotations = { icon: -Math.PI/2, ship: 0, ball: -Math.PI/2, ufo: Math.PI/2, wave: Math.PI/2 };
-      const tabFlipXStates = { icon: true, ship: false, ball: true, ufo: false, wave: false };
-      const tabFlipYStates = { icon: false, ship: false, ball: false, ufo: true, wave: true };
+      const tabRotations = { icon: -Math.PI/2, ship: 0, ball: -Math.PI/2, ufo: Math.PI/2, wave: Math.PI/2, robot: 0, spider: 0 };
+      const tabFlipXStates = { icon: true, ship: false, ball: true, ufo: false, wave: false, robot: false, swing: false };
+      const tabFlipYStates = { icon: false, ship: false, ball: false, ufo: true, wave: true, robot: false, swing: false };
       const tabBtnSprites  = {};
 
       const _switchTab = (tab) => {
@@ -2610,7 +2640,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             : null;
           if (extraImg) this._iconGridObjects.push(extraImg);
           this._iconGridObjects.push(iconImg, hitRect);
-          if (frame.replace("_001.png", "") === window[prop]) {
+          if (getCanonicalIconName(frame, tab) === window[prop]) {
             selLabel.setPosition(ix, iy).setScale(0.75).setVisible(true);
           }
 
@@ -2636,7 +2666,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
 
               selLabel.setPosition(capturedImg.x, capturedImg.y).setScale(0.75).setVisible(true);
 
-              window[prop] = capturedFrame.replace("_001.png", "");
+              window[prop] = getCanonicalIconName(capturedFrame, tab);
               localStorage.setItem("icon" + prop.charAt(0).toUpperCase() + prop.slice(1), window[prop]);
 
               if (tab === "icon" && this._player) {
@@ -2716,6 +2746,20 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
                   const layer = this._player[lp];
                   if (!layer || !layer.sprite) continue;
                   const found = getAtlasFrame(this, `${window.currentBird}${suffix}`);
+                  if (found) {
+                    layer.sprite.setTexture(found.atlas, found.frame);
+                    if (tint !== null) layer.sprite.setTint(tint);
+                  }
+                }
+              }
+              if (tab === "robot" && this._player) {
+                const layerMap = [
+                  { lp: "_robotSpriteLayer", suffix: "_001.png", tint: window.mainColor },
+                ];
+                for (const { lp, suffix, tint } of layerMap) {
+                  const layer = this._player[lp];
+                  if (!layer || !layer.sprite) continue;
+                  const found = getAtlasFrame(this, `${window.currentRobot}${suffix}`);
                   if (found) {
                     layer.sprite.setTexture(found.atlas, found.frame);
                     if (tint !== null) layer.sprite.setTint(tint);

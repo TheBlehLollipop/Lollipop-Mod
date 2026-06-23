@@ -47,6 +47,7 @@ class PlayerState {
     this.robotJumpStartTimer = 0;
     this.robotFallStartTimer = 0;
     this.robotSpeedMultiplier = 1.0;
+    this._robotGroundJump = false;
   }
 }
 
@@ -893,6 +894,14 @@ class PlayerObject {
     this._shipDragEmitter.stop();
     this._shipDragEmitter.setDepth(22);
     this._shipDragActive = false;
+    this._fireBoostSprite = scene.add.image(0, 0, "GJ_GameSheetIcons", "fireBoost_001.png");
+    this._fireBoostSprite.setVisible(false);
+    this._fireBoostSprite.setDepth(20);
+    this._gameLayer.container.add(this._fireBoostSprite);
+    this._fireBoostActive = false;
+    this._fireBoostAnimFrame = 0;
+    this._fireBoostAnimTimer = 0;
+    this._fireBoostAnimDuration = 40;
     this._particleActive = false;
     this._flyParticle2Active = false;
     this._flyParticleActive = false;
@@ -1004,6 +1013,24 @@ class PlayerObject {
     } else if (!_0x2ac9d0 && this._shipDragActive) {
       this._shipDragEmitter.stop();
       this._shipDragActive = false;
+    }
+    const _robotGroundJumpActive = this.p.isRobot && this.p._robotGroundJump && this.p._robotHold;
+    if (_robotGroundJumpActive) {
+      this._fireBoostAnimTimer += _0x5af874;
+      if (this._fireBoostAnimTimer >= this._fireBoostAnimDuration) {
+        this._fireBoostAnimTimer = 0;
+        this._fireBoostAnimFrame = (this._fireBoostAnimFrame + 1) % 7;
+      }
+      const frameName = `fireBoost_${String(this._fireBoostAnimFrame + 1).padStart(3, '0')}.png`;
+      this._fireBoostSprite.setFrame(frameName);
+      const footOffsetY = this.p.gravityFlipped ? -38 : 38;
+      this._fireBoostSprite.setPosition(_0x119eb7, _0x519d38 + footOffsetY);
+      this._fireBoostSprite.scaleY = this.p.gravityFlipped ? -1 : 1;
+      this._fireBoostSprite.setVisible(true);
+    } else {
+      this._fireBoostAnimFrame = 0;
+      this._fireBoostAnimTimer = 0;
+      this._fireBoostSprite.setVisible(false);
     }
   }
   setCubeVisible(_0x411813) {
@@ -1608,6 +1635,7 @@ if (this.p.isFlying || this.p.isUfo) {
       this.p._robotAnimState = 'GROUND';
       this.p.robotJumpStartTimer = 0;
       this.p.robotFallStartTimer = 0;
+      this.p._robotGroundJump = false;
       if (this.p.robotCurrentAnimation !== 'run') {
         this.playRobotAnimation('run', true);
       }
@@ -1635,6 +1663,7 @@ if (this.p.isFlying || this.p.isUfo) {
     this._flyParticle2Active = false;
     this._shipDragEmitter.stop();
     this._shipDragActive = false;
+    this._fireBoostSprite.setVisible(false);
     this._streak.stop();
     this._streak.reset();
     const _0x3f4b84 = this._scene;
@@ -2474,6 +2503,7 @@ _updateRobotJump(dt) {
     this.p.yVelocity = this.flipMod() * robotJumpInit
     this.p._robotHold = true
     this.p._robotHoldTimer = 0
+    this.p._robotGroundJump = true
     return
   }
 
@@ -2860,6 +2890,7 @@ _updateRobotJump(dt) {
               this.p.onGround = false;
               this.p.canJump = false;
               this.p.yVelocity = _fm * _padVel;
+              this.p._robotGroundJump = false;
               if (_padFlip) {
                 this.flipGravity(!this.p.gravityFlipped);
               }
@@ -3031,6 +3062,7 @@ _updateRobotJump(dt) {
                 } else {
                   this.p.yVelocity = _fm * _orbVel;
                 }
+                this.p._robotGroundJump = false;
                 if (_orbId === 1330) {
                   this.p.wasBoosted = false;
                 }
@@ -3461,6 +3493,7 @@ _updateRobotJump(dt) {
     this._flyParticleEmitter.stop();
     this._flyParticle2Emitter.stop();
     this._shipDragEmitter.stop();
+    this._fireBoostSprite.setVisible(false);
     const _0x154798 = this.p.isFlying;
     const _0x3793a4 = [this._shipSpriteLayer, this._shipGlowLayer, this._shipOverlayLayer, this._shipExtraLayer];
     const _0xbd676f = [this._playerSpriteLayer, this._playerGlowLayer, this._playerOverlayLayer, this._playerExtraLayer];
@@ -3567,6 +3600,7 @@ _updateRobotJump(dt) {
     this._flyParticle2Active = false;
     this._shipDragEmitter.stop();
     this._shipDragActive = false;
+    this._fireBoostSprite.setVisible(false);
     this._streak.stop();
     this._streak.reset();
     this._waveTrail.stop();
