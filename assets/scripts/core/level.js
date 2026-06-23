@@ -1453,7 +1453,10 @@ window.LevelObject = class LevelObject {
         const ys = [vRight.y, vLo.y, vHi.y];
         const w = Math.max(...xs) - Math.min(...xs);
         const h = Math.max(...ys) - Math.min(...ys);
-        const col = new Collider(slopeType, worldX, worldY, w, h, rotDeg);
+        // NOTE: pass rotationDegrees=0 — slope w/h are already derived from rotated
+        // vertices, so the broad-phase bounding box is already correct. Passing rotDeg
+        // here would cause the broad-phase to double-rotate and miss collisions.
+        const col = new Collider(slopeType, worldX, worldY, w, h, 0);
         col.objid = levelObj.id;
         col.hypoAx = vLo.x; col.hypoAy = vLo.y;
         col.hypoBx = vHi.x; col.hypoBy = vHi.y;
