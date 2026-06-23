@@ -2823,16 +2823,12 @@ _updateWaveJump() {
           graphics.lineStyle(1, hexToHexadecimal("ff0000"), 1);
 
           if (!this.p.isWave){
-            // outer box (red)
-            graphics.lineStyle(1, hexToHexadecimal("ff0000"), 0.5);
-            graphics.strokeRect(trailX - playerSize, trailY - playerSize, hitboxsize, hitboxsize);
-
             // inner circle (dark red)
             graphics.lineStyle(1, hexToHexadecimal("b30001"), 0.5);
             graphics.strokeCircle((trailX - playerSize) + hitboxsize / 2, (trailY - playerSize) + hitboxsize / 2, hitboxsize / 2);
 
-            // box that rotates with the player (dark red)
-            graphics.lineStyle(1, hexToHexadecimal("b30001"), 0.5);
+            // outer box, rotates with the player (red) - the only outer hitbox now
+            graphics.lineStyle(1, hexToHexadecimal("ff0000"), 0.5);
             {
               const cx = (trailX - playerSize) + hitboxsize / 2;
               const cy = (trailY - playerSize) + hitboxsize / 2;
@@ -2867,15 +2863,12 @@ _updateWaveJump() {
     const _playerDrawX = isFlipped ? screenWidth - centerX : centerX;
     graphics.lineStyle(1, hexToHexadecimal("ff0000"), 1);
     if (!this.p.isWave){
-      // outer box (red)
-      graphics.lineStyle(2, hexToHexadecimal("ff0000"), 0.8);
-      graphics.strokeRect(_playerDrawX - playerSize, _0x1e788a - playerSize, hitboxsize, hitboxsize);
       // inner circle (dark red)
       graphics.lineStyle(2, hexToHexadecimal("b30001"), 0.8);
       graphics.strokeCircle((_playerDrawX - playerSize)+hitboxsize/2, (_0x1e788a - playerSize)+hitboxsize/2, hitboxsize/2);
 
-      // box that rotates with the player (dark red)
-      graphics.lineStyle(2, hexToHexadecimal("b30001"), 0.8);
+      // outer box, rotates with the player (red) - the only outer hitbox now
+      graphics.lineStyle(2, hexToHexadecimal("ff0000"), 0.8);
       {
         const cx = (_playerDrawX - playerSize) + hitboxsize / 2;
         const cy = (_0x1e788a - playerSize) + hitboxsize / 2;
