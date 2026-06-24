@@ -3,7 +3,7 @@
   width="400" 
   height="400" 
   alt="web-dashers logo" 
-  src="https://cdn.discordapp.com/icons/1518348077906264185/933b9aae4c580ee0106d44e8762b5de3.webp" 
+  src="https://github.com/user-attachments/assets/ce1ccbb1-b1e6-49c2-818c-f9c3ba1fda5c" 
   />
   <h1>Lollipop Mod</h1>
   <p>
