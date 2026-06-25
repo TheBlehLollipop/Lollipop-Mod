@@ -187,8 +187,7 @@ class WaveTrail {
     const n = pts.length;
     const upper = new Array(n);
     const lower = new Array(n);
-
-    // precompute per-segment normals
+	  
     const segNx = new Array(n - 1);
     const segNy = new Array(n - 1);
     for (let i = 0; i < n - 1; i++) {
@@ -208,18 +207,18 @@ class WaveTrail {
       } else if (i === n - 1) {
         nx = segNx[n - 2]; ny = segNy[n - 2];
       } else {
-        // miter: intersect the two offset edge lines for a sharp corner
+        // ez
         const n1x = segNx[i - 1], n1y = segNy[i - 1];
         const n2x = segNx[i],     n2y = segNy[i];
 
-        // upper edge intersection
+        // dont even think code is fun
         const u1 = { x: pts[i - 1].x + n1x * halfW, y: pts[i - 1].y + n1y * halfW };
         const u2 = { x: p.x          + n1x * halfW, y: p.y          + n1y * halfW };
         const u3 = { x: p.x          + n2x * halfW, y: p.y          + n2y * halfW };
         const u4 = { x: pts[i + 1].x + n2x * halfW, y: pts[i + 1].y + n2y * halfW };
         const mu = this._intersect(u1, u2, u3, u4);
 
-        // lower edge intersection
+        // yeah this is shit
         const l1 = { x: pts[i - 1].x - n1x * halfW, y: pts[i - 1].y - n1y * halfW };
         const l2 = { x: p.x          - n1x * halfW, y: p.y          - n1y * halfW };
         const l3 = { x: p.x          - n2x * halfW, y: p.y          - n2y * halfW };
@@ -320,6 +319,8 @@ class PlayerObject {
     this.p = _0x3f50cc;
     this._gameLayer = _0x2811e1;
     this._rotation = 0;
+    this._slopeGroundAngle = null;
+    this._visualTilt = 0;
     this.rotateActionActive = false;
     this.rotateActionTime = 0;
     this.rotateActionDuration = 0;
@@ -803,6 +804,19 @@ class PlayerObject {
     const _0x7f0705 = mirrorOffset !== undefined ? mirrorOffset : centerX;
     const _0x1a433c = b(this.p.y) + cameraY;
     const playerRotation = this._rotation;
+    // WHEN DOES IT END??
+    const tiltTarget = (!this.p.isFlying && this._slopeGroundAngle !== null) ? this._slopeGroundAngle
+      : (this.p.isUfo && !this.p.isFlying ? Math.max(-0.05, Math.min(0.05, -(this.p.y - this.p.lastY) * 0.008)) : 0);
+    // impossible
+    const tiltSpeed = Math.abs(tiltTarget) > Math.abs(this._visualTilt) ? 0.25 : 0.12;
+    this._visualTilt += (tiltTarget - this._visualTilt) * tiltSpeed;
+    if (Math.abs(this._visualTilt) < 0.001) this._visualTilt = 0;
+    // why does copilot write a message at every piece of code i make, like i didnt ask him shit
+    const halfPi = Math.PI / 2;
+    const renderBase = this._slopeGroundAngle !== null && !this.p.isFlying
+      ? Math.round(playerRotation / halfPi) * halfPi
+      : playerRotation;
+    const tiltedRotation = renderBase + this._visualTilt;
     this._lastCameraX = cameraX;
     this._lastCameraY = cameraY;
     this._aboveContainer.x = -cameraX;
@@ -825,7 +839,7 @@ if (this.p.isFlying || this.p.isUfo) {
             const _miniS = this.p.isMini ? 0.6 : 1;
             layer.sprite.x = _0x7f0705 + _0x1b1d28;
             layer.sprite.y = _0x1a433c + _0x185f91 + (this.p.gravityFlipped ? (-20 * _miniS) : 0)
-            layer.sprite.rotation = this.p.mirrored ? -playerRotation : playerRotation;
+            layer.sprite.rotation = this.p.mirrored ? -tiltedRotation : tiltedRotation;
             layer.sprite.scaleY = this.p.gravityFlipped ? -_miniS : _miniS;
             layer.sprite.scaleX = this.p.mirrored ? -_miniS : _miniS;
           }
@@ -837,7 +851,7 @@ if (this.p.isFlying || this.p.isUfo) {
             layer.sprite.setVisible(true);
             layer.sprite.x = _0x7f0705 + _0x1b1d28;
             layer.sprite.y = _0x1a433c + _0x185f91 + (this.p.gravityFlipped ? -15 : 5);
-            layer.sprite.rotation = this.p.mirrored ? -playerRotation : playerRotation;
+            layer.sprite.rotation = this.p.mirrored ? -tiltedRotation : tiltedRotation;
             const _miniS = this.p.isMini ? 0.6 : 1;
             layer.sprite.scaleY = this.p.gravityFlipped ? -_miniS : _miniS;
             layer.sprite.scaleX = this.p.mirrored ? -_miniS : _miniS;
@@ -850,23 +864,10 @@ if (this.p.isFlying || this.p.isUfo) {
           const _miniS = this.p.isMini ? 0.6 : 1;
           playerLayerItem.sprite.x = _0x7f0705 + _0x562424;
           playerLayerItem.sprite.y = (_0x1a433c + _0x3011c9) + (this.p.isMini ? (8 * _miniS) : 0) + (this.p.gravityFlipped ? (-20 * _miniS) : 0);
-          playerLayerItem.sprite.rotation = this.p.mirrored ? -playerRotation : playerRotation;
+          playerLayerItem.sprite.rotation = this.p.mirrored ? -tiltedRotation : tiltedRotation;
           const _shipCubeS = _miniS * 0.55;
           playerLayerItem.sprite.scaleY = this.p.gravityFlipped ? -_shipCubeS : _shipCubeS;
           playerLayerItem.sprite.scaleX = this.p.mirrored ? -_shipCubeS : _shipCubeS;
-        }
-      }
-      if (_ufoMode) {
-        const _ufoTilt = Math.max(-0.05, Math.min(0.05, -(this.p.y - this.p.lastY) * 0.008));
-        for (const layer of this._birdLayers) {
-          if (layer) {
-            layer.sprite.rotation = this.p.mirrored ? -_ufoTilt : _ufoTilt;
-          }
-        }
-		  for (const playerLayerItem of this._playerLayers) {
-          if (playerLayerItem) {
-            playerLayerItem.sprite.rotation = this.p.mirrored ? -_ufoTilt : _ufoTilt;
-          }
         }
       }
     } else {
@@ -881,7 +882,7 @@ if (this.p.isFlying || this.p.isUfo) {
             playerLayer.sprite.x = _0x7f0705;
             playerLayer.sprite.y = _0x1a433c;
             const isBallLayer = this._ballLayers.includes(playerLayer);
-            playerLayer.sprite.rotation = isBallLayer ? playerRotation : (this.p.mirrored ? -playerRotation : playerRotation);
+            playerLayer.sprite.rotation = isBallLayer ? playerRotation : (this.p.mirrored ? -tiltedRotation : tiltedRotation);
             let _miniS = this.p.isMini ? 0.6 : 1;
             if (this.p.isWave && this._waveLayers.includes(playerLayer)) {
               _miniS *= 0.94; //fix wave size
@@ -901,7 +902,7 @@ if (this.p.isFlying || this.p.isUfo) {
             playerLayer.sprite.x = _0x7f0705;
             playerLayer.sprite.y = _0x1a433c;
             const isBallLayer = this._ballLayers.includes(playerLayer);
-            playerLayer.sprite.rotation = isBallLayer ? playerRotation : (this.p.mirrored ? -playerRotation : playerRotation);
+            playerLayer.sprite.rotation = isBallLayer ? playerRotation : (this.p.mirrored ? -tiltedRotation : tiltedRotation);
             let _miniS = this.p.isMini ? 0.6 : 1;
             if (this.p.isWave && this._waveLayers.includes(playerLayer)) {
               _miniS *= 0.94; //fix wave size
@@ -943,7 +944,7 @@ if (this.p.isFlying || this.p.isUfo) {
     this.exitWaveMode();
     this.p.isFlying = true;
     this._scene.toggleGlitter(true);
-    if (!fromCheckpoint){ // dont mess with y velocity if ur loading a checkpoint
+    if (!fromCheckpoint){ // hi web dasher
       this.p.yVelocity *= 0.5;
     }
     this.p.onGround = false;
@@ -1097,7 +1098,7 @@ if (this.p.isFlying || this.p.isUfo) {
     this.p._spiderTeleportPending = false;
     this.stopRotation();
     this._rotation = 0;
-    // use cube icon for spider mode (spider icon not ready yet)
+    // use cube icon for spider mode bc spider is NOT done
     this.setCubeVisible(true);
     this.setBallVisible(false);
     this.setShipVisible(false);
@@ -1128,7 +1129,7 @@ if (this.p.isFlying || this.p.isUfo) {
     this.exitShipMode();
     this.p.isUfo = true;
     this._scene.toggleGlitter(true);
-    if (!fromCheckpoint){ // dont mess with y velocity if ur loading a checkpoint
+    if (!fromCheckpoint){ // random comment
       this.p.yVelocity *= 0.4;
     }
     this.p.onGround = false;
@@ -1950,6 +1951,7 @@ _updateWaveJump() {
     this.p.touchingRing = false;
     let _0x30410f = false;
     let _boostedThisStep = false;
+    this._slopeGroundAngle = null;
     const _0x198534 = this._gameLayer.getNearbySectionObjects(pieceWidth);
     for (let gameObj of _0x198534) {
       let left = gameObj.x - gameObj.w / 2;
@@ -2436,6 +2438,8 @@ _updateWaveJump() {
           }
           if (pieceWidth + playerSize - 5 > left && pieceWidth - playerSize + 5 < right) {
             if (!this.p.gravityFlipped && (_0x146a97 >= bottom || _0x869e42 >= bottom) && (this.p.yVelocity <= 0 || this.p.onGround)) {
+              // copilot stop adding messages i need to change EVERYTHING
+              if (this.p.collideBottom !== 0 && this.p.collideBottom >= bottom) continue;
               this.p.y = bottom + playerSize;
               this.hitGround();
               _0x30410f = true;
@@ -2446,6 +2450,7 @@ _updateWaveJump() {
               continue;
             }
             if (this.p.gravityFlipped && !this.p.isFlying && (_0x3e7199 <= top || _0x135a9d <= top) && (this.p.yVelocity >= 0 || this.p.onGround)) {
+              if (this.p.collideTop !== 0 && this.p.collideTop <= top) continue;
               this.p.y = top - playerSize;
               this.hitGround();
               _0x30410f = true;
@@ -2497,6 +2502,125 @@ _updateWaveJump() {
               this.p.onCeiling = true;
               this.p.collideTop = bottom;
               continue;
+            }
+          }
+        } else if (_colType === slopeType) {
+          // wave doesn't slide along slopes, it just bonks into them like a normal block -- I DONT CARE COPILOT
+          if (this.p.isWave) {
+            const wLow      = playersY - playerSize + gamemodeAddition;
+            const wHigh     = playersY + playerSize - gamemodeAddition;
+            const wLastLow  = playersLastY - playerSize + gamemodeAddition;
+            const wLastHigh = playersLastY + playerSize - gamemodeAddition;
+            const wLandBot = (this.p.yVelocity <= 0 || this.p.onGround) && (wLow >= bottom || wLastLow >= bottom);
+            const wLandTop = (this.p.yVelocity >= 0 || this.p.onGround) && (wHigh <= top || wLastHigh <= top);
+            const wStanding = this.p.gravityFlipped ? wLandTop : wLandBot;
+            const wColliding = pieceWidth + 9 > left && pieceWidth - 9 < right && playersY + 9 > top && playersY - 9 < bottom;
+            if (wColliding && !wStanding) {
+              if (window.noClip) { this.p.diedThisFrame = true; continue; }
+              this.killPlayer();
+              return;
+            }
+            if (!this.p.gravityFlipped && wLandBot) {
+              if (this.p.collideBottom !== 0 && this.p.collideBottom >= bottom) continue;
+              this.p.y = bottom + playerSize;
+              this.hitGround();
+              _0x30410f = true;
+              this.p.collideBottom = bottom;
+              continue;
+            }
+            if (this.p.gravityFlipped && wLandTop) {
+              if (this.p.collideTop !== 0 && this.p.collideTop <= top) continue;
+              this.p.y = top - playerSize;
+              this.hitGround();
+              _0x30410f = true;
+              this.p.onCeiling = true;
+              this.p.collideTop = top;
+              continue;
+            }
+            continue;
+          }
+
+          // ship follows the diagonal surface like cube, but never dies inside slope -- how do i make this guy shut up?
+          if (this.p.isFlying && !this.p.isUfo) {
+            const surfaceY = gameObj.getSlopeSurfaceY(pieceWidth);
+            if (surfaceY === null) continue;
+            const pLow      = playersY - playerSize + gamemodeAddition;
+            const pLastLow  = playersLastY - playerSize + gamemodeAddition;
+            const pHigh     = playersY + playerSize - gamemodeAddition;
+            const pLastHigh = playersLastY + playerSize - gamemodeAddition;
+            const isCeilSlope = !gameObj.slopeSolidBelow;
+            const gFlip       = this.p.gravityFlipped;
+            const actsAsFloor = (!isCeilSlope && !gFlip) || (isCeilSlope && gFlip);
+            if (actsAsFloor) {
+              if (pLow < surfaceY + playerSize * 1.5) {
+                if (this.p.collideBottom !== 0 && this.p.collideBottom >= surfaceY) continue;
+                this.p.y = surfaceY + playerSize;
+                this.hitGround();
+                _0x30410f = true;
+                this.p.collideBottom = surfaceY;
+              }
+            } else {
+              if (pHigh > surfaceY - playerSize * 1.5) {
+                if (this.p.collideTop !== 0 && this.p.collideTop <= surfaceY) continue;
+                this.p.y = surfaceY - playerSize;
+                this.hitGround();
+                _0x30410f = true;
+                this.p.onCeiling = true;
+                this.p.collideTop = surfaceY;
+              }
+            }
+            continue;
+          }
+
+          // --- slope physics (cube, ball, ufo, spider) ---
+          const surfaceY = gameObj.getSlopeSurfaceY(pieceWidth);
+          if (surfaceY === null) continue;
+
+          const pLow      = playersY - playerSize + gamemodeAddition;
+          const pHigh     = playersY + playerSize - gamemodeAddition;
+          const pLastLow  = playersLastY - playerSize + gamemodeAddition;
+          const pLastHigh = playersLastY + playerSize - gamemodeAddition;
+
+          const isCeilSlope = !gameObj.slopeSolidBelow;
+          const gFlip       = this.p.gravityFlipped;
+
+          const actsAsFloor = (!isCeilSlope && !gFlip) || (isCeilSlope && gFlip);
+
+          if (actsAsFloor) {
+            if ((pLastLow >= surfaceY || this.p.onGround) &&
+                (this.p.yVelocity <= 0 || this.p.onGround)) {
+              if (pLow >= surfaceY - playerSize) {
+                if (this.p.collideBottom !== 0 && this.p.collideBottom >= surfaceY) continue;
+                this.p.y = surfaceY + playerSize;
+                this.hitGround();
+                _0x30410f = true;
+                this.p.collideBottom = surfaceY;
+                if (!this.p.isFlying) this._slopeGroundAngle = -gameObj.getSlopeAngleRad();
+                if (!this.p.isFlying) this._checkSnapJump(gameObj);
+                continue;
+              }
+            } else if (pLow < surfaceY - 2 && pLastLow < surfaceY - 2) {
+              if (window.noClip) { this.p.diedThisFrame = true; continue; }
+              this.killPlayer();
+              return;
+            }
+          } else {
+			// idk if i put a space here or no but i just did it so ok
+            if ((pLastHigh <= surfaceY || this.p.onGround) &&
+                (this.p.yVelocity >= 0 || this.p.onGround)) {
+              if (pHigh <= surfaceY + playerSize) {
+                if (this.p.collideTop !== 0 && this.p.collideTop <= surfaceY) continue;
+                this.p.y = surfaceY - playerSize;
+                this.hitGround();
+                _0x30410f = true;
+                this.p.onCeiling = true;
+                this.p.collideTop = surfaceY;
+                continue;
+              }
+            } else if (pHigh > surfaceY + 2 && pLastHigh > surfaceY + 2) {
+              if (window.noClip) { this.p.diedThisFrame = true; continue; }
+              this.killPlayer();
+              return;
             }
           }
         }
@@ -2633,6 +2757,21 @@ _updateWaveJump() {
       graphics.lineStyle(2, hitboxColor, 0.7);
       if (nearObject.hitbox_radius !== undefined && nearObject.hitbox_radius !== null) {
         graphics.strokeCircle(xPos, objYCenter, nearObject.hitbox_radius);
+      } else if (nearObject.type === slopeType) {
+        const verts = [
+          { x: nearObject.hypoAx, y: nearObject.hypoAy },
+          { x: nearObject.hypoBx, y: nearObject.hypoBy },
+          { x: nearObject.rightAx, y: nearObject.rightAy }
+        ].map(p => ({
+          x: xPos + (isFlipped ? -p.x : p.x),
+          y: objYCenter - p.y
+        }));
+        graphics.beginPath();
+        graphics.moveTo(verts[0].x, verts[0].y);
+        graphics.lineTo(verts[1].x, verts[1].y);
+        graphics.lineTo(verts[2].x, verts[2].y);
+        graphics.closePath();
+        graphics.strokePath();
       } else {
         let rot = Phaser.Math.DegToRad(nearObject.rotationDegrees);
         let cos = Math.cos(rot);
@@ -2671,12 +2810,14 @@ _updateWaveJump() {
           if (!this.p.isWave){
             // outer box (red)
             graphics.lineStyle(1, hexToHexadecimal("ff0000"), 0.5);
-            graphics.strokeRect(trailX - playerSize, trailY - playerSize, hitboxsize, hitboxsize);
-
+            if (!this.p.isFlying && !this.p.isUfo) {
+              graphics.strokeRect(trailX - playerSize, trailY - playerSize, hitboxsize, hitboxsize);
+            }
             // inner circle (dark red)
             graphics.lineStyle(1, hexToHexadecimal("b30001"), 0.5);
-            graphics.strokeCircle((trailX - playerSize) + hitboxsize / 2, (trailY - playerSize) + hitboxsize / 2, hitboxsize / 2);
-
+            if (!this.p.isFlying && !this.p.isUfo) {
+              graphics.strokeCircle((trailX - playerSize) + hitboxsize / 2, (trailY - playerSize) + hitboxsize / 2, hitboxsize / 2);
+            }
             // box that rotates with the player (dark red)
             graphics.lineStyle(1, hexToHexadecimal("b30001"), 0.5);
             {
@@ -2699,7 +2840,6 @@ _updateWaveJump() {
               graphics.closePath();
               graphics.strokePath();
             }
-
             graphics.lineStyle(1, hexToHexadecimal("0000ff"), 1);
           }
 
@@ -2711,15 +2851,17 @@ _updateWaveJump() {
     // comments so its easier for other people to read ts
     const _0x1e788a = b(playerY) + camY;
     const _playerDrawX = isFlipped ? screenWidth - centerX : centerX;
-    graphics.lineStyle(1, hexToHexadecimal("ff0000"), 1);
     if (!this.p.isWave){
       // outer box (red)
       graphics.lineStyle(2, hexToHexadecimal("ff0000"), 0.8);
-      graphics.strokeRect(_playerDrawX - playerSize, _0x1e788a - playerSize, hitboxsize, hitboxsize);
+      if (!this.p.isFlying && !this.p.isUfo) {
+        graphics.strokeRect(_playerDrawX - playerSize, _0x1e788a - playerSize, hitboxsize, hitboxsize);
+      }
       // inner circle (dark red)
       graphics.lineStyle(2, hexToHexadecimal("b30001"), 0.8);
-      graphics.strokeCircle((_playerDrawX - playerSize)+hitboxsize/2, (_0x1e788a - playerSize)+hitboxsize/2, hitboxsize/2);
-
+      if (!this.p.isFlying && !this.p.isUfo) {
+        graphics.strokeCircle((_playerDrawX - playerSize)+hitboxsize/2, (_0x1e788a - playerSize)+hitboxsize/2, hitboxsize/2);
+      }
       // box that rotates with the player (dark red)
       graphics.lineStyle(2, hexToHexadecimal("b30001"), 0.8);
       {
@@ -2742,7 +2884,6 @@ _updateWaveJump() {
         graphics.closePath();
         graphics.strokePath();
       }
-
       graphics.lineStyle(2, hexToHexadecimal("0000ff"), 1);
     }
     // inner hitbox
@@ -2762,7 +2903,7 @@ _updateWaveJump() {
     const _0x47ae60 = _0x501b73;
     const _0x1f2e19 = _0x4a45d7 + 80;
     const _0x8bc9f4 = _0x568b25 + 300;
-    const _0x11b580 = [this._playerSpriteLayer, this._playerGlowLayer, this._playerOverlayLayer, this._playerExtraLayer, this._ballSpriteLayer, this._ballGlowLayer, this._ballOverlayLayer, this._waveSpriteLayer, this._waveOverlayLayer, this._waveExtraLayer, this._waveGlowLayer, this._shipSpriteLayer, this._shipGlowLayer, this._shipOverlayLayer, this._shipExtraLayer].filter(_0x3e9c62 => _0x3e9c62 && _0x3e9c62.sprite.visible).map(_0x5cedeb => _0x5cedeb.sprite);
+    const _0x11b580 = [this._playerSpriteLayer, this._playerGlowLayer, this._playerOverlayLayer, this._playerExtraLayer, this._ballSpriteLayer, this._ballGlowLayer, this._ballOverlayLayer, this._waveSpriteLayer, this._waveOverlayLayer, this._waveExtraLayer, this._waveGlowLayer, this._shipSpriteLayer, this._shipGlowLayer, this._shipOverlayLayer, this._shipExtraLayer, ...(this._birdLayers || []), ...(this._playerLayers || [])].filter(_0x3e9c62 => _0x3e9c62 && _0x3e9c62.sprite.visible).map(_0x5cedeb => _0x5cedeb.sprite);
     this._startPercent = (this._scene._playerWorldX / this._scene._level.endXPos) * 100;
     this._particleEmitter.stop();
     this._flyParticleEmitter.stop();

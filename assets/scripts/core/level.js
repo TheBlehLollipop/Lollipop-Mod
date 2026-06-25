@@ -7,32 +7,38 @@ class Collider {
     this.h = height;
     this.activated = false;
     this.rotationDegrees = rotation;
-    this.slopeAngleDeg = 0;
-    this.slopeDir = 1;
-    this.slopeIsFilled = false;
-    this.slopeFlipY = false;
+    this.hypoAx = 0; this.hypoAy = 0;
+    this.hypoBx = 0; this.hypoBy = 0;
+    this.rightAx = 0; this.rightAy = 0;
+    this.slopeSolidBelow = true;
   }
   getSlopeSurfaceY(worldX) {
     if (this.type !== slopeType) return null;
-    const halfW = this.w / 2;
-    const left = this.x - halfW;
-    const right = this.x + halfW;
-    if (worldX < left || worldX > right) return null;
-    const frac = (worldX - left) / (right - left);
-    let surfaceFrac = this.slopeDir > 0 ? frac : (1 - frac);
-    if (this.slopeFlipY) surfaceFrac = 1 - surfaceFrac;
-    return (this.y - this.h / 2) + surfaceFrac * this.h;
+    const ax = this.x + this.hypoAx, ay = this.y + this.hypoAy;
+    const bx = this.x + this.hypoBx, by = this.y + this.hypoBy;
+    const lo = ax <= bx ? { x: ax, y: ay } : { x: bx, y: by };
+    const hi = ax <= bx ? { x: bx, y: by } : { x: ax, y: ay };
+    if (hi.x - lo.x < 0.01) return null;
+    if (worldX < lo.x || worldX > hi.x) return null;
+    const t = (worldX - lo.x) / (hi.x - lo.x);
+    return lo.y + t * (hi.y - lo.y);
   }
+  
   getSlopeAngleRad() {
-    let angleDeg = this.slopeAngleDeg;
-    if (this.slopeDir < 0) angleDeg = -angleDeg;
-    if (this.slopeFlipY) angleDeg = -angleDeg;
-    return angleDeg * Math.PI / 180;
+    if (this.type !== slopeType) return 0;
+    return Math.atan2(this.hypoBy - this.hypoAy, this.hypoBx - this.hypoAx);
   }
+}
+
+function rotateSlopePoint(localX, localY, rotDeg) {
+  const theta = -rotDeg * Math.PI / 180;
+  const cosT = Math.cos(theta), sinT = Math.sin(theta);
+  return { x: localX * cosT - localY * sinT, y: localX * sinT + localY * cosT };
 }
 
 function parseObject(objectString) {
   let objectParts = objectString.split(",");
+
   let objectData = {};
   for (let index = 0; index + 1 < objectParts.length; index += 2) {
     let key = objectParts[index];
@@ -117,7 +123,7 @@ const ringType = "ring";
 const triggerType = "trigger";
 const speedType = "speed";
 const slopeType = "slope";
-// ── Slope ID registry ──
+// this is slope id registry
 const _SLOPE_DATA = {
   289:{gw:1,gh:1,angle:45,sq:false},291:{gw:2,gh:1,angle:22.5,sq:false},
   294:{gw:1,gh:1,angle:45,sq:false},295:{gw:2,gh:1,angle:22.5,sq:false},
@@ -226,6 +232,19 @@ const _SLOPE_DATA = {
   1901:{gw:0.367,gh:0.433,angle:45,sq:true},1902:{gw:0.967,gh:0.45,angle:45,sq:true},
   1906:{gw:1,gh:1,angle:45,sq:false},1907:{gw:2,gh:1,angle:22.5,sq:false},
 };
+
+const _origAllobjects = window.allobjects;
+window.allobjects = function() {
+    const result = _origAllobjects();
+    for (const id in _SLOPE_DATA) {
+        const sd = _SLOPE_DATA[id];
+        if (sd && !sd.sq && result[id]) {
+            result[id] = Object.assign({}, result[id], { type: slopeType });
+        }
+    }
+    return result;
+};
+
 const flyPortal = "fly";
 const cubePortal = "cube";
 const portalWaveType = "portal_wave";
@@ -1404,6 +1423,42 @@ window.LevelObject = class LevelObject {
       this.objects.push(speedObj);
       hasCollisionEntry = true;
       this._addCollisionToSection(speedObj);
+    } else if (objectDef.type === slopeType) {
+      const sd = _SLOPE_DATA[levelObj.id];
+      if (sd) {
+        const hw0 = (sd.gw * a) / 2;
+        const hh0 = (sd.gh * a) / 2;
+        let vRight = { x: hw0, y: -hh0 };
+        let vLo    = { x: -hw0, y: -hh0 };
+        let vHi    = { x: hw0, y: hh0 };
+        const fx = levelObj.flipX ? -1 : 1;
+        const fy = levelObj.flipY ? -1 : 1;
+        const flip = p => ({ x: p.x * fx, y: p.y * fy });
+        vRight = flip(vRight); vLo = flip(vLo); vHi = flip(vHi);
+        const rotDeg = levelObj.rot || 0;
+        vRight = rotateSlopePoint(vRight.x, vRight.y, rotDeg);
+        vLo = rotateSlopePoint(vLo.x, vLo.y, rotDeg);
+        vHi = rotateSlopePoint(vHi.x, vHi.y, rotDeg);
+        const xs = [vRight.x, vLo.x, vHi.x];
+        const ys = [vRight.y, vLo.y, vHi.y];
+        const w = Math.max(...xs) - Math.min(...xs);
+        const h = Math.max(...ys) - Math.min(...ys);
+        // this is impossible bruv
+        const col = new Collider(slopeType, worldX, worldY, w, h, 0);
+        col.objid = levelObj.id;
+        col.hypoAx = vLo.x; col.hypoAy = vLo.y;
+        col.hypoBx = vHi.x; col.hypoBy = vHi.y;
+        col.rightAx = vRight.x; col.rightAy = vRight.y;
+        // 3 hours for all ts above and under
+        const hypoDx = vHi.x - vLo.x;
+        col.slopeSolidBelow = Math.abs(hypoDx) < 0.01
+          ? vRight.x < vLo.x
+          : vRight.y < (vLo.y + ((vRight.x - vLo.x) / hypoDx) * (vHi.y - vLo.y));
+        registerCollider(col);
+        this.objects.push(col);
+        hasCollisionEntry = true;
+        this._addCollisionToSection(col);
+      }
     }
 
     if (!hasCollisionEntry) {
