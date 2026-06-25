@@ -2632,28 +2632,29 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             iconSize / (iconImg.width  || iconSize),
             iconSize / (iconImg.height || iconSize)
           ) * 0.7;
-          iconImg.setScale(origScale);
+         iconImg.setScale(origScale);
 
-          // 2. If it's a robot, safely build the body pieces around the head using exact offsets
+          // 2. If it's a robot, dynamically render the full body safely separate from the master image reference
           if (tab === "robot") {
             const canonicalName = getCanonicalIconName(frame, tab);
             
-            // Move the head image up slightly so there's room for the body layout underneath
-            iconImg.setY(iy - 12);
+            // Hide the default single frame because we build a balanced, scaled layout below
+            iconImg.setVisible(false);
 
-            // The exact body assembly layout using relative offsets
+            // Stacking table for the 7 body parts using relative coordinates around (ix, iy)
             const robotLimbs = [
-              { key: `${canonicalName}_02_001.png`, dx: 0,  dy: 0,   depth: 101 },  // Torso
-              { key: `${canonicalName}_03_001.png`, dx: -6, dy: 6,   depth: 100 },  // Back Thigh
-              { key: `${canonicalName}_04_001.png`, dx: -6, dy: 16,  depth: 100 },  // Back Shin
-              { key: `${canonicalName}_05_001.png`, dx: -8, dy: 22,  depth: 100 },  // Back Foot
-              { key: `${canonicalName}_06_001.png`, dx: 6,  dy: 6,   depth: 102 },  // Front Thigh
-              { key: `${canonicalName}_07_001.png`, dx: 8,  dy: 18,  depth: 102 }   // Front Foot combo
+              { key: `${canonicalName}_01_001.png`, dx: 0,  dy: -10, depth: 105 }, // Head
+              { key: `${canonicalName}_02_001.png`, dx: 0,  dy: 4,   depth: 103 }, // Torso
+              { key: `${canonicalName}_03_001.png`, dx: -6, dy: 10,  depth: 101 }, // Back Thigh
+              { key: `${canonicalName}_04_001.png`, dx: -6, dy: 18,  depth: 101 }, // Back Shin
+              { key: `${canonicalName}_05_001.png`, dx: -8, dy: 24,  depth: 101 }, // Back Foot
+              { key: `${canonicalName}_06_001.png`, dx: 6,  dy: 10,  depth: 104 }, // Front Thigh
+              { key: `${canonicalName}_07_001.png`, dx: 8,  dy: 20,  depth: 104 }  // Front Foot
             ];
 
             robotLimbs.forEach(limb => {
               if (this.textures.get(atlas).has(limb.key)) {
-                const limbImg = this.add.image(ix + limb.dx, iy + (iy - 12) + limb.dy, atlas, limb.key)
+                const limbImg = this.add.image(ix + (limb.dx * origScale), iy + (limb.dy * origScale), atlas, limb.key)
                   .setScrollFactor(0)
                   .setDepth(limb.depth)
                   .setScale(origScale)
@@ -2669,6 +2670,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             .setScrollFactor(0)
             .setDepth(110) // Put it on top of all limbs so it captures clicks flawlessly
             .setInteractive();
+
           const extraFrame = frame.replace("_001.png", "_2_001.png");
           const extraInfo = getAtlasFrame(this, extraFrame);
           const extraImg = extraInfo
@@ -2676,6 +2678,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             : null;
           if (extraImg) this._iconGridObjects.push(extraImg);
           this._iconGridObjects.push(iconImg, hitRect);
+
           if (getCanonicalIconName(frame, tab) === window[prop]) {
             selLabel.setPosition(ix, iy).setScale(0.75).setVisible(true);
           }
@@ -2683,6 +2686,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
           ((capturedFrame, capturedImg, capturedExtra, capturedOrigScale) => {
             const bouncedScale = capturedOrigScale * 1.26;
             const iconTargets = capturedExtra ? [capturedImg, capturedExtra] : [capturedImg];
+            
             hitRect.on("pointerdown", () => {
               hitRect._pressed = true;
               iconTargets.forEach(t => this.tweens.killTweensOf(t, "scale"));
