@@ -2625,13 +2625,48 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
           const row = Math.floor(idx / cols);
           const ix  = startX + col * (iconSize + padding);
           const iy  = startY + row * (iconSize + padding);
-          const hitRect = this.add.rectangle(ix, iy, iconSize, iconSize, 0x000000, 0).setScrollFactor(0).setDepth(104).setInteractive();
-          const iconImg = this.add.image(ix, iy, atlas, frame).setScrollFactor(0).setDepth(103).setTint(0xAFAFAF);
-          const origScale = Math.min(
-            iconSize / (iconImg.width  || iconSize),
-            iconSize / (iconImg.height || iconSize)
-          ) * 0.7;
-          iconImg.setScale(origScale);
+const hitRect = this.add.rectangle(ix, iy, iconSize, iconSize, 0x000000, 0).setScrollFactor(0).setDepth(104).setInteractive();
+
+let iconImg;
+let origScale = 0.55; // Default scaling factor for the assembled robot parts container
+
+if (tab === "robot") {
+  // 1. Create a container folder to group all the separate body parts together
+  iconImg = this.add.container(ix, iy).setScrollFactor(0).setDepth(103);
+  
+  // 2. Extract the clean robot prefix name (e.g., "robot_01") using your helper function
+  const canonicalName = getCanonicalIconName(frame, tab);
+
+  // 3. Define the full layer list and assign relative offsets to construct the body layout
+  const robotParts = [
+    { key: `${canonicalName}_leg_back_001.png`, x: -4, y: 12 },
+    { key: `${canonicalName}_thigh_back_001.png`, x: -4, y: 2 },
+    { key: `${canonicalName}_foot_back_001.png`, x: -6, y: 22 },
+    { key: `${canonicalName}_001.png`, x: 0, y: -14 }, // This pulls the HEAD
+    { key: `${canonicalName}_leg_front_001.png`, x: 4, y: 12 },
+    { key: `${canonicalName}_thigh_front_001.png`, x: 4, y: 2 },
+    { key: `${canonicalName}_foot_front_001.png`, x: 6, y: 22 }
+  ];
+
+  // 4. Stencil each piece out from the atlas and pack it straight into the container
+  robotParts.forEach(part => {
+    if (this.textures.get(atlas).has(part.key)) {
+      const sprite = this.add.sprite(part.x, part.y, atlas, part.key).setTint(0xAFAFAF);
+      iconImg.add(sprite);
+    }
+  });
+  
+  iconImg.setScale(origScale);
+
+} else {
+  // Keep normal single-frame loading behavior for regular items (Cube, Ship, Ball, etc.)
+  iconImg = this.add.image(ix, iy, atlas, frame).setScrollFactor(0).setDepth(103).setTint(0xAFAFAF);
+  origScale = Math.min(
+    iconSize / (iconImg.width  || iconSize),
+    iconSize / (iconImg.height || iconSize)
+  ) * 0.7;
+  iconImg.setScale(origScale);
+}
           const extraFrame = frame.replace("_001.png", "_2_001.png");
           const extraInfo = getAtlasFrame(this, extraFrame);
           const extraImg = extraInfo
