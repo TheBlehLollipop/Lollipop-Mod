@@ -1197,19 +1197,22 @@ if (this.p.isFlying || this.p.isUfo) {
           playerLayer.sprite.y = _0x1a433c;
           const isBallLayer = this._ballLayers.includes(playerLayer);
           const isRobotLayer = this._robotLayers.includes(playerLayer);
+          
           if (isRobotLayer) {
             playerLayer.sprite.setVisible(this.p.isRobot);
             playerLayer.sprite.rotation = 0;
             this._robotBaseX = _0x7f0705;
             this._robotBaseY = _0x1a433c;
           } else {
-            playerLayer.sprite.rotation = isBallLayer ? playerRotation : (this.p.mirrored ? -playerRotation : playerRotation);
+            // This ensures your Cube and UFO rotate on slopes!
+            playerLayer.sprite.rotation = isBallLayer ? playerRotation : (this.p.mirrored ? -tiltedRotation : tiltedRotation);
           }
+          
           let _miniS = this.p.isMini ? 0.6 : 1;
           if (this.p.isWave && this._waveLayers.includes(playerLayer)) {
-            _miniS *= 0.94; //fix wave size
+            _miniS *= 0.94; // fix wave size
           }
-          const isSwingLayer = this._swingLayers.includes(playerLayer);
+          
           playerLayer.sprite.scaleY = (this.p.gravityFlipped && !this.p.isSwing) ? -_miniS : _miniS;
           playerLayer.sprite.scaleX = (this.p.mirrored ? -_miniS : _miniS);
         }
@@ -3628,7 +3631,7 @@ _updateRobotJump(dt) {
     const _0x47ae60 = _0x501b73;
     const _0x1f2e19 = _0x4a45d7 + 80;
     const _0x8bc9f4 = _0x568b25 + 300;
-    const _0x11b580 = [this._playerSpriteLayer, this._playerGlowLayer, this._playerOverlayLayer, this._playerExtraLayer, this._ballSpriteLayer, this._ballGlowLayer, this._ballOverlayLayer, this._waveSpriteLayer, this._waveOverlayLayer, this._waveExtraLayer, this._waveGlowLayer, this._shipSpriteLayer, this._shipGlowLayer, this._shipOverlayLayer, this._shipExtraLayer, this._birdSpriteLayer, this._birdGlowLayer, this._birdOverlayLayer, this._birdExtraLayer, this._robotHeadLayer, this._robotHeadOuterLayer, this._robotLegStemBackLayer, this._robotLegStemBackOuterLayer, this._robotThighBackLayer, this._robotFootBackLayer, this._robotLegStemFrontLayer, this._robotLegStemFrontOuterLayer, this._robotThighFrontLayer, this._robotFootFrontLayer, this._swingSpriteLayer, this._swingOverlayLayer, this._swingExtraLayer].filter(_0x3e9c62 => _0x3e9c62 && _0x3e9c62.sprite.visible).map(_0x5cedeb => _0x5cedeb.sprite);
+    const _0x11b580 = [this._playerSpriteLayer, this._playerGlowLayer, this._playerOverlayLayer, this._playerExtraLayer, this._ballSpriteLayer, this._ballGlowLayer, this._ballOverlayLayer, this._waveSpriteLayer, this._waveOverlayLayer, this._waveExtraLayer, this._waveGlowLayer, this._shipSpriteLayer, this._shipGlowLayer, this._shipOverlayLayer, this._shipExtraLayer, this._birdSpriteLayer, this._birdGlowLayer, this._birdOverlayLayer, this._birdExtraLayer, this._robotHeadLayer, this._robotHeadOuterLayer, this._robotLegStemBackLayer, this._robotLegStemBackOuterLayer, this._robotThighBackLayer, this._robotFootBackLayer, this._robotLegStemFrontLayer, this._robotLegStemFrontOuterLayer, this._robotThighFrontLayer, this._robotFootFrontLayer, this._swingSpriteLayer, this._swingOverlayLayer, this._swingExtraLayer, ...(this._birdLayers || []), ...(this._playerLayers || [])].filter(_0x3e9c62 => _0x3e9c62 && _0x3e9c62.sprite.visible).map(_0x5cedeb => _0x5cedeb.sprite);
     this._startPercent = (this._scene._playerWorldX / this._scene._level.endXPos) * 100;
     this._particleEmitter.stop();
     this._flyParticleEmitter.stop();
