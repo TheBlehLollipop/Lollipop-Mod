@@ -2627,7 +2627,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
           const iy  = startY + row * (iconSize + padding);
 const hitRect = this.add.rectangle(ix, iy, iconSize, iconSize, 0x000000, 0).setScrollFactor(0).setDepth(104).setInteractive();
 
-// Keep iconImg as a completely normal flat image frame so Phaser doesn't freeze the tabs!
+// 1. Keep iconImg as a normal image frame so your page arrows and click selectors never freeze up!
 const iconImg = this.add.image(ix, iy, atlas, frame).setScrollFactor(0).setDepth(103).setTint(0xAFAFAF);
 
 const origScale = Math.min(
@@ -2636,32 +2636,36 @@ const origScale = Math.min(
 ) * 0.7;
 iconImg.setScale(origScale);
 
-// If it's a robot, manually spawn the missing limbs behind and in front of the head
+// 2. If it's a robot, dynamically render parts _01 to _07 using your JSON structure
 if (tab === "robot") {
-  const canonicalName = getCanonicalIconName(frame, tab);
+  const canonicalName = getCanonicalIconName(frame, tab); // Extracts the base name like "robot_01"
   
-  // Shift the head image up slightly so it sits perfectly on top of the torso
-  iconImg.setY(iy - 10); 
+  // Hide the default single head texture since we are manually drawing it in the loop below
+  iconImg.setVisible(false);
 
-  const robotLimbs = [
-    { key: `${canonicalName}_leg_back_001.png`, dx: -4, dy: 14, depth: 101 },
-    { key: `${canonicalName}_thigh_back_001.png`, dx: -4, dy: 6, depth: 101 },
-    { key: `${canonicalName}_foot_back_001.png`, dx: -6, dy: 24, depth: 101 },
-    { key: `${canonicalName}_leg_front_001.png`, dx: 4, dy: 14, depth: 102 },
-    { key: `${canonicalName}_thigh_front_001.png`, dx: 4, dy: 6, depth: 102 },
-    { key: `${canonicalName}_foot_front_001.png`, dx: 6, dy: 24, depth: 102 }
-  ];
+  // Loop through part numbers 01 to 07 sequentially to draw head, torso, legs, and feet
+  for (let partNum = 1; partNum <= 7; partNum++) {
+    const partStr = String(partNum).padStart(2, '0'); // Turns 1 into "01", 2 into "02", etc.
+    const partKey = `${canonicalName}_${partStr}_001.png`; // Matches "robot_01_01_001.png", "robot_01_02_001.png", etc.
 
-  robotLimbs.forEach(limb => {
-    if (this.textures.get(atlas).has(limb.key)) {
-      const limbImg = this.add.image(ix + limb.dx, iy + limb.dy, atlas, limb.key)
+    if (this.textures.get(atlas).has(partKey)) {
+      // Set layout offsets so the individual pieces align neatly instead of stacking right on top of each other
+      let dx = 0;
+      let dy = 0;
+
+      if (partNum === 1) { dy = -12; } // Lift the head up away from the waist line
+      if (partNum >= 3) { dy = 6; }    // Shift legs and feet downwards below the torso
+
+      const limbImg = this.add.image(ix + dx, iy + dy, atlas, partKey)
         .setScrollFactor(0)
-        .setDepth(limb.depth)
+        .setDepth(101 + partNum) // Layers the legs correctly behind/in-front
         .setScale(origScale)
-        .setTint(0xAFAFAF);
+        .setTint(0xAFAFAF); // Tints every single piece grey to match the unselected icon kit look
+      
+      // CRITICAL: Tells Phaser to sweep these limbs away whenever you change pages or tabs
       this._iconGridObjects.push(limbImg);
     }
-  });
+  }
 }
           const extraFrame = frame.replace("_001.png", "_2_001.png");
           const extraInfo = getAtlasFrame(this, extraFrame);
