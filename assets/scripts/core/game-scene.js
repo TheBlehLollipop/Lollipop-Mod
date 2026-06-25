@@ -2625,16 +2625,8 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
           const row = Math.floor(idx / cols);
           const ix  = startX + col * (iconSize + padding);
           const iy  = startY + row * (iconSize + padding);
-const hitRect = this.add.rectangle(ix, iy, iconSize, iconSize, 0x000000, 0).setScrollFactor(0).setDepth(104).setInteractive();
-          
-          // 1. Keep iconImg visible as part '01' (the head) so it catches all your clicks perfectly
-          let initialFrame = frame;
-          if (tab === "robot") {
-            const canonicalName = getCanonicalIconName(frame, tab);
-            initialFrame = `${canonicalName}_01_001.png`; // Force the base image to look for part 01
-          }
-
-          const iconImg = this.add.image(ix, iy, atlas, initialFrame).setScrollFactor(0).setDepth(103).setTint(0xAFAFAF);
+// 1. Keep the base image completely standard so the engine never gets confused
+          const iconImg = this.add.image(ix, iy, atlas, frame).setScrollFactor(0).setDepth(103).setTint(0xAFAFAF);
           
           const origScale = Math.min(
             iconSize / (iconImg.width  || iconSize),
@@ -2642,28 +2634,41 @@ const hitRect = this.add.rectangle(ix, iy, iconSize, iconSize, 0x000000, 0).setS
           ) * 0.7;
           iconImg.setScale(origScale);
 
-          // 2. If it's a robot, layer parts 02 through 07 directly behind/around the head safely
+          // 2. If it's a robot, safely build the body pieces around the head using exact offsets
           if (tab === "robot") {
             const canonicalName = getCanonicalIconName(frame, tab);
+            
+            // Move the head image up slightly so there's room for the body layout underneath
+            iconImg.setY(iy - 12);
 
-            // We start at 2 because part 01 is already being drawn by iconImg right above!
-            for (let partNum = 2; partNum <= 7; partNum++) {
-              const partStr = String(partNum).padStart(2, '0');
-              const partKey = `${canonicalName}_${partStr}_001.png`;
+            // The exact body assembly layout using relative offsets
+            const robotLimbs = [
+              { key: `${canonicalName}_02_001.png`, dx: 0,  dy: 0,   depth: 101 },  // Torso
+              { key: `${canonicalName}_03_001.png`, dx: -6, dy: 6,   depth: 100 },  // Back Thigh
+              { key: `${canonicalName}_04_001.png`, dx: -6, dy: 16,  depth: 100 },  // Back Shin
+              { key: `${canonicalName}_05_001.png`, dx: -8, dy: 22,  depth: 100 },  // Back Foot
+              { key: `${canonicalName}_06_001.png`, dx: 6,  dy: 6,   depth: 102 },  // Front Thigh
+              { key: `${canonicalName}_07_001.png`, dx: 8,  dy: 18,  depth: 102 }   // Front Foot combo
+            ];
 
-              if (this.textures.get(atlas).has(partKey)) {
-                // Stack them perfectly centered over the head's position using their natural pivot centers
-                const limbImg = this.add.image(ix, iy, atlas, partKey)
+            robotLimbs.forEach(limb => {
+              if (this.textures.get(atlas).has(limb.key)) {
+                const limbImg = this.add.image(ix + limb.dx, iy + (iy - 12) + limb.dy, atlas, limb.key)
                   .setScrollFactor(0)
-                  .setDepth(100 + partNum) // Keeps them layered in their proper render order
+                  .setDepth(limb.depth)
                   .setScale(origScale)
                   .setTint(0xAFAFAF);
                 
-                // Pushing into _iconGridObjects ensures they are swept away when switching pages
                 this._iconGridObjects.push(limbImg);
               }
-            }
+            });
           }
+
+          // 3. CRITICAL CLICK FIX: Create a single transparent hit area on top of EVERY piece so the whole slot clicks perfectly!
+          const hitRect = this.add.rectangle(ix, iy, iconSize, iconSize, 0x000000, 0)
+            .setScrollFactor(0)
+            .setDepth(110) // Put it on top of all limbs so it captures clicks flawlessly
+            .setInteractive();
           const extraFrame = frame.replace("_001.png", "_2_001.png");
           const extraInfo = getAtlasFrame(this, extraFrame);
           const extraImg = extraInfo
