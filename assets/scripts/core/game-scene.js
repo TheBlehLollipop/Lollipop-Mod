@@ -7804,6 +7804,16 @@ _applyMirrorEffect() {
     _0x2de55e.width;
     this._endStarX = containerX + _0x45540f;
     this._endStarY = _0x241209 - 77.5;
+    if (window.macroBot){
+      const botMenuBtn = this.add.image(containerX - 225, 255, "macroBot").setScale(0.4).setInteractive();
+      this._endLayerInternal.add(botMenuBtn);
+      this._makeBouncyButton(botMenuBtn, 0.4, () => {
+          this._buildMacroPopup();
+          if (this._macroPopup) {
+              this._macroPopup.setDepth(300); 
+          }
+      });
+    }
     const _0x45fc2b = [{
       frame: "GJ_replayBtn_001.png",
       dx: -200,
