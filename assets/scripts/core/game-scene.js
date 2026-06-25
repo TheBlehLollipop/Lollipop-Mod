@@ -2279,10 +2279,10 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
 
       this._iconOverlayObjects = [overlay, blocker, titleTxt];
 
-      const starText = this.add.bitmapText(sw - 20, 60, "bigFont", String(window._totalStars || 0), 28)
+      const starText = this.add.bitmapText(sw - 50, 50.5, "bigFont", String(window._totalStars || 0), 28)
         .setScrollFactor(0).setDepth(105).setOrigin(1, 0.5);
-      const starIcon = this.add.image(starText.x - starText.width - 18, 60, "GJ_WebSheet", "GJ_bigStar_001.png")
-        .setScrollFactor(0).setDepth(105).setScale(0.4);
+      const starIcon = this.add.image(starText.x + starText.width + 9, 50.5, "GJ_GameSheet03", "GJ_starsIcon_001.png")
+        .setScrollFactor(0).setDepth(105).setScale(0.65);
       this._iconOverlayObjects.push(starIcon, starText);
 
       const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_03_001.png")
@@ -2340,9 +2340,8 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       gridBg.fillRoundedRect(containerX, containerY, containerWidth, containerHeight, 10);
       this._iconOverlayObjects.push(gridBg);
 
-      const cornerTL = this.add.image(0,  0,  "GJ_GameSheet03", "GJ_sideArt_001.png").setScrollFactor(0).setDepth(100).setOrigin(1, 0).setFlipX(false).setAngle(-90)
-      const cornerTR = this.add.image(sw, 0,  "GJ_GameSheet03", "GJ_sideArt_001.png").setScrollFactor(0).setDepth(103).setOrigin(0, 0).setFlipY(false).setFlipX(true).setAngle(90);
-      this._iconOverlayObjects.push(cornerTL, cornerTR);
+      const cornerTL = this.add.image(0,  0,  "GJ_GameSheet03", "GJ_sideArt_001.png").setScrollFactor(0).setDepth(100).setOrigin(1, 0).setFlipX(false).setAngle(-90);
+      this._iconOverlayObjects.push(cornerTL);
 
       const navDotSpacing = 35;
       const navDotY = containerY + containerHeight + 30;
@@ -3534,18 +3533,16 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       cardBounceContainer.add(nameLabel);
       const levelStars = lvl[4] || 0;
       if (levelStars > 0) {
-        const starIconScale = 0.35;
-        const starIcon = this.add.image(cardW / 2 - 30, -cardH / 2 + 28, "GJ_WebSheet", "GJ_bigStar_001.png")
+        const starIconScale = 0.7;
+        const starIcon = this.add.image(cardW / 1.98 - 30, -cardH / 2 + 28, "GJ_GameSheet03", "GJ_starsIcon_001.png")
           .setScrollFactor(0).setDepth(155).setScale(starIconScale);
         const starText = this.add.bitmapText(cardW / 2 - 48, -cardH / 2 + 28, "bigFont", String(levelStars), 28)
-          .setScrollFactor(0).setDepth(155).setOrigin(1, 0.5);
+          .setScrollFactor(0).setDepth(200).setOrigin(1, 0.5).setTint(0xf9ff32);
         const completedSet = JSON.parse(localStorage.getItem("gd_completedSet") || "[]");
         if (completedSet.includes(levelId)) {
-          starIcon.setTint(0xffff00);
           starText.setTint(0xffff00);
         } else {
-          starIcon.setTint(0xaaaaaa);
-          starText.setTint(0xaaaaaa);
+          starText.setTint(0xffffff);
         }
         cardContentObjs.push(starIcon, starText);
         cardBounceContainer.add([starIcon, starText]);
@@ -3558,9 +3555,9 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         const completionOrbs = completedSet2.includes(levelId) ? Math.round(maxOrbs * 0.2) : 0;
         const earnedOrbs = progressOrbs + completionOrbs;
         const orbText = this.add.bitmapText(-cardW / 2 + 65, cardH / 2 - 30, "bigFont", earnedOrbs + "/" + maxOrbs, 20)
-          .setScrollFactor(0).setDepth(155).setOrigin(0, 0.5).setTint(0x00ccff);
+          .setScrollFactor(0).setDepth(155).setOrigin(0, 0.5).setTint(0xFFFFFF);
         const orbIcon = this.add.image(-cardW / 2 + 45, cardH / 2 - 30, "GJ_GameSheet03", "currencyOrbIcon_001.png")
-          .setScrollFactor(0).setDepth(155).setScale(0.6);
+          .setScrollFactor(0).setDepth(155).setScale(0.65);
         cardContentObjs.push(orbText, orbIcon);
         cardBounceContainer.add([orbText, orbIcon]);
       }
@@ -3568,15 +3565,15 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       if (levelCoinCount > 0) {
         let savedCoins;
         try { savedCoins = JSON.parse(localStorage.getItem("coins_" + levelId) || "[]"); } catch(e) { savedCoins = []; }
-        const coinSpacing = 36;
+        const coinSpacing = 50;
         const coinsGroupW = (levelCoinCount - 1) * coinSpacing;
-        const coinBaseX = cardW / 2 - 50 - coinsGroupW / 2;
+        const coinBaseX = cardW / 2.2 - 50 - coinsGroupW / 2;
         const coinY = cardH / 2 - 30;
         for (let i = 0; i < levelCoinCount; i++) {
           const collected = savedCoins.includes(i);
           const coinFrame = collected ? "GJ_coinsIcon_001.png" : "GJ_coinsIcon_gray_001.png";
           const coinIcon = this.add.image(coinBaseX + i * coinSpacing, coinY, "GJ_GameSheet03", coinFrame)
-            .setScrollFactor(0).setDepth(155).setScale(0.9);
+            .setScrollFactor(0).setDepth(155).setScale(0.95);
           cardContentObjs.push(coinIcon);
           cardBounceContainer.add(coinIcon);
         }
@@ -4591,7 +4588,10 @@ _buildSettingsPopup() {
       innerContainer.add(rewardText);
 
       const diamondIcon = this.add.image(rowW / 2 - 20, ry - 10, "GJ_GameSheet03", "GJ_diamondsIcon_001.png")
-        .setScale(0.8);
+        .setScale(0.8)
+        .setDepth(1.1)
+        .setAngle(90);
+        
       innerContainer.add(diamondIcon);
 
       if (clamped >= quest.target) {

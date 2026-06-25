@@ -526,48 +526,88 @@ window.allobjects = function() {
     "default_z_order": 9
   },
   "50": {
+    "can_color": true,
     "type": "deco",
-    "frame": "d_ball_01_001.png",
+    "frame": "null",
     "gridW": 0,
     "gridH": 0,
     "default_detail_color_channel": -1,
     "default_z_layer": 3,
-    "default_z_order": 9
+    "default_z_order": 9,
+    "children": [
+      {
+        "frame": "rod_ball_01_001.png",
+        "localDy": 0,
+        "blend": "additive",
+        "z": 1,
+        "audioScale": true
+      }
+    ],
   },
   "51": {
     "type": "deco",
-    "frame": "d_ball_02_001.png",
+    "can_color": true,
+    "frame": "null",
     "gridW": 0,
     "gridH": 0,
     "default_detail_color_channel": -1,
     "default_z_layer": 3,
-    "default_z_order": 9
+    "default_z_order": 9,
+    "children": [
+      {
+        "frame": "d_ball_02_001.png",
+        "localDy": 0,
+        "blend": "additive",
+        "z": 1,
+        "audioScale": true
+      }
+    ],
   },
   "52": {
+    "can_color": true,
     "type": "deco",
-    "frame": "d_ball_03_001.png",
+    "frame": "null",
     "gridW": 0,
     "gridH": 0,
     "default_detail_color_channel": -1,
     "default_z_layer": 3,
-    "default_z_order": 9
+    "default_z_order": 9,
+    "children": [
+      {
+        "frame": "d_ball_03_001.png",
+        "localDy": 0,
+        "blend": "additive",
+        "z": 1,
+        "audioScale": true
+      }
+    ],
   },
   "53": {
+    "can_color": true,
     "type": "deco",
-    "frame": "d_ball_04_001.png",
+    "frame": "null",
     "gridW": 0,
     "gridH": 0,
     "blend": "additive",
     "tint": 64511,
     "default_detail_color_channel": -1,
     "default_z_layer": 3,
-    "default_z_order": 9
+    "default_z_order": 9,
+    "children": [
+      {
+        "frame": "d_ball_04_001.png",
+        "localDy": 0,
+        "blend": "additive",
+        "z": 1,
+        "audioScale": true
+      }
+    ],
   },
   "54": {
     "can_color": true,
+    "can_color": true,
     "default_base_color_channel": 1006,
-    "frame": "d_ball_05_001.png",
-    "glow_frame": "d_ball_05_glow_001.png",
+    "frame": "null",
     "gridH": 0.949999988079071,
     "gridW": 1,
     "spritesheet": "GJ_GameSheet-uhd",
@@ -575,43 +615,93 @@ window.allobjects = function() {
     "z": 9,
     "default_detail_color_channel": -1,
     "default_z_layer": 3,
-    "default_z_order": 9
+    "default_z_order": 9,
+    "children": [
+      {
+        "frame": "d_ball_05_001.png",
+        "glow_frame": "d_ball_05_glow_001.png",
+        "localDy": 0,
+        "blend": "additive",
+        "z": 1,
+        "audioScale": true
+      }
+    ],
   },
   "55": {
+    "can_color": true,
     "type": "deco",
-    "frame": "d_ball_06_001.png",
+    "frame": "null",
     "gridW": 0,
     "gridH": 0,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "children": [
+      {
+        "frame": "d_ball_06_001.png",
+        "localDy": 0,
+        "blend": "additive",
+        "z": 1,
+        "audioScale": true
+      }
+    ],
   },
   "56": {
+    "can_color": true,
     "type": "deco",
-    "frame": "d_ball_07_001.png",
+    "frame": "null",
     "gridW": 0,
     "gridH": 0,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "children": [
+      {
+        "frame": "d_ball_07_001.png",
+        "localDy": 0,
+        "blend": "additive",
+        "z": 1,
+        "audioScale": true
+      }
+    ],
   },
   "57": {
+    "can_color": true,
     "type": "deco",
-    "frame": "d_ball_08_001.png",
+    "frame": "null",
     "gridW": 0,
     "gridH": 0,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "children": [
+      {
+        "frame": "d_ball_08_001.png",
+        "localDy": 0,
+        "blend": "additive",
+        "z": 1,
+        "audioScale": true
+      }
+    ],
   },
   "58": {
+    "can_color": true,
     "type": "deco",
-    "frame": "d_ball_09_001.png",
+    "frame": "null",
     "gridW": 0,
     "gridH": 0,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "children": [
+      {
+        "frame": "d_ball_09_001.png",
+        "localDy": 0,
+        "blend": "additive",
+        "z": 1,
+        "audioScale": true
+      }
+    ],
   },
   "59": {
     "type": "trigger",
@@ -624,13 +714,23 @@ window.allobjects = function() {
     "default_z_order": 2
   },
   "60": {
+    "can_color": true,
     "type": "deco",
-    "frame": "d_ball_06_001.png",
+    "frame": "null",
     "gridW": 0,
     "gridH": 0,
     "default_detail_color_channel": -1,
-    "default_z_layer": 3,
-    "default_z_order": 9
+    "default_z_layer": 5,
+    "default_z_order": 2,
+    "children": [
+      {
+        "frame": "d_ball_06_001.png",
+        "localDy": 0,
+        "blend": "additive",
+        "z": 1,
+        "audioScale": true
+      }
+    ],
   },
   "61": {
     "type": "hazard",
@@ -818,7 +918,7 @@ window.allobjects = function() {
   },
   "75": {
     "type": "solid",
-    "frame": "blockOutline_05_001.png",
+    "frame": "lightsquare_01_07_001.png",
     "gridW": 1,
     "gridH": 1,
     "glow": true,
@@ -827,11 +927,6 @@ window.allobjects = function() {
         "frame": "square_c_05_001.png",
         "localDy": 0,
         "z": -1
-      },
-      {
-        "frame": "blockOutline_05_001.png",
-        "localDy": 0,
-        "z": 1
       }
     ],
     "default_detail_color_channel": -1,
@@ -1260,9 +1355,9 @@ window.allobjects = function() {
         "z": -1
       },
       {
-        "frame": "blockOutline_05_001.png",
+        "frame": "lightsquare_01_07_001.png",
         "localDy": 0,
-        "tint": 65280,
+        "default_detail_color_channel": -1,
         "z": 1
       }
     ],
@@ -1503,7 +1598,15 @@ window.allobjects = function() {
     "spritesheet": "GJ_GameSheet-uhd",
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "children": [
+      {
+        "frame": "square_f_05_001.png",
+        "localDy": 0,
+        "tint": 65280,
+        "z": -1
+      }
+    ],
   },
   "120": {
     "type": "deco",
@@ -1808,16 +1911,24 @@ window.allobjects = function() {
   "148": {
     "can_color": true,
     "default_base_color_channel": 1006,
+    "type": "deco",
     "frame": "d_ball_07_001.png",
     "glow_frame": "d_ball_07_glow_001.png",
-    "gridH": 0.9166666865348816,
-    "gridW": 0.9166666865348816,
     "spritesheet": "GJ_GameSheet-uhd",
-    "type": "deco",
-    "z": 9,
+    "gridW": 0,
+    "gridH": 0,
     "default_detail_color_channel": -1,
-    "default_z_layer": 3,
-    "default_z_order": 9
+    "default_z_layer": 5,
+    "default_z_order": 2,
+    "children": [
+      {
+        "frame": "d_ball_06_001.png",
+        "localDy": 0,
+        "blend": "additive",
+        "z": 1,
+        "audioScale": true
+      }
+    ],
   },
   "149": {
     "can_color": true,
@@ -2038,7 +2149,15 @@ window.allobjects = function() {
     "spritesheet": "GJ_GameSheet-uhd",
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+        "children": [
+      {
+        "frame": "square_g_03_001.png",
+        "localDy": 0,
+        "tint": 65280,
+        "z": -1
+      }
+    ],
   },
   "163": {
     "can_color": true,
@@ -2084,7 +2203,15 @@ window.allobjects = function() {
     "spritesheet": "GJ_GameSheet-uhd",
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "children": [
+      {
+        "frame": "square_g_06_001.png",
+        "localDy": 0,
+        "tint": 65280,
+        "z": -1
+      }
+    ],
   },
   "166": {
     "can_color": true,
