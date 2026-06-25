@@ -2626,47 +2626,44 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
           const ix  = startX + col * (iconSize + padding);
           const iy  = startY + row * (iconSize + padding);
 const hitRect = this.add.rectangle(ix, iy, iconSize, iconSize, 0x000000, 0).setScrollFactor(0).setDepth(104).setInteractive();
+          
+          // 1. Keep iconImg visible as part '01' (the head) so it catches all your clicks perfectly
+          let initialFrame = frame;
+          if (tab === "robot") {
+            const canonicalName = getCanonicalIconName(frame, tab);
+            initialFrame = `${canonicalName}_01_001.png`; // Force the base image to look for part 01
+          }
 
-// 1. Keep iconImg as a normal image frame so your page arrows and click selectors never freeze up!
-const iconImg = this.add.image(ix, iy, atlas, frame).setScrollFactor(0).setDepth(103).setTint(0xAFAFAF);
+          const iconImg = this.add.image(ix, iy, atlas, initialFrame).setScrollFactor(0).setDepth(103).setTint(0xAFAFAF);
+          
+          const origScale = Math.min(
+            iconSize / (iconImg.width  || iconSize),
+            iconSize / (iconImg.height || iconSize)
+          ) * 0.7;
+          iconImg.setScale(origScale);
 
-const origScale = Math.min(
-  iconSize / (iconImg.width  || iconSize),
-  iconSize / (iconImg.height || iconSize)
-) * 0.7;
-iconImg.setScale(origScale);
+          // 2. If it's a robot, layer parts 02 through 07 directly behind/around the head safely
+          if (tab === "robot") {
+            const canonicalName = getCanonicalIconName(frame, tab);
 
-// 2. If it's a robot, dynamically render parts _01 to _07 using your JSON structure
-if (tab === "robot") {
-  const canonicalName = getCanonicalIconName(frame, tab); // Extracts the base name like "robot_01"
-  
-  // Hide the default single head texture since we are manually drawing it in the loop below
-  iconImg.setVisible(false);
+            // We start at 2 because part 01 is already being drawn by iconImg right above!
+            for (let partNum = 2; partNum <= 7; partNum++) {
+              const partStr = String(partNum).padStart(2, '0');
+              const partKey = `${canonicalName}_${partStr}_001.png`;
 
-  // Loop through part numbers 01 to 07 sequentially to draw head, torso, legs, and feet
-  for (let partNum = 1; partNum <= 7; partNum++) {
-    const partStr = String(partNum).padStart(2, '0'); // Turns 1 into "01", 2 into "02", etc.
-    const partKey = `${canonicalName}_${partStr}_001.png`; // Matches "robot_01_01_001.png", "robot_01_02_001.png", etc.
-
-    if (this.textures.get(atlas).has(partKey)) {
-      // Set layout offsets so the individual pieces align neatly instead of stacking right on top of each other
-      let dx = 0;
-      let dy = 0;
-
-      if (partNum === 1) { dy = -12; } // Lift the head up away from the waist line
-      if (partNum >= 3) { dy = 6; }    // Shift legs and feet downwards below the torso
-
-      const limbImg = this.add.image(ix + dx, iy + dy, atlas, partKey)
-        .setScrollFactor(0)
-        .setDepth(101 + partNum) // Layers the legs correctly behind/in-front
-        .setScale(origScale)
-        .setTint(0xAFAFAF); // Tints every single piece grey to match the unselected icon kit look
-      
-      // CRITICAL: Tells Phaser to sweep these limbs away whenever you change pages or tabs
-      this._iconGridObjects.push(limbImg);
-    }
-  }
-}
+              if (this.textures.get(atlas).has(partKey)) {
+                // Stack them perfectly centered over the head's position using their natural pivot centers
+                const limbImg = this.add.image(ix, iy, atlas, partKey)
+                  .setScrollFactor(0)
+                  .setDepth(100 + partNum) // Keeps them layered in their proper render order
+                  .setScale(origScale)
+                  .setTint(0xAFAFAF);
+                
+                // Pushing into _iconGridObjects ensures they are swept away when switching pages
+                this._iconGridObjects.push(limbImg);
+              }
+            }
+          }
           const extraFrame = frame.replace("_001.png", "_2_001.png");
           const extraInfo = getAtlasFrame(this, extraFrame);
           const extraImg = extraInfo
