@@ -266,6 +266,7 @@ if (!allObjects[1331]) {
   };
 }
 
+
 const _speedPortalIds = [200, 201, 202, 203, 1334];
 for (const _spId of _speedPortalIds) {
   if (!allObjects[_spId] || allObjects[_spId].type !== "speed") {
@@ -785,7 +786,11 @@ window.LevelObject = class LevelObject {
   _updateGlowVisibility = () => {
       if (!this._glowSprites) return;
       for (const glow of this._glowSprites) {
-          glow.setVisible(!window.isEditor || window.showEditorGlow);
+          if (window.isEditor) {
+            glow.setVisible(window.showEditorGlow);
+          } else {
+            glow.setVisible(window.showObjectGlow !== false);
+          }
       }
   };
   _addGlowSprite(scene, x, y, frameName, objectData, worldX) {
@@ -805,7 +810,7 @@ window.LevelObject = class LevelObject {
         this._glowSprites = [];
       }
       this._glowSprites.push(glowSprite);
-      glowSprite.setVisible(!window.isEditor || window.showEditorGlow);
+      glowSprite.setVisible(window.isEditor ? window.showEditorGlow : window.showObjectGlow !== false);
       if (worldX !== undefined) {
         glowSprite._eeWorldX = worldX;
         glowSprite._eeBaseY = y;
@@ -967,6 +972,26 @@ window.LevelObject = class LevelObject {
     const isPortalFront =
       (objectDef.type === portalType || objectDef.type === speedType) &&
       frameName.includes("_front_");
+
+    // define portalsub to stop reference errors
+    const portalSub = objectDef.sub || {
+      10: "gravity_flip",
+      11: "gravity_normal",
+      12: "cube",
+      13: "fly",
+      45: "mirrora",
+      46: "mirrorb",
+      47: "ball",
+      660: "wave",
+      111: "ufo",
+      745: "robot",
+      747: "teleport_in",
+      1933: "swing",
+      749: "teleport_out",
+      1331: "spider",
+      286: "dual_on",
+      287: "dual_off"
+    }[levelObj.id];
 
     const zLayer =
       levelObj.zLayer || (objectDef.default_z_layer !== undefined ? objectDef.default_z_layer : 0);
@@ -1341,6 +1366,10 @@ window.LevelObject = class LevelObject {
         47: "ball",
         660: "wave",
         111: "ufo",
+        745: "robot",
+        747: "teleport_in",
+        1933: "swing",
+        749: "teleport_out",
         1331: "spider",
         286: "dual_on",
         287: "dual_off"
@@ -1357,18 +1386,24 @@ window.LevelObject = class LevelObject {
         ball: "portal_ball",
         wave: portalWaveType,
         ufo: portalUfoType,
+        robot: "portal_robot",
+        swing: "portal_swing",
         spider: "portal_spider",
         mirrora: "portal_mirror_on",
         mirrorb: "portal_mirror_off",
         shrink: "portal_mini_on",
         grow: "portal_mini_off",
+        teleport_in: "portal_teleport_in",
+        teleport_out: "portal_teleport_out",
         dual_on: "portal_dual_on",
         dual_off: "portal_dual_off"
       }[portalSub] || null;
 
       if (portalColliderType) {
         const collider = new Collider(portalColliderType, worldX, worldY, portalW, portalH, levelObj.rot || 0);
+        // store portal Y for both portals
         collider.portalY = worldY;
+        collider.portalObjId = levelObj.id;
         registerCollider(collider);
         this.objects.push(collider);
         hasCollisionEntry = true;
@@ -1486,8 +1521,94 @@ window.LevelObject = class LevelObject {
       }
     }
 
-    unknownObjectIds.size;
     if (unknownObjectIds.size > 0) {
+      console.log("[Level] Unknown object IDs skipped:", [...unknownObjectIds]);
+    }
+
+    // portal logic once again
+    
+    const _tpInList  = this.objects.filter(o => o.type === "portal_teleport_in");
+    const _tpOutList = this.objects.filter(o => o.type === "portal_teleport_out");
+
+    // check if we need to create orange portals from blue portals key 54 offsets
+    if (_tpInList.length > 0 && _tpOutList.length === 0) {
+      let possibleOrangePortals = [];
+      for (const levelObj of _0x35f1ae) {
+        if (levelObj && levelObj.id === 749) {
+          possibleOrangePortals.push(levelObj);
+        }
+      }
+      
+      if (possibleOrangePortals.length > 0) {
+        for (const orangeObj of possibleOrangePortals) {
+          this._spawnObject(orangeObj);
+        }
+      } else {
+        // ONLy create orange portal offsets if a blue teleport portal exists, with the raw data
+        
+        for (const _tpIn of _tpInList) {
+          let rawBluePortal = null;
+          let key54Value = 0;
+          
+          for (const rawObj of _0x35f1ae) {
+            if (rawObj && rawObj.id === 747) {
+              const rawWorldX = rawObj.x * 2;
+              const rawWorldY = rawObj.y * 2;
+              
+              if (Math.abs(rawWorldX - _tpIn.x) < 5 && Math.abs(rawWorldY - _tpIn.y) < 5) {
+                rawBluePortal = rawObj;
+                key54Value = rawObj._raw && rawObj._raw["54"] ? parseFloat(rawObj._raw["54"]) : 0;
+                break;
+              }
+            }
+          }
+          
+          const _orangeWorldY = (_tpIn.y || _tpIn.portalY || 0) + (key54Value * 2);
+          
+          // orange portal should use its rotation on raw data
+		  // will fix later
+          let orangeRotation = 0;
+          
+          for (const rawObj749 of _0x35f1ae) {
+            if (rawObj749 && rawObj749.id === 749) {
+              const raw749WorldX = rawObj749.x * 2;
+              const raw749WorldY = rawObj749.y * 2;
+              
+              if (Math.abs(raw749WorldX - _tpIn.x) < 5 && Math.abs(raw749WorldY - _orangeWorldY) < 5) {
+                orangeRotation = rawObj749._raw && rawObj749._raw["6"] ? parseFloat(rawObj749._raw["6"]) : (rawBluePortal._raw && rawBluePortal._raw["6"] ? parseFloat(rawBluePortal._raw["6"]) : 0);
+                break;
+              }
+            }
+          }
+          
+          if (orangeRotation === 0) {
+            orangeRotation = rawBluePortal._raw && rawBluePortal._raw["6"] ? parseFloat(rawBluePortal._raw["6"]) : 0;
+          }
+          
+          const _syntheticObj = {
+            id:         749,
+            x:          _tpIn.x / 2,        
+            y:          _orangeWorldY / 2,  
+            flipX:      rawBluePortal.flipX || false,
+            flipY:      rawBluePortal.flipY || false,
+            rot:        orangeRotation,     
+            scale:      1,
+            zLayer:     5,
+            zOrder:     10,
+            groups:     "",
+            color1:     0,
+            color2:     -1,
+            gameMode:   0,
+            miniMode:   0,
+            speed:      0,
+            mirrored:   0,
+            flipGravity: false,
+            _raw:       {}
+          };
+          
+          this._spawnObject(_syntheticObj);
+        }
+      }
     }
 
     const colTypeCounts = {};
