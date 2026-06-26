@@ -331,6 +331,16 @@ class GameScene extends Phaser.Scene {
     if (_0x591888) {
       this._level.loadLevel(_0x591888);
     }
+    const _resolveEditorArtId = (key, fallback, displayOffset = 0) => {
+      const raw = window.settingsMap?.[key];
+      const parsed = parseInt(raw ?? fallback, 10);
+      const value = Number.isFinite(parsed) ? parsed : fallback;
+      return String(value + displayOffset).padStart(2, "0");
+    };
+
+    window._backgroundId = _resolveEditorArtId("kA6", parseInt(window._backgroundId || "01", 10) - 1, 1);
+    window._groundId = _resolveEditorArtId("kA7", parseInt(window._groundId || "00", 10), 0);
+
     const _bgId = window._backgroundId || "01";
     const _bgKey = "game_bg_" + (parseInt(_bgId, 10) - 1);
     if (this.textures.exists(_bgKey)) {
@@ -738,6 +748,11 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             const songIcon = this.add.image(tableX + 150, infoY, "GJ_GameSheet03", "GJ_musicIcon_001.png").setScale(0.65);
             const songTxt = this.add.bitmapText(songIcon.x + 22, infoY, "bigFont", level.song, 18).setOrigin(0, 0.5);
             const statusIcon = this.add.image(tableX + 380, infoY, "GJ_GameSheet03", "GJ_infoIcon_001.png").setScale(0.65).setFlipY(true).setAngle(90);
+            const songTxtMaxW = Math.max(20, (statusIcon.x - 25) - songTxt.x);
+            songTxt.setScale(1);
+            if (songTxt.width > songTxtMaxW) {
+                songTxt.setScale(songTxtMaxW / songTxt.width);
+            }
             const statusTxt = this.add.bitmapText(statusIcon.x + 22, infoY, "bigFont", level.status, 18).setOrigin(0, 0.5);
             
             const viewBtn = this.add.nineslice(tableX + tableW - 80, slotY, "GJ_button01", null, 120, 60, 24, 24, 24, 24 ).setScale(0.75).setInteractive();
@@ -1205,6 +1220,11 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         const songIcon = this.add.image(centerX - 160, footerY, "GJ_GameSheet03", "GJ_musicIcon_001.png").setScale(1).setDepth(152);
         const songLabel = this.add.bitmapText(centerX - 115, footerY, "bigFont", level.song, 29).setOrigin(0, 0.5).setDepth(152);
         const statusIcon = this.add.image(centerX + 200, footerY, "GJ_GameSheet03", "GJ_infoIcon_001.png").setScale(1).setDepth(152).setFlipY(true).setAngle(90);
+        const songLabelMaxW = Math.max(40, (statusIcon.x - 30) - songLabel.x);
+        songLabel.setScale(1);
+        if (songLabel.width > songLabelMaxW) {
+            songLabel.setScale(songLabelMaxW / songLabel.width);
+        }
         const statusLabel = this.add.bitmapText(centerX + 245, footerY, "bigFont", level.status, 33).setOrigin(0, 0.5).setDepth(152);
         const versionText = this.add.bitmapText(centerX - 180, subFooterY, "goldFont", `Version: ${level.version || 1}`, 30).setOrigin(0.5).setDepth(152);
         const idText = this.add.bitmapText(centerX + 180, subFooterY, "goldFont", `ID: ${level.levelId || "na"}`, 30).setOrigin(0.5).setDepth(152);
@@ -1623,7 +1643,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
                 
                 if (!songUrl && isNCS) {
                   const songId = levelData.customSongID;
-                  const path = `/music/${songId}.mp3`;
+                  const path = `/music/${songId}.ogg`;
                       
                   function generateCdnAuth(path) {
                       const SALT = "8501f9c2-75ba-4230-8188-51037c4da102";
@@ -2676,6 +2696,10 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       }
       if (this._editorHorizontalOptionPopup) {
           this._closeEditorHorizontalOptionPopup();
+          return;
+      }
+      if (this._editorStartOptionsPopup) {
+          this._closeEditorStartOptionsPopup();
           return;
       }
       if (this._editorLevelSettingsPopup) {
@@ -4224,10 +4248,10 @@ _buildSettingsPopup() {
     const creditsEntries = [
       { text: "Made by RobTop Games", scale: 0.8, font: "goldFont" },
       { text: "Modded by:", scale: 0.9, font: "bigFont" },
-      { text: "breadbb, PinkDev, rohanis0000,", scale: 0.7, font: "goldFont" },
-      { text: "bog, AntiMatter, arbstro, aloaf", scale: 0.7, font: "goldFont" },
+      { text: "breadbb, PinkDev, rohanis0000, bog,", scale: 0.7, font: "goldFont" },
+      { text: "Lasokar, AntiMatter, arbstro, aloaf", scale: 0.7, font: "goldFont" },
       { text: "Contributors:", scale: 0.9, font: "bigFont" },
-      { text: "t0nchi7 and Lasokar.", scale: 0.7, font: "goldFont" },
+      { text: "t0nchi7 and Itzar.", scale: 0.7, font: "goldFont" },
       { text: "© 2026 RobTop Games. All rights reserved.", scale: 0.4, font: "Arial", color: 0x000000 },
     ]; 
     let yPos = 0;
@@ -5216,6 +5240,8 @@ _buildSettingsPopup() {
     } else if (gamemode == 4) {
       this._player.enterWaveMode();
     }
+
+    this._applyLevelStartOptions();
   }
   _pushButton(ignoreMacro = false) {
     const objectsUnderPointer = this.input.manager.hitTest(
@@ -5480,8 +5506,9 @@ _buildSettingsPopup() {
 
     const musicOffset = this._getStartPosMusicOffset();
     const startPositions = this._level.getStartPositions();
+    const activeStartPos = this._startPosIndex !== -1 && !!startPositions[this._startPosIndex];
 
-    if (this._startPosIndex !== -1 && startPositions[this._startPosIndex]) {
+    if (activeStartPos) {
       const pos = startPositions[this._startPosIndex];
 
       this._playerWorldX = pos.x;
@@ -5525,18 +5552,22 @@ _buildSettingsPopup() {
     this._attemptsLabel.setText("Attempt " + this._levelAttempts);
     this._attemptsLabel.setVisible(true);
     this._positionAttemptsLabel();
-    let gamemode = parseInt(window.settingsMap["kA2"] || "0");
-    if (gamemode == 1) {
-      this._player.enterShipMode();
-    } else if (gamemode == 2) {
-      this._state.y = 30;
-      this._player.enterBallMode({ y: 30 });
-    } else if (gamemode == 3) {
-      this._player.enterUfoMode();
-    } else if (gamemode == 4) {
-      this._player.enterWaveMode();
-    } else if (gamemode == 6) {
-      this._player.enterSpiderMode();
+    if (!activeStartPos) {
+      let gamemode = parseInt(window.settingsMap["kA2"] || "0");
+      if (gamemode == 1) {
+        this._player.enterShipMode();
+      } else if (gamemode == 2) {
+        this._state.y = 30;
+        this._player.enterBallMode({ y: 30 });
+      } else if (gamemode == 3) {
+        this._player.enterUfoMode();
+      } else if (gamemode == 4) {
+        this._player.enterWaveMode();
+      } else if (gamemode == 6) {
+        this._player.enterSpiderMode();
+      }
+
+      this._applyLevelStartOptions();
     }
 
     if (this._player && this._player._hitboxTrail) {
@@ -6210,7 +6241,8 @@ _buildSettingsPopup() {
       if (!this._player._scene._slideIn){
         if (!this._player._hitboxTrail) this._player._hitboxTrail = [];
         if (!this._player.p.isDead) {
-          this._player._hitboxTrail.push({ x: this._playerWorldX, y: this._player.p.y, rotation: this._player._rotation });
+          const _trailSize = this._player.p.isMini ? 18 : 30;
+          this._player._hitboxTrail.push({ x: this._playerWorldX, y: this._player.p.y, rotation: this._player._rotation, size: _trailSize, isWave: this._player.p.isWave });
           if (this._player._hitboxTrail.length > 180) this._player._hitboxTrail.shift();
         }
       }
@@ -6528,7 +6560,7 @@ _updateTabVisuals = () => {
 };
 
 _getSheetForFrameThingy = (frameName) => {
-    const sheets = ["GJ_WebSheet", "GJ_GameSheet", "GJ_GameSheet02", "GJ_GameSheet03", "GJ_GameSheet04"];
+    const sheets = ["GJ_WebSheet", "GJ_GameSheet", "GJ_GameSheet02", "GJ_GameSheet03", "GJ_GameSheet04", "GJ_GameSheetEditor"];
     for (const key of sheets) {
         if (this.textures.exists(key) && this.textures.get(key).has(frameName)) {
             return key;
@@ -6537,7 +6569,7 @@ _getSheetForFrameThingy = (frameName) => {
 };
 
 _getTextureRefForFrameThingy = (frameName) => { // getSheetForFrameThingy: the sequel
-    const sheets = ["GJ_WebSheet", "GJ_GameSheet", "GJ_GameSheet02", "GJ_GameSheet03", "GJ_GameSheet04"];
+    const sheets = ["GJ_WebSheet", "GJ_GameSheet", "GJ_GameSheet02", "GJ_GameSheet03", "GJ_GameSheet04", "GJ_GameSheetEditor"];
     for (const key of sheets) {
         if (this.textures.exists(key) && this.textures.get(key).has(frameName)) {
             return {
@@ -7786,6 +7818,33 @@ _getEditorStartValue = (key, fallback = 0) => {
     return isNaN(val) ? fallback : val;
 };
 
+_setEditorArtValueDraft = (key, value) => {
+    const numericValue = Math.max(0, parseInt(value ?? 0, 10) || 0);
+
+    this._setEditorStartValueDraft(key, numericValue);
+
+    if (key === "kA6") {
+        window._backgroundId = String(numericValue + 1).padStart(2, "0");
+
+        const bgKey = "game_bg_" + numericValue;
+
+        if (this._bg && this.textures.exists(bgKey)) {
+            this._bg.setTexture(bgKey);
+            const newBgH = this.textures.get(bgKey).source?.[0]?.height;
+
+            if (newBgH) {
+                this._bgInitY = newBgH - screenHeight - o;
+            }
+        }
+    } else if (key === "kA7") {
+        window._groundId = String(numericValue).padStart(2, "0");
+
+        if (this._level && typeof this._level.applyGroundTexture === "function") {
+            this._level.applyGroundTexture();
+        }
+    }
+};
+
 _getCurrentEditorLevelRecord = () => {
     const levels = JSON.parse(localStorage.getItem("created_levels") || "[]");
     const idx = levels.findIndex(l => l.createdId === window.currentlevel?.[2]);
@@ -8266,6 +8325,161 @@ _makeGamemodeIconButton = (parent, x, y, modeDef, callback) => {
     };
 };
 
+_makeEditorAtlasIconButton = (parent, x, y, optionDef, callback, targetHeight = 58) => {
+    const icon = this._addSafeFrameImage(x, y, optionDef.frame, 1);
+
+    let iconScale = 1;
+    const rawHeight = icon.height || ((icon.displayHeight || 1) / (icon.scaleY || 1)) || 1;
+
+    if (rawHeight > 0) {
+        iconScale = targetHeight / rawHeight;
+    }
+
+    if (!Number.isFinite(iconScale) || iconScale <= 0) {
+        iconScale = 1;
+    }
+
+    if (typeof icon.setScale === "function") {
+        icon.setScale(iconScale);
+        icon._bouncyBaseScale = iconScale;
+    }
+
+    if (typeof icon.setInteractive === "function") {
+        icon.setInteractive();
+    }
+
+    parent.add(icon);
+
+    this._makeBouncyButton(icon, iconScale, () => {
+        callback?.();
+    });
+
+    return {
+        root: icon,
+        hit: icon,
+        visualRoot: icon,
+        visual: icon,
+        baseScale: iconScale,
+        setBaseScale: (scale) => {
+            icon._bouncyBaseScale = scale;
+            icon.setScale(scale);
+        }
+    };
+};
+
+_openEditorStartOptionsPopup = () => {
+    if (this._editorStartOptionsPopup) return;
+
+    const sw = screenWidth;
+    const sh = screenHeight;
+    const panelW = 520;
+    const panelH = 420;
+
+    const root = this.add.container(0, 0).setScrollFactor(0).setDepth(2650);
+    this._editorStartOptionsPopup = root;
+
+    const blocker = this.add.rectangle(0, 0, sw, sh, 0x000000, 0.25)
+        .setOrigin(0)
+        .setInteractive();
+
+    root.add(blocker);
+
+    const inner = this.add.container(sw / 2, sh / 2 + 15)
+        .setScale(1);
+
+    root.add(inner);
+
+    const corner = this.textures.exists("GJ_square01") ? this.textures.get("GJ_square01").source[0].width * 0.325 : 24;
+
+    const panel = this._drawScale9(
+        0,
+        0,
+        panelW,
+        panelH,
+        "GJ_square01",
+        corner,
+        0xffffff,
+        1
+    );
+
+    inner.add(panel);
+
+    const closeBtn = this.add.image(
+        -(panelW / 2) + 10,
+        -(panelH / 2) + 10,
+        "GJ_WebSheet",
+        "GJ_closeBtn_001.png"
+    )
+        .setScale(0.8)
+        .setInteractive();
+
+    inner.add(closeBtn);
+
+    this._makeBouncyButton(closeBtn, 0.8, () => {
+        this._closeEditorStartOptionsPopup();
+    });
+
+    const optionDefs = [
+        { label: "Mini Mode", key: "kA3" },
+        { label: "Flip Gravity", key: "kA11" },
+        { label: "Dual Mode", key: "kA8" },
+        { label: "Mirror Mode", key: "kA28" }
+    ];
+
+    const makeToggle = (label, key, y) => {
+        const row = this.add.container(-150, y);
+        const check = this.add.image(0, 0, "GJ_GameSheet03", "GJ_checkOff_001.png").setScale(0.9).setInteractive();
+        const text = this.add.bitmapText(48, -2, "bigFont", label, 28).setOrigin(0, 0.5).setInteractive();
+
+        row.add([check, text]);
+        inner.add(row);
+
+        const refresh = () => {
+            const checked = this._getEditorStartValue(key, 0) === 1;
+            check.setTexture(
+                "GJ_GameSheet03",
+                checked ? "GJ_checkOn_001.png" : "GJ_checkOff_001.png"
+            );
+        };
+
+        const toggle = () => {
+            const checked = this._getEditorStartValue(key, 0) === 1;
+            this._setEditorStartValueDraft(key, checked ? 0 : 1);
+            refresh();
+        };
+
+        this._makeBouncyButton(check, 0.9, toggle);
+        text.on("pointerdown", toggle);
+
+        refresh();
+
+        return row;
+    };
+
+    optionDefs.forEach((opt, i) => {
+        makeToggle(opt.label, opt.key, -130 + i * 80);
+    });
+};
+
+_applyLevelStartOptions = () => {
+    const getBool = (key) => parseInt(window.settingsMap?.[key] || "0", 10) === 1;
+
+    this._state.isMini = getBool("kA3");
+    this._state.gravityFlipped = getBool("kA11");
+    this._state.mirrored = getBool("kA28");
+
+    if (getBool("kA8")) {
+        this._enableDualMode();
+    }
+};
+
+_closeEditorStartOptionsPopup = () => {
+    if (this._editorStartOptionsPopup) {
+        this._editorStartOptionsPopup.destroy();
+        this._editorStartOptionsPopup = null;
+    }
+};
+
 _openEditorHorizontalOptionPopup = (titleText, options, selectedKey, onSelect, renderOption) => {
     this._closeEditorHorizontalOptionPopup();
 
@@ -8273,6 +8487,9 @@ _openEditorHorizontalOptionPopup = (titleText, options, selectedKey, onSelect, r
     const sh = screenHeight;
     const isGamemodePopup = titleText === "Select Mode";
     const isSpeedPopup = titleText === "Select Speed";
+    const isBgPopup = titleText === "Select Background";
+    const isGroundPopup = titleText === "Select Ground";
+    const isArtPopup = isBgPopup || isGroundPopup;
 
     const root = this.add.container(0, 0).setScrollFactor(0).setDepth(2600);
     this._editorHorizontalOptionPopup = root;
@@ -8280,16 +8497,17 @@ _openEditorHorizontalOptionPopup = (titleText, options, selectedKey, onSelect, r
     const blocker = this.add.rectangle(0, 0, sw, sh, 0x000000, 0.25).setOrigin(0).setInteractive();
     root.add(blocker);
 
-    const optionCols = options.length;
-    const optionRows = 1;
+    const optionCols = isArtPopup ? 10 : options.length;
+    const optionRows = isArtPopup ? Math.ceil(options.length / optionCols) : 1;
 
-    const optionGapX = isGamemodePopup ? 84 : (isSpeedPopup ? 150 : 142);
-    const optionGapY = 0;
+    const optionGapX = isArtPopup ? 76 : (isGamemodePopup ? 84 : (isSpeedPopup ? 150 : 142));
+    const optionGapY = isArtPopup ? 68 : 0;
 
-    const panelW = 760
-    const panelH = 340
+    const panelW = isArtPopup ? 860 : 760;
+    const panelH = isArtPopup ? Math.min(650, 225 + optionRows * optionGapY) - 45 : 340;
 
     const speedTargetHeight = 112;
+    const artGridYOffset = isArtPopup ? -20 : 0;
 
     const inner = this.add.container(sw / 2, sh / 2 + 15).setScale(1);
     root.add(inner);
@@ -8301,7 +8519,7 @@ _openEditorHorizontalOptionPopup = (titleText, options, selectedKey, onSelect, r
     const panel = this._drawScale9(0, 0, panelW, panelH, "GJ_square01", corner, 0xffffff, 1);
     inner.add(panel);
 
-    const title = this.add.bitmapText(0, -(panelH / 2) + 50, "bigFont", titleText, 60).setOrigin(0.5);
+    const title = this.add.bitmapText(0, -(panelH / 2) + 50, "bigFont", titleText, isArtPopup ? 52 : 60).setOrigin(0.5);
     inner.add(title);
 
     let selected = selectedKey;
@@ -8351,9 +8569,14 @@ _openEditorHorizontalOptionPopup = (titleText, options, selectedKey, onSelect, r
     };
 
     options.forEach((opt, i) => {
-        const col = i;
-        const ox = ((col - ((options.length - 1) / 2)) * optionGapX) + (isSpeedPopup ? -15 : 0);
-        const oy = -2;
+        const row = isArtPopup ? Math.floor(i / optionCols) : 0;
+        const col = isArtPopup ? (i % optionCols) : i;
+        const itemsInRow = isArtPopup ? Math.min(optionCols, options.length - row * optionCols) : options.length;
+
+        const ox = ((col - ((itemsInRow - 1) / 2)) * optionGapX) + (isSpeedPopup ? -15 : 0);
+        const oy = isArtPopup
+            ? (-(optionRows - 1) * optionGapY / 2) + row * optionGapY + 16 + artGridYOffset
+            : -2;
 
         const buttonObj = renderOption(inner, opt, ox, oy, () => {
             selected = opt.key;
@@ -9406,6 +9629,23 @@ _openEditorLevelSettingsPopup = () => {
         { key: 7, label: "Swing", frame: "gj_swingBtn_off_001.png", rotateFlip: false }
     ];
 
+    const makeArtDefs = (prefix, count) => {
+        const defs = [];
+
+        for (let i = 1; i <= count; i++) {
+            defs.push({
+                key: i - 1,
+                label: String(i),
+                frame: `${prefix}Icon_${String(i).padStart(2, "0")}_001.png`
+            });
+        }
+
+        return defs;
+    };
+
+    const bgArtDefs = makeArtDefs("bg", 59);
+    const groundArtDefs = makeArtDefs("g", 22);
+
     const leftX = -(panelW / 2) + 90;
 
     const startSpeedLabel = this.add.bitmapText(leftX, -262, "goldFont", "Speed:", 30).setOrigin(0.5);
@@ -9489,6 +9729,83 @@ _openEditorLevelSettingsPopup = () => {
 
     refreshModeButton();
 
+    const editorOptionsLabel = this.add.bitmapText(leftX, 45, "goldFont", "Options:", 30).setOrigin(0.5);
+    inner.add(editorOptionsLabel);
+
+    const editorOptionsBtn = this.add.image(leftX, 112, "GJ_GameSheet03", "GJ_optionsBtn_001.png").setScale(0.7).setAngle(-90).setFlipX(true).setInteractive();
+
+    inner.add(editorOptionsBtn);
+
+    this._makeBouncyButton(editorOptionsBtn, 0.7, () => {
+        this._openEditorStartOptionsPopup();
+    });
+
+    const rightX = (panelW / 2) - 90;
+
+    const bgArtLabel = this.add.bitmapText(rightX, -262, "goldFont", "BG:", 30).setOrigin(0.5);
+    inner.add(bgArtLabel);
+
+    let bgArtButtonObj = null;
+
+    const refreshBgArtButton = () => {
+        if (bgArtButtonObj) {
+            bgArtButtonObj.root?.destroy();
+            bgArtButtonObj = null;
+        }
+
+        const bgKey = Phaser.Math.Clamp(this._getEditorStartValue("kA6", 0), 0, bgArtDefs.length - 1);
+        const bgDef = bgArtDefs.find(bg => bg.key === bgKey) || bgArtDefs[0];
+
+        bgArtButtonObj = this._makeEditorAtlasIconButton(inner, rightX, -190, bgDef, () => {
+            this._openEditorHorizontalOptionPopup(
+                "Select Background",
+                bgArtDefs,
+                this._getEditorStartValue("kA6", 0),
+                (opt) => {
+                    this._setEditorArtValueDraft("kA6", opt.key);
+                    refreshBgArtButton();
+                },
+                (parent, opt, ox, oy, choose) => {
+                    return this._makeEditorAtlasIconButton(parent, ox, oy, opt, choose, 48);
+                }
+            );
+        }, 90);
+    };
+
+    refreshBgArtButton();
+
+    const groundArtLabel = this.add.bitmapText(rightX, -112, "goldFont", "G:", 30).setOrigin(0.5);
+    inner.add(groundArtLabel);
+
+    let groundArtButtonObj = null;
+
+    const refreshGroundArtButton = () => {
+        if (groundArtButtonObj) {
+            groundArtButtonObj.root?.destroy();
+            groundArtButtonObj = null;
+        }
+
+        const groundKey = Phaser.Math.Clamp(this._getEditorStartValue("kA7", 0), 0, groundArtDefs.length - 1);
+        const groundDef = groundArtDefs.find(g => g.key === groundKey) || groundArtDefs[0];
+
+        groundArtButtonObj = this._makeEditorAtlasIconButton(inner, rightX, -40, groundDef, () => {
+            this._openEditorHorizontalOptionPopup(
+                "Select Ground",
+                groundArtDefs,
+                this._getEditorStartValue("kA7", 0),
+                (opt) => {
+                    this._setEditorArtValueDraft("kA7", opt.key);
+                    refreshGroundArtButton();
+                },
+                (parent, opt, ox, oy, choose) => {
+                    return this._makeEditorAtlasIconButton(parent, ox, oy, opt, choose, 48);
+                }
+            );
+        }, 90);
+    };
+
+    refreshGroundArtButton();
+
     const songBgX = -315;
     const songBgY = 40;
     const songBgW = 630;
@@ -9548,9 +9865,17 @@ _openEditorLevelSettingsPopup = () => {
     };
 
     const normalTab = makeSongTabButton(normalTabX, "Normal", () => {
+        const wasCustomSongTab = songCategory === "custom";
+
         songCategory = "normal";
         customFocused = false;
         this._editorTextInputFocused = false;
+
+        if (wasCustomSongTab) {
+            normalIndex = 0;
+            commitNormalSongDraft();
+        }
+
         updateSongUi();
     });
 
@@ -9732,7 +10057,7 @@ _openEditorLevelSettingsPopup = () => {
                     ? `${customInput}|`
                     : customInput
                         ? customInput
-                        : "Type Song ID"
+                        : "Newgrounds Song ID"
             );
         }
     };
