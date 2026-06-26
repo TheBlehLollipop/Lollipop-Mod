@@ -743,7 +743,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             const viewBtn = this.add.nineslice(tableX + tableW - 80, slotY, "GJ_button01", null, 120, 60, 24, 24, 24, 24 ).setScale(0.75).setInteractive();
             const viewTxt = this.add.bitmapText(viewBtn.x - 2, viewBtn.y - 1, "bigFont", "View", 32).setOrigin(0.5).setScale(0.8);
             
-            this._makeBouncyButton(viewBtn, 0.75, () => {
+            this._makeCompositeBouncyButton(viewBtn, [viewBtn, viewTxt], 0.75, () => {
                 this._closeEditorMenu(false);
                 this._openLevelView(level);
             });
@@ -946,36 +946,87 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
 
         fileInput.click();
     };
+    this._escapeXml = (value) => {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&apos;");
+    };
+    this._decodeWebLevelStringForGMD = (levelString) => {
+        if (!levelString) return "";
+        try {
+            let base64 = String(levelString)
+                .trim()
+                .replace(/-/g, "+")
+                .replace(/_/g, "/");
+
+            while (base64.length % 4 !== 0) {
+                base64 += "=";
+            }
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return pako.inflate(bytes, { to: "string" });
+        } catch (err) {
+            console.warn("Why the fuck didnt it work", err);
+            return String(levelString);
+        }
+    };
     this._exportGMD = (level) => {
-        const encodedDesc = btoa(level.description || "");
+        const encodedDesc = btoa(unescape(encodeURIComponent(level.description || "")));
         const authorName = "Web Dashers";
-        
         const officialSong = level.songId < 0 ? Math.abs(level.songId) : 0;
         const customSong = level.songId > 0 ? level.songId : 0;
+        const rawLevelData = this._decodeWebLevelStringForGMD(level.levelString);
+        const safeName = this._escapeXml(level.levelName || "Unnamed");
+        const safeDesc = this._escapeXml(encodedDesc);
+        const safeAuthor = this._escapeXml(authorName);
+        const safeLevelData = this._escapeXml(rawLevelData);
 
-        let xml = '<?xml version="1.0"?>';
+        let xml = "";
+        xml += '<?xml version="1.0"?>';
         xml += '<plist version="1.0" gjver="2.0">';
         xml += '<dict>';
         xml += '<k>kCEK</k><i>4</i>';
-        xml += `<k>k1</k><i>${level.levelId && level.levelId !== "NA" ? level.levelId.replace(/\D/g, "") : 0}</i>`;
-        xml += `<k>k18</k><i>${level.levelLength || 0}</i>`;
-        xml += `<k>k23</k><i>${level.levelLength || 0}</i>`;
-        xml += `<k>k2</k><s>${level.levelName}</s>`;
-        xml += `<k>k4</k><s>${level.levelString}</s>`;
-        xml += `<k>k3</k><s>${encodedDesc}</s>`;
-        xml += `<k>k5</k><s>${authorName}</s>`;
-        xml += '<k>k101</k><s>0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0</s>';
+        xml += `<k>k1</k><i>${
+            level.levelId && level.levelId !== "NA"
+                ? String(level.levelId).replace(/\D/g, "")
+                : 0
+        }</i>`;
+        xml += `<k>k2</k><s>${safeName}</s>`;
+        xml += `<k>k3</k><s>${safeDesc}</s>`;
+        xml += `<k>k4</k><s>${safeLevelData}</s>`;
+        xml += `<k>k5</k><s>${safeAuthor}</s>`;
         xml += `<k>k8</k><i>${officialSong - 1}</i>`;
         xml += `<k>k45</k><i>${customSong}</i>`;
         xml += `<k>k16</k><i>${level.version || 1}</i>`;
-        xml += '<k>k13</k><t/><k>k21</k><i>2</i><k>k50</k><i>47</i>';
-        xml += '<k>kI1</k><r>0</r><k>kI2</k><r>0</r><k>kI3</k><r>0.1</r>';
-        xml += '<k>kI6</k><d><k>0</k><s>0</s><k>1</k><s>0</s><k>2</k><s>0</s><k>3</k><s>0</s><k>4</k><s>0</s><k>5</k><s>0</s><k>6</k><s>0</s><k>7</k><s>0</s><k>8</k><s>0</s><k>9</k><s>0</s><k>10</k><s>0</s><k>11</k><s>0</s><k>12</k><s>0</s><k>13</k><s>0</s></d>';
-        xml += '</dict></plist>';
-        const blob = new Blob([xml], { type: 'text/xml' });
+        xml += `<k>k18</k><i>${level.levelLength || 0}</i>`;
+        xml += `<k>k23</k><i>${level.levelLength || 0}</i>`;
+        xml += '<k>k13</k><t/>';
+        xml += '<k>k21</k><i>2</i>';
+        xml += '<k>k50</k><i>47</i>';
+        xml += '<k>k101</k><s>0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0</s>';
+        xml += '<k>kI1</k><r>0</r>';
+        xml += '<k>kI2</k><r>0</r>';
+        xml += '<k>kI3</k><r>0.1</r>';
+        xml += '<k>kI6</k><d>';
+        xml += '<k>0</k><s>0</s><k>1</k><s>0</s><k>2</k><s>0</s><k>3</k><s>0</s>';
+        xml += '<k>4</k><s>0</s><k>5</k><s>0</s><k>6</k><s>0</s><k>7</k><s>0</s>';
+        xml += '<k>8</k><s>0</s><k>9</k><s>0</s><k>10</k><s>0</s><k>11</k><s>0</s>';
+        xml += '<k>12</k><s>0</s><k>13</k><s>0</s>';
+        xml += '</d>';
+        xml += '</dict>';
+        xml += '</plist>';
+
+        const blob = new Blob([xml], { type: "text/xml" });
         const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        const fileName = `${level.levelName.replace(/[^a-z0-9]/gi, '_')}.gmd`;
+        const link = document.createElement("a");
+        const fileName = `${String(level.levelName || "Unnamed").replace(/[^a-z0-9]/gi, "_")}.gmd`;
+
         link.href = url;
         link.download = fileName;
         document.body.appendChild(link);
@@ -2618,6 +2669,18 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       if (this._newgroundsPopup) {
         this._closeNewgroundsPopup();
         return;
+      }
+      if (this._editorColorPickerPopup) {
+          this._closeEditorColorPickerPopup();
+          return;
+      }
+      if (this._editorHorizontalOptionPopup) {
+          this._closeEditorHorizontalOptionPopup();
+          return;
+      }
+      if (this._editorLevelSettingsPopup) {
+          this._closeEditorLevelSettingsPopup();
+          return;
       }
       if (this._statsLayerOverlay) {
         this._hideStatsScreen();
@@ -4669,40 +4732,109 @@ _buildSettingsPopup() {
     _0x122213.input.hitArea.setTo(-_0x960250, -_0x3f88a1, _0x46ea45 + _0x960250 * 2, _0x43b461 + _0x3f88a1 * 2);
   }
   _makeBouncyButton(textureX, _0x57b645, _0x2f13d0, _0xda0c21) {
-    const _0x396ca0 = _0x57b645 * 1.26;
-    textureX.on("pointerdown", () => {
-      if (!_0xda0c21 || !!_0xda0c21()) {
-        textureX._pressed = true;
-        this.tweens.killTweensOf(textureX, "scale");
+    textureX._bouncyBaseScale = _0x57b645;
+    const getBouncyVisualTargets = () => {
+      const configured = Array.isArray(textureX._bouncyVisualTargets) && textureX._bouncyVisualTargets.length
+        ? textureX._bouncyVisualTargets
+        : [textureX._bouncyVisualTarget || textureX];
+      return configured
+        .map(entry => {
+          const target = entry && entry.target ? entry.target : entry;
+          if (!target || typeof target.setScale !== "function") return null;
+          const baseScale =
+            (entry && typeof entry.getBaseScale === "function" ? entry.getBaseScale() : undefined) ??
+            (entry && entry.baseScale !== undefined ? entry.baseScale : undefined) ??
+            target._bouncyBaseScale ??
+            textureX._bouncyBaseScale ??
+            _0x57b645;
+          const baseScaleX =
+            (entry && typeof entry.getBaseScaleX === "function" ? entry.getBaseScaleX() : undefined) ??
+            (entry && entry.baseScaleX !== undefined ? entry.baseScaleX : undefined) ??
+            baseScale;
+          const baseScaleY =
+            (entry && typeof entry.getBaseScaleY === "function" ? entry.getBaseScaleY() : undefined) ??
+            (entry && entry.baseScaleY !== undefined ? entry.baseScaleY : undefined) ??
+            baseScale;
+          return { target, baseScaleX, baseScaleY };
+        })
+        .filter(Boolean);
+    };
+    const tweenBouncyTargets = (scaleMultiplier, duration) => {
+      for (const entry of getBouncyVisualTargets()) {
+        this.tweens.killTweensOf(entry.target);
         this.tweens.add({
-          targets: textureX,
-          scale: _0x396ca0,
-          duration: 300,
+          targets: entry.target,
+          scaleX: entry.baseScaleX * scaleMultiplier,
+          scaleY: entry.baseScaleY * scaleMultiplier,
+          duration,
           ease: "Bounce.Out"
         });
       }
+    };
+    const resetBouncyTargets = (instant = false) => {
+      for (const entry of getBouncyVisualTargets()) {
+        this.tweens.killTweensOf(entry.target);
+
+        if (instant) {
+          entry.target.setScale(entry.baseScaleX, entry.baseScaleY);
+        } else {
+          this.tweens.add({
+            targets: entry.target,
+            scaleX: entry.baseScaleX,
+            scaleY: entry.baseScaleY,
+            duration: 400,
+            ease: "Bounce.Out"
+          });
+        }
+      }
+    };
+    textureX.on("pointerdown", () => {
+      if (!_0xda0c21 || !!_0xda0c21()) {
+        textureX._pressed = true;
+        tweenBouncyTargets(1.26, 300);
+      }
     });
-    textureX.on("pointerout", (pointer) => {
+    textureX.on("pointerout", () => {
       if (textureX._pressed) {
         textureX._pressed = false;
-        this.tweens.killTweensOf(textureX, "scale");
-        this.tweens.add({
-          targets: textureX,
-          scale: _0x57b645,
-          duration: 400,
-          ease: "Bounce.Out"
-        });
+        resetBouncyTargets(false);
       }
     });
     textureX.on("pointerup", () => {
       if (textureX._pressed) {
         textureX._pressed = false;
-        this.tweens.killTweensOf(textureX);
-        textureX.setScale(_0x57b645);
-        _0x2f13d0();
+        resetBouncyTargets(true);
+        _0x2f13d0?.();
+      }
+    });
+    textureX.on("pointerupoutside", () => {
+      if (textureX._pressed) {
+        textureX._pressed = false;
+        resetBouncyTargets(false);
       }
     });
     return textureX;
+  }
+  _makeCompositeBouncyButton(trigger, visualTargets, baseScale, callback, condition) {
+    trigger._bouncyVisualTargets = (Array.isArray(visualTargets) ? visualTargets : [visualTargets])
+      .filter(Boolean)
+      .map(entry => {
+        const target = entry && entry.target ? entry.target : entry;
+        const currentScaleX = target?.scaleX ?? baseScale;
+        const currentScaleY = target?.scaleY ?? baseScale;
+        const entryBase = entry && entry.baseScale !== undefined ? entry.baseScale : undefined;
+
+        return {
+          target,
+          baseScaleX: entry && entry.baseScaleX !== undefined ? entry.baseScaleX : (entryBase ?? currentScaleX),
+          baseScaleY: entry && entry.baseScaleY !== undefined ? entry.baseScaleY : (entryBase ?? currentScaleY),
+          getBaseScale: entry && entry.getBaseScale,
+          getBaseScaleX: entry && entry.getBaseScaleX,
+          getBaseScaleY: entry && entry.getBaseScaleY
+        };
+      });
+
+    return this._makeBouncyButton(trigger, baseScale, callback, condition);
   }
   _toggleFullscreen() {
     if (this.scale.isFullscreen) {
@@ -6171,6 +6303,16 @@ _buildSettingsPopup() {
   }
 
 _handleEditorCamera = (delta) => {
+    if (this._editorTextInputFocused) {
+        this._level.container.x = -this._cameraX;
+        this._level.container.y = -this._cameraY;
+        this._level.additiveContainer.x = -this._cameraX;
+        this._level.additiveContainer.y = -this._cameraY;
+        this._level.topContainer.x = -this._cameraX;
+        this._level.topContainer.y = -this._cameraY;
+        return;
+    }
+
     const camSpeed = 15;
     const cursors = this.input.keyboard.createCursorKeys();
     const wasd = this.input.keyboard.addKeys('W,A,S,D');
@@ -6238,9 +6380,11 @@ _createEditorGui = () => {
     const bottomY = screenHeight - 100;
 
     this._editorGui = this.add.container(screenWidth - 40, 40).setScrollFactor(0).setDepth(1000);
+    const editorSettings = this.add.image(-87, 0, "GJ_GameSheet03", "GJ_optionsBtn02_001.png").setInteractive().setAngle(-90).setFlipX(true);
     const editorPause = this.add.image(0, 0, "GJ_GameSheet03", "GJ_pauseBtn_001.png").setInteractive().setFlipX(true).setAngle(-90);
-    this._deleteButton = this.add.image(50, 40, "GJ_GameSheet03", "GJ_trashBtn_001.png").setInteractive();
-    this._editorGui.add(editorPause, this._deleteButton);
+    this._deleteButton = this.add.image(-(screenWidth - 40) + 50, 0, "GJ_GameSheet03", "GJ_trashBtn_001.png").setInteractive();
+    this._editorGui.add([editorSettings, editorPause, this._deleteButton]);
+    this._makeBouncyButton(editorSettings, 1.0, () => {this._openEditorLevelSettingsPopup();}, () => !this._editorLevelSettingsPopup);
     this._makeBouncyButton(editorPause, 1.0, () => this._showEditorPauseMenu(true), () => true);
     this._makeBouncyButton(this._deleteButton, 0.9, () => this._deleteSelectedObject(), () => true);
     this._initEditorPauseMenu();
@@ -6269,7 +6413,7 @@ _createEditorGui = () => {
 
     this._swipeContainer.add([this._swipeBg, this._swipeText]);
 
-    this._makeBouncyButton(this._swipeBg, 0.8, () => {
+    this._makeCompositeBouncyButton(this._swipeBg, [this._swipeBg, this._swipeText], 0.8, () => {
         this._isSwipeEnabled = !this._isSwipeEnabled;
 
         if (this._isSwipeEnabled) {
@@ -6390,6 +6534,261 @@ _getSheetForFrameThingy = (frameName) => {
             return key;
         }
     }
+};
+
+_getTextureRefForFrameThingy = (frameName) => { // getSheetForFrameThingy: the sequel
+    const sheets = ["GJ_WebSheet", "GJ_GameSheet", "GJ_GameSheet02", "GJ_GameSheet03", "GJ_GameSheet04"];
+    for (const key of sheets) {
+        if (this.textures.exists(key) && this.textures.get(key).has(frameName)) {
+            return {
+                key,
+                frame: frameName
+            };
+        }
+    }
+    if (this.textures.exists(frameName)) {
+        return {
+            key: frameName,
+            frame: null
+        };
+    }
+    return null;
+};
+
+_createEditorObjectButtonPreview = (x, y, objId) => {
+    const objectDef = getObjectFromId(objId);
+    if (!objectDef) return null;
+
+    let frameName = objectDef.frame;
+
+    if (objectDef.randomFrames && objectDef.randomFrames.length) {
+        frameName = objectDef.randomFrames[0];
+    }
+
+    if (!frameName) return null;
+
+    const previewObj = {
+        id: objId,
+        x: 0,
+        y: 0,
+        flipX: false,
+        flipY: false,
+        rot: 0,
+        scale: 1,
+        zLayer: objectDef.default_z_layer || 0,
+        zOrder: objectDef.default_z_order || 0,
+        groups: "",
+        color1: 0,
+        color2: 0,
+        _raw: {}
+    };
+
+    const preview = this.add.container(x, y);
+    const sprites = [];
+
+    const addPreviewSprite = (frame, localX = 0, localY = 0, colorData = null, previewDepth = 0, extra = {}) => {
+        const tex = this._getTextureRefForFrameThingy(frame);
+        if (!tex) return null;
+
+        const spr = tex.frame
+            ? this.add.image(localX, localY, tex.key, tex.frame)
+            : this.add.image(localX, localY, tex.key);
+
+        if (!spr) return null;
+
+        if (this._level && this._level._applyVisualProps) {
+            this._level._applyVisualProps(this, spr, frame, previewObj, colorData);
+        }
+
+        if (extra.blendMode !== undefined) {
+            spr.setBlendMode(extra.blendMode);
+        }
+
+        if (extra.tint !== undefined) {
+            spr.setTint(extra.tint);
+        }
+
+        if (extra.rotationOffset !== undefined) {
+            spr.rotation += extra.rotationOffset;
+        }
+
+        spr._editorPreviewDepth = previewDepth;
+        sprites.push(spr);
+
+        return spr;
+    };
+
+    const isPortalFront =
+        (objectDef.type === portalType || objectDef.type === speedType) &&
+        frameName.includes("_front_");
+
+    let portalBackSprite = null;
+
+    if (isPortalFront) {
+        const backFrame = frameName.replace("_front_", "_back_");
+        if (this._getTextureRefForFrameThingy(backFrame)) {
+            portalBackSprite = addPreviewSprite(backFrame, 0, 0, null, -0.005);
+        }
+    }
+
+    let glowSprite = null;
+
+    if (
+        objectDef.glow &&
+        this._level &&
+        this._level._getGlowFrameName &&
+        (!window.isEditor || window.showEditorGlow)
+    ) {
+        const glowFrame = this._level._getGlowFrameName(frameName);
+
+        if (glowFrame && this._getTextureRefForFrameThingy(glowFrame)) {
+            glowSprite = addPreviewSprite(glowFrame, 0, 0, null, -0.003, {
+                blendMode: S
+            });
+        }
+    }
+
+    const visualDef = isPortalFront
+        ? {
+            ...objectDef,
+            _portalFront: true
+        }
+        : objectDef;
+
+    const mainSprite = addPreviewSprite(frameName, 0, 0, visualDef, 0);
+
+    if (mainSprite && portalBackSprite) {
+        portalBackSprite.x = mainSprite.x;
+        portalBackSprite.y = mainSprite.y;
+    }
+
+    if (objectDef.type === ringType) {
+        if (mainSprite) mainSprite.setScale(0.75);
+        if (glowSprite) glowSprite.setScale(0.75);
+    }
+
+    if (frameName.indexOf("sawblade") >= 0 && mainSprite) {
+        mainSprite.setTint(0x000000);
+
+        const sawMirror = addPreviewSprite(frameName, 0, 0, objectDef, 0.001, {
+            tint: 0x000000,
+            rotationOffset: Math.PI
+        });
+
+        if (sawMirror) {
+            sawMirror.x = mainSprite.x;
+            sawMirror.y = mainSprite.y;
+        }
+    }
+
+    if (objectDef.type === solidType || objectDef.type === hazardType) {
+        const overlayFrame = frameName.replace("_001.png", "_2_001.png");
+
+        if (this._getTextureRefForFrameThingy(overlayFrame)) {
+            addPreviewSprite(overlayFrame, 0, 0, null, 0.002);
+        }
+    }
+
+    if (objectDef.children) {
+        for (const childDef of objectDef.children) {
+            let childDx = childDef.dx || 0;
+            let childDy = childDef.dy || 0;
+
+            if (childDef.localDx !== undefined || childDef.localDy !== undefined) {
+                let localDx = childDef.localDx || 0;
+                let localDy = childDef.localDy || 0;
+
+                if (previewObj.flipX) localDx = -localDx;
+                if (previewObj.flipY) localDy = -localDy;
+
+                const rot = (previewObj.rot || 0) * Math.PI / 180;
+
+                childDx = localDx * Math.cos(rot) - localDy * Math.sin(rot);
+                childDy = localDx * Math.sin(rot) + localDy * Math.cos(rot);
+            }
+
+            const childDepth =
+                (childDef.z !== undefined ? childDef.z : -1) < 0
+                    ? -0.003
+                    : 0.001;
+
+            const childSprite = addPreviewSprite(
+                childDef.frame,
+                childDx,
+                childDy,
+                childDef,
+                childDepth
+            );
+
+            if (childSprite && childDef.audioScale) {
+                childSprite.setScale(0.1);
+                childSprite.setAlpha(0.9);
+            }
+
+            if (frameName.indexOf("sawblade") >= 0 && childSprite) {
+                childSprite.setTint(0x000000);
+
+                const childMirror = addPreviewSprite(
+                    childDef.frame,
+                    childDx,
+                    childDy,
+                    childDef,
+                    childDepth + 0.001,
+                    {
+                        tint: 0x000000,
+                        rotationOffset: Math.PI
+                    }
+                );
+
+                if (childMirror) {
+                    childMirror.x = childSprite.x;
+                    childMirror.y = childSprite.y;
+                }
+            }
+        }
+    }
+
+    if (!sprites.length) {
+        preview.destroy();
+        return null;
+    }
+
+    sprites.sort((a, b) => {
+        return (a._editorPreviewDepth || 0) - (b._editorPreviewDepth || 0);
+    });
+
+    preview.add(sprites);
+
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    for (const spr of sprites) {
+        const displayW = spr.displayWidth || spr.width || 1;
+        const displayH = spr.displayHeight || spr.height || 1;
+
+        const left = spr.x - displayW * spr.originX;
+        const right = spr.x + displayW * (1 - spr.originX);
+        const top = spr.y - displayH * spr.originY;
+        const bottom = spr.y + displayH * (1 - spr.originY);
+
+        minX = Math.min(minX, left);
+        maxX = Math.max(maxX, right);
+        minY = Math.min(minY, top);
+        maxY = Math.max(maxY, bottom);
+    }
+
+    const visualW = Math.max(1, maxX - minX);
+    const visualH = Math.max(1, maxY - minY);
+
+    const targetSize = 64;
+    const maxDim = Math.max(visualW, visualH);
+    const scaleMultiplier = targetSize / maxDim;
+
+    preview.setScale(Math.min(scaleMultiplier, 0.6));
+
+    return preview;
 };
 
 _buildObjectGrid = () => {
@@ -6567,24 +6966,16 @@ _buildObjectGrid = () => {
         const y = startY + (row * paddingY);
 
         if (item.type === "object") {
-            const btnBg = this.add.image(x, y, "GJ_GameSheet03", "GJ_checkOff_001.png")
-                .setScale(1.2)
-                .setInteractive();
-
-            const sheet = this._getSheetForFrameThingy(item.frame);
-            const icon = this.add.image(x, y, sheet, item.frame);
-
-            const targetSize = 64;
-            const maxDim = Math.max(icon.width, icon.height);
-            const scaleMultiplier = targetSize / maxDim;
-
-            icon.setScale(Math.min(scaleMultiplier, 0.6));
-
-            if (window.selectedObjId === item.id) btnBg.setTint(0x888888);
-
-            this._gridContainer.add([btnBg, icon]);
-
-            this._makeBouncyButton(btnBg, 1.2, () => {
+            const btnBg = this.add.image(x, y, "GJ_GameSheet03", "GJ_checkOff_001.png").setScale(1.2).setInteractive();
+            const icon = this._createEditorObjectButtonPreview(x, y, item.id);
+            if (window.selectedObjId === item.id) {
+                btnBg.setTint(0x888888);
+            }
+            this._gridContainer.add(btnBg);
+            if (icon) {
+                this._gridContainer.add(icon);
+            }
+            this._makeCompositeBouncyButton(btnBg, [btnBg, icon], 1.2, () => {
                 window.selectedObjId = item.id;
                 this._buildObjectGrid();
             });
@@ -6600,7 +6991,7 @@ _buildObjectGrid = () => {
 
             this._gridContainer.add([btn, icon]);
 
-            this._makeBouncyButton(btn, 0.92, () => {
+            this._makeCompositeBouncyButton(btn, [btn, icon], 0.92, () => {
                 if (item.subType === "move") {
                     this._moveObject(item.dx, item.dy);
                 } else if (item.subType === "rotate") {
@@ -6618,7 +7009,7 @@ _buildObjectGrid = () => {
 
             this._gridContainer.add([btnBg, icon]);
 
-            this._makeBouncyButton(btnBg, 1.2, () => {
+            this._makeCompositeBouncyButton(btnBg, [btnBg, icon], 1.2, () => {
                 this._deleteSelectedObject();
             });
 
@@ -7190,6 +7581,2256 @@ _deleteObjectAtPointer = () => {
     this._updateEditorActionButtons();
 };
 
+_closeEditorLevelSettingsPopup = () => {
+    this._editorTextInputFocused = false;
+
+    if (!this._editorLevelSettingsPopup) return;
+
+    this._closeEditorHorizontalOptionPopup();
+    this._closeEditorColorPickerPopup();
+
+    if (this._editorLevelSettingsKeyHandler) {
+        window.removeEventListener("keydown", this._editorLevelSettingsKeyHandler);
+        this._editorLevelSettingsKeyHandler = null;
+    }
+
+    this._editorLevelSettingsPopup.destroy();
+    this._editorLevelSettingsPopup = null;
+};
+
+_closeEditorHorizontalOptionPopup = () => {
+    if (!this._editorHorizontalOptionPopup) return;
+
+    this._editorHorizontalOptionPopup.destroy();
+    this._editorHorizontalOptionPopup = null;
+};
+
+_closeEditorColorPickerPopup = () => {
+    this._editorTextInputFocused = false;
+
+    if (this._editorColorPickerKeyHandler) {
+        window.removeEventListener("keydown", this._editorColorPickerKeyHandler);
+        this._editorColorPickerKeyHandler = null;
+    }
+
+    if (!this._editorColorPickerPopup) return;
+
+    this._editorColorPickerPopup.destroy();
+    this._editorColorPickerPopup = null;
+};
+
+_editorSettingsToMap = () => {
+    const map = {};
+
+    const raw = window.settingslist || "";
+    const parts = String(raw).split(",");
+
+    for (let i = 0; i + 1 < parts.length; i += 2) {
+        map[parts[i]] = parts[i + 1];
+    }
+
+    window.settingsMap = window.settingsMap || {};
+
+    for (const key in window.settingsMap) {
+        if (map[key] === undefined) {
+            map[key] = window.settingsMap[key];
+        }
+    }
+
+    return map;
+};
+
+_editorMapToSettings = (map) => {
+    const parts = [];
+
+    for (const key in map) {
+        if (map[key] === undefined || map[key] === null) continue;
+        parts.push(key, String(map[key]));
+    }
+
+    window.settingsMap = map;
+    window.settingslist = parts.join(",");
+
+    return window.settingslist;
+};
+
+_makeColorStringEntry = (channelId, color) => {
+    return [
+        "1", String(color.r),
+        "2", String(color.g),
+        "3", String(color.b),
+        "6", String(channelId),
+        "5", "0",
+        "7", "0"
+    ].join("_");
+};
+
+_parseColorStringEntry = (entry) => {
+    const props = {};
+    const parts = String(entry || "").split("_");
+
+    for (let i = 0; i + 1 < parts.length; i += 2) {
+        props[parts[i]] = parts[i + 1];
+    }
+
+    return {
+        channel: parseInt(props["6"] || "0", 10),
+        r: parseInt(props["1"] || "255", 10),
+        g: parseInt(props["2"] || "255", 10),
+        b: parseInt(props["3"] || "255", 10)
+    };
+};
+
+_getEditorColorChannel = (channelId, fallback = { r: 255, g: 255, b: 255 }) => {
+    const map = this._editorSettingsToMap();
+
+    if (map["kS38"]) {
+        const entries = map["kS38"].split("|").filter(Boolean);
+
+        for (const entry of entries) {
+            const parsed = this._parseColorStringEntry(entry);
+
+            if (parsed.channel === channelId) {
+                return {
+                    r: parsed.r,
+                    g: parsed.g,
+                    b: parsed.b
+                };
+            }
+        }
+    }
+
+    const legacyKey =
+        channelId === 1000
+            ? "kS29"
+            : channelId === 1001
+                ? "kS30"
+                : null;
+
+    if (legacyKey && map[legacyKey]) {
+        const parsed = this._parseColorStringEntry(map[legacyKey]);
+
+        return {
+            r: parsed.r,
+            g: parsed.g,
+            b: parsed.b
+        };
+    }
+
+    return fallback;
+};
+
+_setEditorColorChannelDraft = (channelId, color) => {
+    const map = this._editorSettingsToMap();
+
+    const entries = map["kS38"]
+        ? map["kS38"].split("|").filter(Boolean)
+        : [];
+
+    let replaced = false;
+
+    for (let i = 0; i < entries.length; i++) {
+        const parsed = this._parseColorStringEntry(entries[i]);
+
+        if (parsed.channel === channelId) {
+            entries[i] = this._makeColorStringEntry(channelId, color);
+            replaced = true;
+            break;
+        }
+    }
+
+    if (!replaced) {
+        entries.push(this._makeColorStringEntry(channelId, color));
+    }
+
+    map["kS38"] = entries.join("|");
+
+    if (channelId === 1000) {
+        map["kS29"] = this._makeColorStringEntry(1000, color);
+    } else if (channelId === 1001) {
+        map["kS30"] = this._makeColorStringEntry(1001, color);
+    }
+
+    this._editorMapToSettings(map);
+
+    if (this._level) {
+        this._level._initialColors = this._level._initialColors || {};
+        this._level._initialColors[channelId] = color;
+    }
+
+    if (this._colorManager && this._colorManager.setInitialColor) {
+        this._colorManager.setInitialColor(channelId, color);
+    }
+
+    const hex = Phaser.Display.Color.GetColor(color.r, color.g, color.b);
+
+    if (channelId === 1000 && this._bg) {
+        this._bg.setTint(hex);
+    }
+
+    if (channelId === 1001 && this._level && this._level.setGroundColor) {
+        this._level.setGroundColor(hex);
+    }
+};
+
+_setEditorStartValueDraft = (key, value) => {
+    const map = this._editorSettingsToMap();
+    map[key] = String(value);
+    this._editorMapToSettings(map);
+};
+
+_getEditorStartValue = (key, fallback = 0) => {
+    const map = this._editorSettingsToMap();
+    const val = parseInt(map[key] ?? fallback, 10);
+
+    return isNaN(val) ? fallback : val;
+};
+
+_getCurrentEditorLevelRecord = () => {
+    const levels = JSON.parse(localStorage.getItem("created_levels") || "[]");
+    const idx = levels.findIndex(l => l.createdId === window.currentlevel?.[2]);
+
+    return {
+        levels,
+        idx,
+        level: idx !== -1 ? levels[idx] : null
+    };
+};
+
+_setEditorSongDraft = (songId, songName) => {
+    this._editorPendingSongId = songId;
+    this._editorPendingSongName = songName;
+
+    window.currentlevel = window.currentlevel || [
+        "Placeholder",
+        "Unnamed",
+        window._onlineLevelId || "local_0",
+        ["Local", "SongAuthor"]
+    ];
+
+    if (songId < 0) {
+        const normalIndex = Math.abs(songId) - 1;
+        const levelSong = window.allLevels?.[normalIndex];
+
+        if (levelSong) {
+            window.currentlevel[0] = levelSong[0];
+            window.currentlevel[3] = ["Local", levelSong[3]];
+        }
+    } else {
+        window.currentlevel[0] = `ng_song_${songId}`;
+        window.currentlevel[3] = ["Local", "Newgrounds"];
+        window._onlineSongBuffer = null;
+        window._onlineSongKey = null;
+        window._onlineSongTitle = `NG#${songId}`;
+        window._onlineSongArtist = "Newgrounds";
+    }
+};
+
+_addSafeFrameImage = (x, y, frameName, scale = 1) => {
+    const tex =
+        this._getTextureRefForFrameThingy
+            ? this._getTextureRefForFrameThingy(frameName)
+            : null;
+
+    if (tex) {
+        return tex.frame
+            ? this.add.image(x, y, tex.key, tex.frame).setScale(scale)
+            : this.add.image(x, y, tex.key).setScale(scale);
+    }
+
+    return this.add.bitmapText(x, y, "bigFont", "?", 36)
+        .setOrigin(0.5)
+        .setScale(scale);
+};
+
+_getColourPickerFrameData = () => {
+    return {
+        "colourPicker.png": {
+            frame: { x: 1, y: 1591, w: 52, h: 52 },
+            rotated: false,
+            sourceSize: { w: 52, h: 52 }
+        },
+        "colourPickerBackground.png": {
+            frame: { x: 698, y: 325, w: 440, h: 440 },
+            rotated: false,
+            sourceSize: { w: 440, h: 440 }
+        },
+        "colourPickerOverlay.png": {
+            frame: { x: 698, y: 766, w: 440, h: 440 },
+            rotated: false,
+            sourceSize: { w: 440, h: 440 }
+        },
+        "colourPickerShadow.png": {
+            frame: { x: 602, y: 1207, w: 440, h: 440 },
+            rotated: false,
+            sourceSize: { w: 440, h: 440 }
+        },
+        "huePickerBackground.png": {
+            frame: { x: 1, y: 990, w: 600, h: 600 },
+            rotated: false,
+            sourceSize: { w: 600, h: 600 }
+        },
+        "menuColourPanelBackground.png": {
+            frame: { x: 1, y: 325, w: 696, h: 664 },
+            rotated: false,
+            sourceSize: { w: 720, h: 664 },
+            spriteSourceSize: { x: 24, y: 0, w: 696, h: 664 }
+        }
+    };
+};
+
+_getColourPickerTextureRef = (frameName) => {
+    const sheet = "CCControlColourPickerSpriteSheet-uhd";
+
+    if (
+        this.textures.exists(sheet) &&
+        this.textures.get(sheet).has(frameName)
+    ) {
+        return {
+            key: sheet,
+            frame: frameName
+        };
+    }
+
+    const generatedKey = `__cc_picker_${frameName}`;
+
+    if (this.textures.exists(generatedKey)) {
+        return {
+            key: generatedKey,
+            frame: null
+        };
+    }
+
+    if (!this.textures.exists(sheet)) {
+        return null;
+    }
+
+    const tex = this.textures.get(sheet);
+
+    const sourceImage =
+        typeof tex.getSourceImage === "function"
+            ? tex.getSourceImage()
+            : tex.source?.[0]?.image;
+
+    if (!sourceImage) {
+        return null;
+    }
+
+    const data = this._getColourPickerFrameData()[frameName];
+    if (!data) return null;
+
+    const frame = data.frame;
+    const outW = data.sourceSize.w;
+    const outH = data.sourceSize.h;
+
+    const canvasTexture = this.textures.createCanvas(generatedKey, outW, outH);
+    const canvas = canvasTexture.getCanvas();
+    const ctx = canvas.getContext("2d");
+
+    ctx.clearRect(0, 0, outW, outH);
+
+    if (data.rotated) {
+        ctx.save();
+        ctx.translate(outW / 2, outH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.drawImage(
+            sourceImage,
+            frame.x,
+            frame.y,
+            frame.w,
+            frame.h,
+            -frame.w / 2,
+            -frame.h / 2,
+            frame.w,
+            frame.h
+        );
+        ctx.restore();
+    } else {
+        ctx.drawImage(
+            sourceImage,
+            frame.x,
+            frame.y,
+            frame.w,
+            frame.h,
+            0,
+            0,
+            outW,
+            outH
+        );
+    }
+
+    canvasTexture.refresh();
+
+    return {
+        key: generatedKey,
+        frame: null
+    };
+};
+
+_addColourPickerImage = (x, y, frameName, scale = 1) => {
+    const tex = this._getColourPickerTextureRef(frameName);
+
+    if (tex) {
+        return tex.frame
+            ? this.add.image(x, y, tex.key, tex.frame).setScale(scale)
+            : this.add.image(x, y, tex.key).setScale(scale);
+    }
+
+    return this.add.rectangle(x, y, 80 * scale, 80 * scale, 0xffffff, 0.4)
+        .setStrokeStyle(2, 0xff0000, 1);
+};
+
+_setPickerObjectColor = (obj, hex, alpha = 1) => {
+    if (!obj) return;
+
+    if (typeof obj.setTint === "function") {
+        obj.setTint(hex);
+        return;
+    }
+
+    if (typeof obj.setFillStyle === "function") {
+        obj.setFillStyle(hex, alpha);
+    }
+};
+
+_rgbToHsv = (r, g, b) => {
+    r /= 255;
+    g /= 255;
+    b /= 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const d = max - min;
+
+    let h = 0;
+
+    if (d !== 0) {
+        if (max === r) {
+            h = ((g - b) / d) % 6;
+        } else if (max === g) {
+            h = ((b - r) / d) + 2;
+        } else {
+            h = ((r - g) / d) + 4;
+        }
+
+        h *= 60;
+
+        if (h < 0) h += 360;
+    }
+
+    const s = max === 0 ? 0 : d / max;
+    const v = max;
+
+    return { h, s, v };
+};
+
+_hsvToRgb = (h, s, v) => {
+    h = ((h % 360) + 360) % 360;
+
+    const c = v * s;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = v - c;
+
+    let r = 0;
+    let g = 0;
+    let b = 0;
+
+    if (h < 60) {
+        r = c;
+        g = x;
+    } else if (h < 120) {
+        r = x;
+        g = c;
+    } else if (h < 180) {
+        g = c;
+        b = x;
+    } else if (h < 240) {
+        g = x;
+        b = c;
+    } else if (h < 300) {
+        r = x;
+        b = c;
+    } else {
+        r = c;
+        b = x;
+    }
+
+    return {
+        r: Math.round((r + m) * 255),
+        g: Math.round((g + m) * 255),
+        b: Math.round((b + m) * 255)
+    };
+};
+
+_makeEditorOkButton = (parent, x, y, text, callback) => {
+    const btnW = 124;
+    const btnH = 62;
+    const btnBorder = this.textures.exists("GJ_button01") ? this.textures.get("GJ_button01").source[0].width * 0.3 : 28;
+
+    const grp = this.add.container(x, y);
+
+    const btn = this.add.nineslice(
+        0,
+        0,
+        "GJ_button01",
+        null,
+        btnW,
+        btnH,
+        btnBorder,
+        btnBorder,
+        btnBorder,
+        btnBorder
+    ).setOrigin(0.5);
+
+    const label = this.add.bitmapText(-5, -3, "goldFont", text, 42).setOrigin(0.5, 0.5);
+    const hitZone = this.add.zone(0, 0, btnW, btnH) .setInteractive();
+
+    grp.add([btn, label, hitZone]);
+    parent.add(grp);
+
+    const baseScale = 1;
+    const pressedScale = baseScale * 1.16;
+
+    hitZone.on("pointerdown", () => {
+        hitZone._pressed = true;
+        this.tweens.killTweensOf(grp, "scale");
+        this.tweens.add({
+            targets: grp,
+            scale: pressedScale,
+            duration: 300,
+            ease: "Bounce.Out"
+        });
+    });
+
+    const release = (runCallback = false) => {
+        if (!hitZone._pressed) return;
+
+        hitZone._pressed = false;
+        this.tweens.killTweensOf(grp, "scale");
+        this.tweens.add({
+            targets: grp,
+            scale: baseScale,
+            duration: 400,
+            ease: "Bounce.Out"
+        });
+
+        if (runCallback) {
+            callback?.();
+        }
+    };
+
+    hitZone.on("pointerup", () => release(true));
+    hitZone.on("pointerout", () => release(false));
+    hitZone.on("pointerupoutside", () => release(false));
+
+    return grp;
+};
+
+_makeEditorVisualHitButton = (parent, x, y, hitW, hitH, buildVisual, callback) => {
+    const root = this.add.container(x, y);
+    const visualRoot = this.add.container(0, 0);
+
+    const visual = buildVisual(visualRoot);
+
+    const hit = this.add.rectangle(0, 0, hitW, hitH, 0xffffff, 0.001)
+        .setOrigin(0.5)
+        .setInteractive();
+
+    root.add([visualRoot, hit]);
+    parent.add(root);
+
+    root._editorVisualBaseScale = visualRoot.scaleX || 1;
+
+    const getBaseScale = () => root._editorVisualBaseScale || visualRoot.scaleX || 1;
+
+    this._makeCompositeBouncyButton(
+        hit,
+        [{ target: visualRoot, getBaseScale }],
+        1,
+        () => {
+            callback?.();
+        }
+    );
+
+    return {
+        root,
+        hit,
+        visualRoot,
+        visual,
+        baseScale: getBaseScale(),
+        setBaseScale: (scale) => {
+            root._editorVisualBaseScale = scale;
+            visualRoot.setScale(scale);
+        }
+    };
+};
+
+_makeCurrentSpeedPreview = (parent, x, y, objectId, callback, targetHeight = 76, heightMultiplier = 1) => {
+    const objectDef = typeof getObjectFromId === "function" ? getObjectFromId(objectId) : null;
+    let frameName = objectDef?.frame || null;
+
+    if (objectDef?.randomFrames && objectDef.randomFrames.length) {
+        frameName = objectDef.randomFrames[0];
+    }
+
+    let icon = null;
+
+    if (frameName) {
+        icon = this._addSafeFrameImage(x, y, frameName, 1);
+    }
+
+    if (icon && typeof icon.setScale === "function") {
+        const rawHeight = icon.height || ((icon.displayHeight || 1) / (icon.scaleY || 1)) || 1;
+        let iconScale = (targetHeight * heightMultiplier) / rawHeight;
+
+        if (!Number.isFinite(iconScale) || iconScale <= 0) {
+            iconScale = 1;
+        }
+
+        icon.setScale(iconScale);
+        icon._bouncyBaseScale = iconScale;
+
+        if (typeof icon.setInteractive === "function") {
+            icon.setInteractive();
+        }
+
+        parent.add(icon);
+
+        this._makeBouncyButton(icon, iconScale, () => {
+            callback?.();
+        });
+
+        return {
+            root: icon,
+            hit: icon,
+            visualRoot: icon,
+            visual: icon,
+            baseScale: iconScale,
+            setBaseScale: (scale) => {
+                icon._bouncyBaseScale = scale;
+                icon.setScale(scale);
+            }
+        };
+    }
+
+    const fallback = this.add.bitmapText(x, y, "bigFont", "?", 42)
+        .setOrigin(0.5)
+        .setInteractive();
+
+    parent.add(fallback);
+
+    fallback._bouncyBaseScale = 1;
+
+    this._makeBouncyButton(fallback, 1, () => {
+        callback?.();
+    });
+
+    return {
+        root: fallback,
+        hit: fallback,
+        visualRoot: fallback,
+        visual: fallback,
+        baseScale: 1,
+        setBaseScale: (scale) => {
+            fallback._bouncyBaseScale = scale;
+            fallback.setScale(scale);
+        }
+    };
+};
+
+_makeGamemodeIconButton = (parent, x, y, modeDef, callback) => {
+    const iconScale = 0.88;
+    const icon = this._addSafeFrameImage(x, y, modeDef.frame, iconScale);
+
+    if (modeDef.rotateFlip) {
+        icon.setAngle(90);
+        icon.setFlipY(true);
+    }
+
+    if (typeof icon.setInteractive === "function") {
+        icon.setInteractive();
+    }
+
+    parent.add(icon);
+
+    this._makeBouncyButton(icon, iconScale, () => {
+        callback?.();
+    });
+
+    return {
+        root: icon,
+        hit: icon,
+        visualRoot: icon,
+        visual: icon,
+        baseScale: iconScale
+    };
+};
+
+_openEditorHorizontalOptionPopup = (titleText, options, selectedKey, onSelect, renderOption) => {
+    this._closeEditorHorizontalOptionPopup();
+
+    const sw = screenWidth;
+    const sh = screenHeight;
+    const isGamemodePopup = titleText === "Select Mode";
+    const isSpeedPopup = titleText === "Select Speed";
+
+    const root = this.add.container(0, 0).setScrollFactor(0).setDepth(2600);
+    this._editorHorizontalOptionPopup = root;
+
+    const blocker = this.add.rectangle(0, 0, sw, sh, 0x000000, 0.25).setOrigin(0).setInteractive();
+    root.add(blocker);
+
+    const optionCols = options.length;
+    const optionRows = 1;
+
+    const optionGapX = isGamemodePopup ? 84 : (isSpeedPopup ? 150 : 142);
+    const optionGapY = 0;
+
+    const panelW = 760
+    const panelH = 340
+
+    const speedTargetHeight = 112;
+
+    const inner = this.add.container(sw / 2, sh / 2 + 15).setScale(1);
+    root.add(inner);
+
+    const corner = this.textures.exists("GJ_square01")
+        ? this.textures.get("GJ_square01").source[0].width * 0.325
+        : 24;
+
+    const panel = this._drawScale9(0, 0, panelW, panelH, "GJ_square01", corner, 0xffffff, 1);
+    inner.add(panel);
+
+    const title = this.add.bitmapText(0, -(panelH / 2) + 50, "bigFont", titleText, 60).setOrigin(0.5);
+    inner.add(title);
+
+    let selected = selectedKey;
+    const optionObjects = [];
+
+    const setTintDeep = (obj, tint) => {
+        if (!obj) return;
+
+        if (tint === null) {
+            if (typeof obj.clearTint === "function") obj.clearTint();
+        } else if (typeof obj.setTint === "function") {
+            obj.setTint(tint);
+        }
+
+        if (Array.isArray(obj.list)) {
+            for (const child of obj.list) {
+                setTintDeep(child, tint);
+            }
+        }
+    };
+
+    const getVisualHeight = (obj) => {
+        if (!obj) return 0;
+
+        if (typeof obj.getBounds === "function") {
+            const bounds = obj.getBounds();
+            if (bounds && bounds.height > 0) {
+                return bounds.height;
+            }
+        }
+
+        if (obj.displayHeight > 0) return obj.displayHeight;
+        if (obj.height > 0) return obj.height * (obj.scaleY || 1);
+
+        return 0;
+    };
+
+    const refreshSelected = () => {
+        for (const entry of optionObjects) {
+            const isSelected = entry.key === selected;
+            const baseScale = entry.baseScale || 1;
+
+            entry.visualRoot.setScale(baseScale);
+            entry.visualRoot.setAlpha(1);
+            setTintDeep(entry.visualRoot, isSelected ? null : 0x666666);
+        }
+    };
+
+    options.forEach((opt, i) => {
+        const col = i;
+        const ox = ((col - ((options.length - 1) / 2)) * optionGapX) + (isSpeedPopup ? -15 : 0);
+        const oy = -2;
+
+        const buttonObj = renderOption(inner, opt, ox, oy, () => {
+            selected = opt.key;
+            onSelect(opt);
+            refreshSelected();
+        }, i);
+
+        const visualRoot = buttonObj.visualRoot || buttonObj.root;
+
+        let baseScale = buttonObj.baseScale || visualRoot.scaleX || 1;
+
+        if (isSpeedPopup) {
+            const currentHeight = getVisualHeight(visualRoot);
+
+            if (currentHeight > 0) {
+                const targetHeight = speedTargetHeight * (i === 0 ? 0.8 : 1);
+                baseScale = baseScale * (targetHeight / currentHeight);
+            }
+        }
+
+        if (buttonObj.setBaseScale) {
+            buttonObj.setBaseScale(baseScale);
+        } else {
+            visualRoot._bouncyBaseScale = baseScale;
+            visualRoot.setScale(baseScale);
+        }
+
+        optionObjects.push({
+            key: opt.key,
+            root: buttonObj.root,
+            visualRoot,
+            baseScale
+        });
+    });
+
+    this._makeEditorOkButton(inner, 0, (panelH / 2) - 52, "OK", () => {
+        this._closeEditorHorizontalOptionPopup();
+    });
+
+    refreshSelected();
+};
+
+_openEditorColorPickerPopup = (channelId, labelText, onColorChanged) => {
+    this._closeEditorColorPickerPopup();
+
+    const sw = screenWidth;
+    const sh = screenHeight;
+
+    const root = this.add.container(0, 0).setScrollFactor(0).setDepth(2700);
+    this._editorColorPickerPopup = root;
+
+    const blocker = this.add.rectangle(0, 0, sw, sh, 0x000000, 0.32).setOrigin(0).setInteractive();
+    root.add(blocker);
+
+    const panelW = 820;
+    const panelH = 520;
+
+    const inner = this.add.container(sw / 2, sh / 2).setScale(1);
+    root.add(inner);
+
+    const corner = this.textures.exists("GJ_square01") ? this.textures.get("GJ_square01").source[0].width * 0.325 : 24;
+    const panel = this._drawScale9(0, 0, panelW, panelH, "GJ_square01", corner, 0xffffff, 1);
+    inner.add(panel);
+
+    const title = this.add.bitmapText(0, -(panelH / 2) + 40, "goldFont", "Select Color", 34).setOrigin(0.5);
+    inner.add(title);
+
+    const currentColor = this._getEditorColorChannel(channelId);
+    const originalColor = {
+        r: currentColor.r,
+        g: currentColor.g,
+        b: currentColor.b
+    };
+    const currentHsv = this._rgbToHsv(currentColor.r, currentColor.g, currentColor.b);
+
+    const pickerX = 0;
+    const pickerY = 0;
+    const pickerScale = 0.42;
+    const hueRingInnerRadius = 94;
+    const hueRingOuterRadius = 126;
+    const shadowRadius = (220 * pickerScale) - 1;
+    const innerRadius = shadowRadius;
+
+    const startHueAngle = Phaser.Math.DegToRad(currentHsv.h - 90);
+
+    const state = {
+        h: currentHsv.h,
+
+        innerX: 0,
+        innerY: 0,
+
+        hueX: Math.cos(startHueAngle) * 110,
+        hueY: Math.sin(startHueAngle) * 110,
+
+        sampledColor: {
+            r: currentColor.r,
+            g: currentColor.g,
+            b: currentColor.b
+        }
+    };
+
+    let activePickerTarget = null;
+
+    const toHexNumber = (color) => {
+        return Phaser.Display.Color.GetColor(color.r, color.g, color.b);
+    };
+
+    const toHexString = (color) => {
+        const toPart = (v) => {
+            return Phaser.Math.Clamp(Math.round(v), 0, 255)
+                .toString(16)
+                .padStart(2, "0")
+                .toUpperCase();
+        };
+
+        return `${toPart(color.r)}${toPart(color.g)}${toPart(color.b)}`;
+    };
+
+    const normalizeColor = (color) => {
+        return {
+            r: Phaser.Math.Clamp(parseInt(color.r, 10) || 0, 0, 255),
+            g: Phaser.Math.Clamp(parseInt(color.g, 10) || 0, 0, 255),
+            b: Phaser.Math.Clamp(parseInt(color.b, 10) || 0, 0, 255)
+        };
+    };
+
+    const parseHexColor = (raw) => {
+        let value = String(raw || "")
+            .replace(/^#/, "")
+            .replace(/[^0-9a-fA-F]/g, "")
+            .toUpperCase();
+
+        if (value.length !== 6) return null;
+
+        return {
+            r: parseInt(value.slice(0, 2), 16),
+            g: parseInt(value.slice(2, 4), 16),
+            b: parseInt(value.slice(4, 6), 16)
+        };
+    };
+
+    const menuPanelBg = this._addColourPickerImage(
+        pickerX,
+        pickerY,
+        "menuColourPanelBackground.png",
+        pickerScale
+    );
+
+    if (menuPanelBg && typeof menuPanelBg.setFlipX === "function") {
+        menuPanelBg.setFlipX(true);
+    }
+
+    const hueBg = this._addColourPickerImage(
+        pickerX,
+        pickerY,
+        "huePickerBackground.png",
+        pickerScale
+    );
+
+    const innerCircleBg = this._addColourPickerImage(
+        pickerX,
+        pickerY,
+        "colourPickerBackground.png",
+        pickerScale
+    );
+
+    const selectedColorCircle = this.add.circle(
+        pickerX,
+        pickerY,
+        innerRadius,
+        0xffffff,
+        1
+    );
+
+    const innerShadow = this._addColourPickerImage(
+        pickerX,
+        pickerY,
+        "colourPickerShadow.png",
+        pickerScale
+    );
+
+    const innerOverlay = this._addColourPickerImage(
+        pickerX,
+        pickerY,
+        "colourPickerOverlay.png",
+        pickerScale
+    );
+
+    const hueHandle = this._addColourPickerImage(
+        pickerX,
+        pickerY,
+        "colourPicker.png",
+        pickerScale
+    );
+
+    const svHandle = this._addColourPickerImage(
+        pickerX,
+        pickerY,
+        "colourPicker.png",
+        pickerScale
+    );
+
+    const previewSize = 42;
+    const previewX = -(panelW / 2) + 46;
+    const previewY = -(panelH / 2) + 43;
+
+    const currentPreview = this.add.rectangle(
+        previewX,
+        previewY,
+        previewSize,
+        previewSize,
+        toHexNumber(currentColor),
+        1
+    );
+
+    const originalPreview = this.add.rectangle(
+        previewX,
+        previewY + previewSize,
+        previewSize,
+        previewSize,
+        toHexNumber(originalColor),
+        1
+    );
+
+    const inputState = {
+        focused: null,
+        values: {
+            r: String(currentColor.r),
+            g: String(currentColor.g),
+            b: String(currentColor.b),
+            hex: toHexString(currentColor)
+        },
+        fields: {}
+    };
+
+    const createInputField = (key, label, x, y, w, maxChars) => {
+        const labelObj = this.add.bitmapText(x, y - 37, "goldFont", label, 22).setOrigin(0.5).setAlpha(0.95);
+        const bg = this.add.rectangle(x, y, w, 34, 0x000000, 0.38).setOrigin(0.5).setInteractive();
+        const valueText = this.add.bitmapText(x, y, "bigFont", "", 20).setOrigin(0.5);
+        const hit = this.add.rectangle(x, y, w, 40, 0xffffff, 0.001).setOrigin(0.5).setInteractive();
+
+        inputState.fields[key] = {
+            key,
+            label,
+            bg,
+            valueText,
+            maxChars
+        };
+
+        hit.on("pointerdown", (pointer) => {
+            inputState.focused = key;
+            this._editorTextInputFocused = true;
+            renderInputFields();
+
+            if (pointer && pointer.event) {
+                pointer.event.preventDefault?.();
+                pointer.event.stopPropagation?.();
+                pointer.event.stopImmediatePropagation?.();
+            }
+        });
+
+        inner.add([labelObj, bg, valueText, hit]);
+    };
+
+    const inputLeftX = -(panelW / 2) + 60;
+    const rgbInputY = -34;
+    const rgbGap = 76;
+
+    createInputField("r", "R:", inputLeftX, rgbInputY, 68, 3);
+    createInputField("g", "G:", inputLeftX + rgbGap, rgbInputY, 68, 3);
+    createInputField("b", "B:", inputLeftX + (rgbGap * 2), rgbInputY, 68, 3);
+    createInputField("hex", "HEX:", inputLeftX + rgbGap, 50, 152, 6);
+
+    inner.add([
+        menuPanelBg,
+        hueBg,
+        innerCircleBg,
+        selectedColorCircle,
+        innerShadow,
+        innerOverlay,
+        hueHandle,
+        svHandle,
+        currentPreview,
+        originalPreview
+    ]);
+
+    const getTextureFrame = (frameName) => {
+        const ref = this._getColourPickerTextureRef(frameName);
+        if (!ref) return null;
+
+        const tex = this.textures.get(ref.key);
+        if (!tex) return null;
+
+        const frame =
+            typeof tex.get === "function"
+                ? tex.get(ref.frame || "__BASE")
+                : null;
+
+        if (!frame || !frame.source || !frame.source.image) {
+            return null;
+        }
+
+        return frame;
+    };
+
+    const drawFrameToCanvas = (ctx, frameName, destW, destH) => {
+        const frame = getTextureFrame(frameName);
+        if (!frame) return false;
+
+        const sourceImage = frame.source.image;
+
+        ctx.drawImage(
+            sourceImage,
+            frame.cutX,
+            frame.cutY,
+            frame.cutWidth,
+            frame.cutHeight,
+            0,
+            0,
+            destW,
+            destH
+        );
+
+        return true;
+    };
+
+    const colorDistanceSq = (a, b) => {
+        const dr = a.r - b.r;
+        const dg = a.g - b.g;
+        const db = a.b - b.b;
+
+        return dr * dr + dg * dg + db * db;
+    };
+
+    const hueDistance = (a, b) => {
+        let d = Math.abs(a - b) % 360;
+        if (d > 180) d = 360 - d;
+        return d;
+    };
+
+    const sampleSize = Math.ceil(440 * pickerScale);
+    const sampleRadius = sampleSize / 2;
+
+    const sampleCanvas = document.createElement("canvas");
+    sampleCanvas.width = sampleSize;
+    sampleCanvas.height = sampleSize;
+
+    const sampleCtx = sampleCanvas.getContext("2d", {
+        willReadFrequently: true
+    });
+
+    const hueSampleSize = Math.ceil(600 * pickerScale);
+    const hueSampleRadius = hueSampleSize / 2;
+
+    const hueSampleCanvas = document.createElement("canvas");
+    hueSampleCanvas.width = hueSampleSize;
+    hueSampleCanvas.height = hueSampleSize;
+
+    const hueSampleCtx = hueSampleCanvas.getContext("2d", {
+        willReadFrequently: true
+    });
+
+    let hueSampleReady = false;
+
+    const rebuildHueSampleCanvas = () => {
+        hueSampleCtx.clearRect(0, 0, hueSampleSize, hueSampleSize);
+
+        hueSampleReady = drawFrameToCanvas(
+            hueSampleCtx,
+            "huePickerBackground.png",
+            hueSampleSize,
+            hueSampleSize
+        );
+    };
+
+    const rebuildInnerSampleCanvas = () => {
+        const huePure = this._hsvToRgb(state.h, 1, 1);
+        const hueHex = Phaser.Display.Color.GetColor(huePure.r, huePure.g, huePure.b);
+
+        selectedColorCircle.setFillStyle(hueHex, 1);
+
+        sampleCtx.clearRect(0, 0, sampleSize, sampleSize);
+
+        drawFrameToCanvas(sampleCtx, "colourPickerBackground.png", sampleSize, sampleSize);
+
+        sampleCtx.save();
+        sampleCtx.globalCompositeOperation = "source-over";
+        sampleCtx.fillStyle = `rgb(${huePure.r}, ${huePure.g}, ${huePure.b})`;
+        sampleCtx.beginPath();
+        sampleCtx.arc(sampleRadius, sampleRadius, sampleRadius, 0, Math.PI * 2);
+        sampleCtx.fill();
+        sampleCtx.restore();
+
+        drawFrameToCanvas(sampleCtx, "colourPickerShadow.png", sampleSize, sampleSize);
+        drawFrameToCanvas(sampleCtx, "colourPickerOverlay.png", sampleSize, sampleSize);
+    };
+
+    const findHuePositionForLoadedColor = (targetColor) => {
+        if (!hueSampleReady) {
+            rebuildHueSampleCanvas();
+        }
+
+        const targetHsv = this._rgbToHsv(targetColor.r, targetColor.g, targetColor.b);
+        let best = null;
+
+        const fallbackAngle = Phaser.Math.DegToRad(targetHsv.h - 90);
+        const fallback = {
+            x: Math.cos(fallbackAngle) * ((hueRingInnerRadius + hueRingOuterRadius) / 2),
+            y: Math.sin(fallbackAngle) * ((hueRingInnerRadius + hueRingOuterRadius) / 2)
+        };
+
+        if (!hueSampleReady) {
+            return fallback;
+        }
+
+        for (let y = 0; y < hueSampleSize; y += 2) {
+            for (let x = 0; x < hueSampleSize; x += 2) {
+                const dx = x - hueSampleRadius;
+                const dy = y - hueSampleRadius;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < hueRingInnerRadius || dist > hueRingOuterRadius) continue;
+
+                const pixel = hueSampleCtx.getImageData(x, y, 1, 1).data;
+                if (pixel[3] < 12) continue;
+
+                const rgb = {
+                    r: pixel[0],
+                    g: pixel[1],
+                    b: pixel[2]
+                };
+
+                const hsv = this._rgbToHsv(rgb.r, rgb.g, rgb.b);
+                if (hsv.s < 0.08) continue;
+
+                const midRadius = (hueRingInnerRadius + hueRingOuterRadius) / 2;
+                const radiusPenalty = Math.abs(dist - midRadius) * 0.08;
+                const huePenalty = hueDistance(hsv.h, targetHsv.h);
+
+                const score = huePenalty + radiusPenalty;
+
+                if (!best || score < best.score) {
+                    best = {
+                        x: dx,
+                        y: dy,
+                        score
+                    };
+                }
+            }
+        }
+
+        return best || fallback;
+    };
+
+    const sampleHuePixel = () => {
+        if (!hueSampleReady) {
+            rebuildHueSampleCanvas();
+        }
+
+        const canvasX = Math.round(hueSampleRadius + state.hueX);
+        const canvasY = Math.round(hueSampleRadius + state.hueY);
+
+        const clampedX = Phaser.Math.Clamp(canvasX, 0, hueSampleSize - 1);
+        const clampedY = Phaser.Math.Clamp(canvasY, 0, hueSampleSize - 1);
+
+        const pixel = hueSampleCtx.getImageData(clampedX, clampedY, 1, 1).data;
+
+        const sampledRgb = {
+            r: pixel[0],
+            g: pixel[1],
+            b: pixel[2]
+        };
+
+        const sampledHsv = this._rgbToHsv(sampledRgb.r, sampledRgb.g, sampledRgb.b);
+
+        if (sampledHsv.s > 0.08) {
+            state.h = sampledHsv.h;
+        }
+
+        return sampledRgb;
+    };
+
+    const findInnerPositionForLoadedColor = (targetColor) => {
+        rebuildInnerSampleCanvas();
+
+        let best = null;
+        for (let y = 1; y < sampleSize - 1; y++) {
+            for (let x = 1; x < sampleSize - 1; x++) {
+                const dx = x - sampleRadius;
+                const dy = y - sampleRadius;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist > innerRadius) continue;
+
+                const pixel = sampleCtx.getImageData(x, y, 1, 1).data;
+                if (pixel[3] < 12) continue;
+
+                const rgb = {
+                    r: pixel[0],
+                    g: pixel[1],
+                    b: pixel[2]
+                };
+
+                const score = colorDistanceSq(rgb, targetColor);
+
+                if (!best || score < best.score) {
+                    best = {
+                        x: dx,
+                        y: dy,
+                        color: rgb,
+                        score
+                    };
+                }
+            }
+        }
+
+        if (best) return best;
+
+        return {
+            x: 0,
+            y: 0,
+            color: targetColor,
+            score: 0
+        };
+    };
+
+    const sampleInnerPixel = () => {
+        rebuildInnerSampleCanvas();
+
+        const canvasX = Math.round(sampleRadius + state.innerX);
+        const canvasY = Math.round(sampleRadius + state.innerY);
+
+        const clampedX = Phaser.Math.Clamp(canvasX, 1, sampleSize - 2);
+        const clampedY = Phaser.Math.Clamp(canvasY, 1, sampleSize - 2);
+
+        const pixel = sampleCtx.getImageData(clampedX, clampedY, 1, 1).data;
+
+        if (pixel[3] < 12) {
+            return state.sampledColor;
+        }
+
+        state.sampledColor = {
+            r: pixel[0],
+            g: pixel[1],
+            b: pixel[2]
+        };
+
+        return state.sampledColor;
+    };
+
+    const getLocalPointer = (pointer) => {
+        return {
+            x: pointer.x - (sw / 2),
+            y: pointer.y - (sh / 2)
+        };
+    };
+
+    const getPointerDeltaFromPicker = (pointer) => {
+        const p = getLocalPointer(pointer);
+
+        return {
+            dx: p.x - pickerX,
+            dy: p.y - pickerY
+        };
+    };
+
+    const getPointerDistanceFromPicker = (pointer) => {
+        const { dx, dy } = getPointerDeltaFromPicker(pointer);
+        return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const clampPointToHuePickerBackground = (dx, dy) => {
+        let dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 0.0001) {
+            dx = 0;
+            dy = -hueRingInnerRadius;
+            dist = hueRingInnerRadius;
+        }
+
+        const clampedDist = Phaser.Math.Clamp(
+            dist,
+            hueRingInnerRadius,
+            hueRingOuterRadius
+        );
+
+        return {
+            x: dx / dist * clampedDist,
+            y: dy / dist * clampedDist
+        };
+    };
+
+    const clampPointToColourPickerShadow = (dx, dy) => {
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist > innerRadius && dist > 0.0001) {
+            return {
+                x: dx / dist * innerRadius,
+                y: dy / dist * innerRadius
+            };
+        }
+
+        return {
+            x: dx,
+            y: dy
+        };
+    };
+
+    const isColourPickerShadowPointer = (pointer) => {
+        const dist = getPointerDistanceFromPicker(pointer);
+
+        return dist <= innerRadius;
+    };
+
+    const isHueRingPointer = (pointer) => {
+        const dist = getPointerDistanceFromPicker(pointer);
+
+        return dist >= hueRingInnerRadius && dist <= hueRingOuterRadius;
+    };
+
+    function renderInputFields() {
+        for (const key in inputState.fields) {
+            const field = inputState.fields[key];
+            const isFocused = inputState.focused === key;
+            const raw = inputState.values[key] ?? "";
+            const displayValue = raw;
+
+            field.bg.setFillStyle(isFocused ? 0x000000 : 0x000000, isFocused ? 0.56 : 0.38);
+            field.valueText.setText(`${displayValue}${isFocused ? "|" : ""}`);
+        }
+    }
+
+    const setInputValuesFromColor = (color) => {
+        const normalized = normalizeColor(color);
+
+        inputState.values.r = String(normalized.r);
+        inputState.values.g = String(normalized.g);
+        inputState.values.b = String(normalized.b);
+        inputState.values.hex = toHexString(normalized);
+
+        renderInputFields();
+    };
+
+    const updateColorUi = (color, commitDraft = true, syncInputs = true) => {
+        const normalized = normalizeColor(color);
+        const hex = toHexNumber(normalized);
+
+        state.sampledColor = normalized;
+        currentPreview.setFillStyle(hex, 1);
+
+        hueHandle.setPosition(
+            pickerX + state.hueX,
+            pickerY + state.hueY
+        );
+
+        svHandle.setPosition(
+            pickerX + state.innerX,
+            pickerY + state.innerY
+        );
+
+        if (syncInputs) {
+            setInputValuesFromColor(normalized);
+        }
+
+        if (commitDraft) {
+            this._setEditorColorChannelDraft(channelId, normalized);
+        }
+
+        if (onColorChanged) {
+            onColorChanged(normalized);
+        }
+    };
+
+    const setPickerPositionForColor = (color) => {
+        const normalized = normalizeColor(color);
+        const loadedHuePos = findHuePositionForLoadedColor(normalized);
+
+        state.hueX = loadedHuePos.x;
+        state.hueY = loadedHuePos.y;
+
+        sampleHuePixel();
+
+        const loadedInnerPos = findInnerPositionForLoadedColor(normalized);
+
+        state.innerX = loadedInnerPos.x;
+        state.innerY = loadedInnerPos.y;
+    };
+
+    const applyTypedColor = (color) => {
+        const normalized = normalizeColor(color);
+
+        inputState.focused = inputState.focused;
+        setPickerPositionForColor(normalized);
+        updateColorUi(normalized, true, true);
+    };
+
+    const tryApplyRgbInputs = () => {
+        if (
+            inputState.values.r === "" ||
+            inputState.values.g === "" ||
+            inputState.values.b === ""
+        ) {
+            renderInputFields();
+            return;
+        }
+
+        applyTypedColor({
+            r: inputState.values.r,
+            g: inputState.values.g,
+            b: inputState.values.b
+        });
+    };
+
+    const tryApplyHexInput = () => {
+        const parsed = parseHexColor(inputState.values.hex);
+
+        if (!parsed) {
+            renderInputFields();
+            return;
+        }
+
+        applyTypedColor(parsed);
+    };
+
+    const applyColor = (commitDraft = true) => {
+        const color = sampleInnerPixel();
+        updateColorUi(color, commitDraft, true);
+    };
+
+    const moveHuePickerToPointer = (pointer) => {
+        inputState.focused = null;
+        this._editorTextInputFocused = false;
+        renderInputFields();
+
+        let { dx, dy } = getPointerDeltaFromPicker(pointer);
+        const clamped = clampPointToHuePickerBackground(dx, dy);
+
+        state.hueX = clamped.x;
+        state.hueY = clamped.y;
+
+        sampleHuePixel();
+
+        applyColor(true);
+    };
+
+    const moveInnerPickerToPointer = (pointer) => {
+        inputState.focused = null;
+        this._editorTextInputFocused = false;
+        renderInputFields();
+
+        let { dx, dy } = getPointerDeltaFromPicker(pointer);
+        const clamped = clampPointToColourPickerShadow(dx, dy);
+
+        state.innerX = clamped.x;
+        state.innerY = clamped.y;
+
+        applyColor(true);
+    };
+
+    const beginPickerDrag = (pointer) => {
+        if (isColourPickerShadowPointer(pointer)) {
+            activePickerTarget = "inner";
+            moveInnerPickerToPointer(pointer);
+            return;
+        }
+
+        if (isHueRingPointer(pointer)) {
+            activePickerTarget = "hue";
+            moveHuePickerToPointer(pointer);
+            return;
+        }
+
+        activePickerTarget = null;
+    };
+
+    const continuePickerDrag = (pointer) => {
+        if (activePickerTarget === "inner") {
+            moveInnerPickerToPointer(pointer);
+            return;
+        }
+
+        if (activePickerTarget === "hue") {
+            moveHuePickerToPointer(pointer);
+        }
+    };
+
+    const endPickerDrag = () => {
+        activePickerTarget = null;
+    };
+
+    const pickerHit = this.add.circle(
+        pickerX,
+        pickerY,
+        hueRingOuterRadius + 20,
+        0xffffff,
+        0.001
+    )
+        .setInteractive({ draggable: true });
+
+    inner.add(pickerHit);
+
+    pickerHit.on("pointerdown", beginPickerDrag);
+    pickerHit.on("drag", continuePickerDrag);
+    pickerHit.on("pointerup", endPickerDrag);
+    pickerHit.on("pointerout", endPickerDrag);
+    pickerHit.on("pointerupoutside", endPickerDrag);
+
+    this._editorColorPickerKeyHandler = (event) => {
+        if (!this._editorColorPickerPopup || !inputState.focused) return;
+
+        this._editorTextInputFocused = true;
+
+        const key = inputState.focused;
+
+        if (event.key === "Escape" || event.key === "Enter") {
+            inputState.focused = null;
+            this._editorTextInputFocused = false;
+            renderInputFields();
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation?.();
+            return;
+        }
+
+        if (event.key === "Backspace") {
+            inputState.values[key] = String(inputState.values[key] || "").slice(0, -1);
+        } else if (key === "hex") {
+            if (/^[0-9a-fA-F]$/.test(event.key) && inputState.values.hex.length < 6) {
+                inputState.values.hex += event.key.toUpperCase();
+            } else {
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation?.();
+                return;
+            }
+        } else if (/^[0-9]$/.test(event.key) && inputState.values[key].length < 3) {
+            inputState.values[key] += event.key;
+        } else {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation?.();
+            return;
+        }
+
+        if (key === "hex") {
+            tryApplyHexInput();
+        } else {
+            tryApplyRgbInputs();
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+    };
+
+    window.addEventListener("keydown", this._editorColorPickerKeyHandler);
+
+    blocker.on("pointerdown", () => {
+        inputState.focused = null;
+        this._editorTextInputFocused = false;
+        renderInputFields();
+    });
+
+    rebuildHueSampleCanvas();
+    setPickerPositionForColor(currentColor);
+    state.sampledColor = normalizeColor(currentColor);
+
+    this._makeEditorOkButton(inner, 0, (panelH / 2) - 42, "OK", () => {
+        this._closeEditorColorPickerPopup();
+    });
+
+    updateColorUi(currentColor, false, true);
+};
+
+_openEditorLevelSettingsPopup = () => {
+    if (this._editorLevelSettingsPopup) return;
+
+    const sw = screenWidth;
+    const sh = screenHeight;
+    const centerX = sw / 2;
+    const centerY = sh / 2;
+    const panelW = 1000;
+    const panelH = 600;
+
+    this._editorLevelSettingsPopup = this.add.container(0, 0).setScrollFactor(0).setDepth(2300);
+    const dim = this.add.rectangle(0, 0, sw, sh, 0x000000, 0.55).setOrigin(0).setInteractive();
+    this._editorLevelSettingsPopup.add(dim);
+    const inner = this.add.container(centerX, centerY).setScale(1);
+    this._editorLevelSettingsPopup.add(inner);
+
+    const corner = this.textures.exists("GJ_square01") ? this.textures.get("GJ_square01").source[0].width * 0.325 : 24;
+    const panel = this._drawScale9(0, 0, panelW, panelH, "GJ_square01", corner, 0xffffff, 1);
+    inner.add(panel);
+
+    const title = this.add.bitmapText(0, -(panelH / 2) + 42, "goldFont", "Select Color:", 40).setOrigin(0.5);
+    inner.add(title);
+
+    const colorToHex = (color) => {
+        return Phaser.Display.Color.GetColor(color.r, color.g, color.b);
+    };
+
+   const makeColorTarget = (label, channelId, x, y) => {
+        const container = this.add.container(x, y);
+        const buttonW = 50;
+        const buttonH = 50;
+        const radius = 8;
+
+        const labelText = this.add.bitmapText(0, -45, "bigFont", label, 24).setOrigin(0.5);
+
+        const buttonVisual = this.add.container(0, 0);
+        buttonVisual._bouncyBaseScale = 1;
+
+        const shadow = this.add.graphics();
+        const swatch = this.add.graphics();
+
+        buttonVisual.add([shadow, swatch]);
+
+        const hitZone = this.add.zone(0, 0, buttonW, buttonH)
+            .setOrigin(0.5)
+            .setInteractive();
+
+        container.add([labelText, buttonVisual, hitZone]);
+        inner.add(container);
+
+        const getBouncyBaseScale = () => (
+            buttonVisual._bouncyBaseScale !== undefined ? buttonVisual._bouncyBaseScale : 1
+        );
+
+        hitZone.on("pointerdown", () => {
+            const baseScale = getBouncyBaseScale();
+
+            buttonVisual._pressed = true;
+            this.tweens.killTweensOf(buttonVisual);
+
+            this.tweens.add({
+                targets: buttonVisual,
+                scale: baseScale * 1.26,
+                duration: 300,
+                ease: "Bounce.Out"
+            });
+        });
+
+        hitZone.on("pointerout", () => {
+            if (buttonVisual._pressed) {
+                buttonVisual._pressed = false;
+                this.tweens.killTweensOf(buttonVisual);
+
+                this.tweens.add({
+                    targets: buttonVisual,
+                    scale: getBouncyBaseScale(),
+                    duration: 400,
+                    ease: "Bounce.Out"
+                });
+            }
+        });
+
+        hitZone.on("pointerup", () => {
+            if (buttonVisual._pressed) {
+                buttonVisual._pressed = false;
+                this.tweens.killTweensOf(buttonVisual);
+                buttonVisual.setScale(getBouncyBaseScale());
+
+                this._openEditorColorPickerPopup(
+                    channelId,
+                    label,
+                    refresh
+                );
+            }
+        });
+
+        hitZone.on("pointerupoutside", () => {
+            if (buttonVisual._pressed) {
+                buttonVisual._pressed = false;
+                this.tweens.killTweensOf(buttonVisual);
+
+                this.tweens.add({
+                    targets: buttonVisual,
+                    scale: getBouncyBaseScale(),
+                    duration: 400,
+                    ease: "Bounce.Out"
+                });
+            }
+        });
+
+        const drawSwatch = (color) => {
+            const hex = colorToHex(color);
+
+            shadow.clear();
+            shadow.fillStyle(0x000000, 0.35);
+            shadow.fillRoundedRect(
+                -(buttonW / 2) + 4,
+                -(buttonH / 2) + 5,
+                buttonW,
+                buttonH,
+                radius
+            );
+
+            swatch.clear();
+            swatch.fillStyle(hex, 1);
+            swatch.fillRoundedRect(
+                -(buttonW / 2),
+                -(buttonH / 2),
+                buttonW,
+                buttonH,
+                radius
+            );
+
+            swatch.lineStyle(2, 0x000000, 1);
+            swatch.strokeRoundedRect(
+                -(buttonW / 2),
+                -(buttonH / 2),
+                buttonW,
+                buttonH,
+                radius
+            );
+        };
+
+        const refresh = () => {
+            const color = this._getEditorColorChannel(channelId);
+            drawSwatch(color);
+        };
+
+        refresh();
+    };
+
+    makeColorTarget("BG:", 1000, -240, -170);
+    makeColorTarget("G:", 1001, -160, -170);
+    makeColorTarget("G2:", 1009, -80, -170);
+    makeColorTarget("Line:", 1002, 0, -170);
+    makeColorTarget("Obj:", 1004, 80, -170);
+    makeColorTarget("MG:", 1013, 160, -170);
+    makeColorTarget("MG2:", 1014, 240, -170);
+
+    const speedDefs = [
+        { key: 1, label: "0.5x", objectId: 200 },
+        { key: 0, label: "1x", objectId: 201 },
+        { key: 2, label: "2x", objectId: 202 },
+        { key: 3, label: "3x", objectId: 203 },
+        { key: 4, label: "4x", objectId: 1334 }
+    ];
+
+    const modeDefs = [
+        { key: 0, label: "Cube", frame: "gj_iconBtn_off_001.png", rotateFlip: true },
+        { key: 1, label: "Ship", frame: "gj_shipBtn_off_001.png", rotateFlip: false },
+        { key: 2, label: "Ball", frame: "gj_ballBtn_off_001.png", rotateFlip: true },
+        { key: 3, label: "UFO", frame: "gj_birdBtn_off_001.png", rotateFlip: true },
+        { key: 4, label: "Wave", frame: "gj_dartBtn_off_001.png", rotateFlip: true },
+        { key: 5, label: "Robot", frame: "gj_robotBtn_off_001.png", rotateFlip: false },
+        { key: 6, label: "Spider", frame: "gj_spiderBtn_off_001.png", rotateFlip: false },
+        { key: 7, label: "Swing", frame: "gj_swingBtn_off_001.png", rotateFlip: false }
+    ];
+
+    const leftX = -(panelW / 2) + 90;
+
+    const startSpeedLabel = this.add.bitmapText(leftX, -262, "goldFont", "Speed:", 30).setOrigin(0.5);
+    inner.add(startSpeedLabel);
+
+    let speedButtonObj = null;
+
+    const refreshSpeedButton = () => {
+        if (speedButtonObj) {
+            speedButtonObj.root?.destroy();
+            speedButtonObj = null;
+        }
+
+        const speedKey = this._getEditorStartValue("kA4", 0);
+        const speedDef = speedDefs.find(s => s.key === speedKey) || speedDefs[0];
+        const speedIndex = Math.max(0, speedDefs.findIndex(s => s.key === speedDef.key));
+
+        speedButtonObj = this._makeCurrentSpeedPreview(
+            inner,
+            leftX + 5,
+            -190,
+            speedDef.objectId,
+            () => {
+                this._openEditorHorizontalOptionPopup(
+                    "Select Speed",
+                    speedDefs,
+                    this._getEditorStartValue("kA4", 0),
+                    (opt) => {
+                        this._setEditorStartValueDraft("kA4", opt.key);
+                        refreshSpeedButton();
+                    },
+                    (parent, opt, ox, oy, choose, optionIndex = 0) => {
+                        return this._makeCurrentSpeedPreview(
+                            parent,
+                            ox,
+                            oy,
+                            opt.objectId,
+                            choose,
+                            89.6,
+                            optionIndex === 0 ? 1.05 : 1.2
+                        );
+                    }
+                );
+            },
+            60.8,
+            speedIndex === 0 ? 1.05 : 1.2
+        );
+    };
+
+    refreshSpeedButton();
+
+    const modeLabel = this.add.bitmapText(leftX, -105, "goldFont", "Mode:", 30).setOrigin(0.5);
+    inner.add(modeLabel);
+
+    let modeButtonObj = null;
+
+    const refreshModeButton = () => {
+        if (modeButtonObj) {
+            modeButtonObj.root?.destroy();
+            modeButtonObj = null;
+        }
+
+        const modeKey = this._getEditorStartValue("kA2", 0);
+        const modeDef = modeDefs.find(m => m.key === modeKey) || modeDefs[0];
+
+        modeButtonObj = this._makeGamemodeIconButton(inner, leftX, -40, modeDef, () => {
+            this._openEditorHorizontalOptionPopup(
+                "Select Mode",
+                modeDefs,
+                this._getEditorStartValue("kA2", 0),
+                (opt) => {
+                    this._setEditorStartValueDraft("kA2", opt.key);
+                    refreshModeButton();
+                },
+                (parent, opt, ox, oy, choose) => {
+                    return this._makeGamemodeIconButton(parent, ox, oy, opt, choose);
+                }
+            );
+        });
+    };
+
+    refreshModeButton();
+
+    const songBgX = -315;
+    const songBgY = 40;
+    const songBgW = 630;
+    const songBgH = 175;
+
+    const songTabY = songBgY - 25;
+    const songTabW = 110;
+    const songTextY = songBgY + (songBgH / 2);
+
+    const songTitle = this.add.bitmapText(0, songTabY - 2, "goldFont", "Select Song:", 40).setOrigin(1, 0.5);
+    inner.add(songTitle);
+
+    const songGroupW = songTitle.width + 42 + songTabW + 13 + songTabW;
+    const songGroupLeft = -(songGroupW / 2);
+
+    const songTitleX = songGroupLeft + songTitle.width;
+    const normalTabX = songTitleX + 42 + (songTabW / 2);
+    const customTabX = normalTabX + songTabW + 13;
+
+    songTitle.setPosition(songTitleX, songTabY - 2);
+
+    let songCategory = "normal";
+
+    const {
+        level: currentLevel
+    } = this._getCurrentEditorLevelRecord();
+
+    if ((this._editorPendingSongId ?? currentLevel?.songId ?? -1) > 0) {
+        songCategory = "custom";
+    }
+
+    let normalIndex = 0;
+    const activeSongId = this._editorPendingSongId ?? currentLevel?.songId ?? -1;
+
+    if (activeSongId < 0) {
+        normalIndex = Math.max(0, Math.abs(activeSongId) - 1);
+    }
+
+    let customInput = activeSongId > 0 ? String(activeSongId) : "";
+    let customFocused = false;
+
+    const makeSongTabButton = (x, label, callback) => {
+        const tabRoot = this.add.container(x, songTabY);
+        const tabBg = this.add.nineslice(0, 0, "GJ_button01", null, songTabW, 40, 18, 18, 18, 18).setInteractive();
+        const tabText = this.add.bitmapText(-3, -3, "bigFont", label, 22).setOrigin(0.5);
+
+        tabRoot.add([tabBg, tabText]);
+        inner.add(tabRoot);
+
+        this._makeCompositeBouncyButton(tabBg, tabRoot, 1, callback);
+
+        return {
+            root: tabRoot,
+            bg: tabBg,
+            text: tabText
+        };
+    };
+
+    const normalTab = makeSongTabButton(normalTabX, "Normal", () => {
+        songCategory = "normal";
+        customFocused = false;
+        this._editorTextInputFocused = false;
+        updateSongUi();
+    });
+
+    const customTab = makeSongTabButton(customTabX, "Custom", () => {
+        songCategory = "custom";
+        customFocused = false;
+        this._editorTextInputFocused = false;
+        updateSongUi();
+    });
+
+    const songAreaBg = this.add.graphics();
+    songAreaBg.fillStyle(0x000000, 0.28);
+    songAreaBg.fillRoundedRect(songBgX, songBgY, songBgW, songBgH, 25);
+    inner.add(songAreaBg);
+
+    const customSongInputW = 335;
+    const customSongInputH = 62;
+    const customSongInputRadius = 12;
+    const customSongInputBg = this.add.graphics();
+    inner.add(customSongInputBg);
+
+    const songText = this.add.bitmapText(0, songTextY, "bigFont", "", 50).setOrigin(0.5);
+    inner.add(songText);
+
+    const customSongInputHit = this.add.zone(0, songTextY, customSongInputW, customSongInputH)
+        .setOrigin(0.5)
+        .setInteractive();
+    inner.add(customSongInputHit);
+
+    const prevSong = this.add.image(-250, songTextY + 2, "GJ_GameSheet03", "edit_leftBtn_001.png").setScale(1.2).setFlipX(false).setInteractive();
+    const nextSong = this.add.image(250, songTextY + 2, "GJ_GameSheet03", "edit_leftBtn_001.png").setScale(1.2).setFlipX(true).setInteractive();
+
+    inner.add([prevSong, nextSong]);
+
+    let customInputBeforeFocus = customInput;
+
+    const stopInputEvent = (event) => {
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
+        event?.stopImmediatePropagation?.();
+    };
+
+    const blurCustomSongInput = (commit = false) => {
+        if (!customFocused) return;
+
+        customFocused = false;
+        this._editorTextInputFocused = false;
+
+        if (commit) {
+            commitCustomSongDraft();
+        }
+
+        updateSongUi();
+    };
+
+    const cancelCustomSongInput = () => {
+        if (!customFocused) return;
+
+        customInput = customInputBeforeFocus;
+        customFocused = false;
+        this._editorTextInputFocused = false;
+        updateSongUi();
+    };
+
+    const focusCustomSongInput = (pointer = null) => {
+        if (songCategory !== "custom") return;
+
+        customInputBeforeFocus = customInput;
+        customFocused = true;
+        this._editorTextInputFocused = true;
+        updateSongUi();
+        stopInputEvent(pointer?.event);
+    };
+
+    const fitSongTextToArrows = () => {
+        const maxFontSize = songCategory === "custom"
+            ? ((!customFocused && !customInput) ? 30 : 42)
+            : 50;
+        const minFontSize = 8;
+        const padding = 18;
+        let maxTextW = customSongInputW - 34;
+
+        if (songCategory !== "custom") {
+            const prevW = prevSong.displayWidth || prevSong.width || 0;
+            const nextW = nextSong.displayWidth || nextSong.width || 0;
+
+            const leftLimit = prevSong.x + (prevW / 2) + padding;
+            const rightLimit = nextSong.x - (nextW / 2) - padding;
+            maxTextW = Math.max(40, rightLimit - leftLimit);
+        }
+
+        songText.setScale(1);
+
+        for (let size = maxFontSize; size >= minFontSize; size -= 2) {
+            songText.setFontSize(size);
+
+            if (songText.width <= maxTextW) {
+                return;
+            }
+        }
+
+        if (songText.width > maxTextW && songText.width > 0) {
+            songText.setScale(maxTextW / songText.width);
+        }
+    };
+
+    const setSongText = (value) => {
+        songText.setText(value);
+        fitSongTextToArrows();
+    };
+
+    const drawCustomSongInput = () => {
+        customSongInputBg.clear();
+
+        if (songCategory !== "custom") {
+            customSongInputHit.setVisible(false);
+            customSongInputHit.disableInteractive();
+            return;
+        }
+
+        customSongInputHit.setVisible(true);
+        customSongInputHit.setInteractive();
+
+        customSongInputBg.fillStyle(0x000000, 0.42);
+        customSongInputBg.fillRoundedRect(
+            -(customSongInputW / 2),
+            songTextY - (customSongInputH / 2),
+            customSongInputW,
+            customSongInputH,
+            customSongInputRadius
+        );
+    };
+
+    const updateSongUi = () => {
+        const setTabVisual = (tab, selected) => {
+            const selectedTexture = this.textures.exists("GJ_button01") ? "GJ_button01" : tab.bg.texture.key;
+            const deselectedTexture = this.textures.exists("GJ_button04") ? "GJ_button04" : selectedTexture;
+
+            tab.bg.setTexture(selected ? selectedTexture : deselectedTexture);
+            tab.bg.clearTint();
+            tab.text.clearTint();
+        };
+
+        setTabVisual(normalTab, songCategory === "normal");
+        setTabVisual(customTab, songCategory === "custom");
+
+        prevSong.setVisible(songCategory === "normal");
+        nextSong.setVisible(songCategory === "normal");
+        drawCustomSongInput();
+
+        if (songCategory === "normal") {
+            songText.setAlpha(1);
+            songText.clearTint();
+
+            const songs = window.allLevels || [];
+
+            if (!songs.length) {
+                setSongText("No normal songs loaded");
+                return;
+            }
+
+            normalIndex = Phaser.Math.Wrap(normalIndex, 0, songs.length);
+
+            const song = songs[normalIndex];
+            const title = song?.[1] || `Song ${normalIndex + 1}`;
+
+            setSongText(`${String(normalIndex + 1).padStart(2, "0")}: ${title}`);
+        } else {
+            const customPlaceholderVisible = !customFocused && !customInput;
+
+            songText.setAlpha(1);
+            if (customPlaceholderVisible) {
+                songText.setTint(0x75aaf0);
+            } else {
+                songText.clearTint();
+            }
+            setSongText(
+                customFocused
+                    ? `${customInput}|`
+                    : customInput
+                        ? customInput
+                        : "Type Song ID"
+            );
+        }
+    };
+
+    const commitNormalSongDraft = () => {
+        const songs = window.allLevels || [];
+        if (!songs.length) return;
+
+        normalIndex = Phaser.Math.Wrap(normalIndex, 0, songs.length);
+
+        const song = songs[normalIndex];
+        const title = song?.[1] || `Song ${normalIndex + 1}`;
+
+        this._setEditorSongDraft(-(normalIndex + 1), title);
+    };
+
+    const commitCustomSongDraft = () => {
+        const id = parseInt(customInput || "0", 10);
+
+        if (!id || id <= 0) return;
+
+        this._setEditorSongDraft(id, `NG#${id}`);
+    };
+
+    this._makeBouncyButton(prevSong, 1.2, () => {
+        const songs = window.allLevels || [];
+        if (!songs.length) return;
+
+        normalIndex = Phaser.Math.Wrap(normalIndex - 1, 0, songs.length);
+        commitNormalSongDraft();
+        updateSongUi();
+    });
+
+    this._makeBouncyButton(nextSong, 1.2, () => {
+        const songs = window.allLevels || [];
+        if (!songs.length) return;
+
+        normalIndex = Phaser.Math.Wrap(normalIndex + 1, 0, songs.length);
+        commitNormalSongDraft();
+        updateSongUi();
+    });
+
+    customSongInputHit.on("pointerdown", (pointer) => {
+        focusCustomSongInput(pointer);
+    });
+
+    dim.on("pointerdown", () => {
+        blurCustomSongInput(false);
+    });
+
+    this._editorLevelSettingsKeyHandler = (event) => {
+        if (!this._editorLevelSettingsPopup) return;
+        if (songCategory !== "custom" || !customFocused) return;
+
+        if (event.key === "Escape") {
+            cancelCustomSongInput();
+            stopInputEvent(event);
+            return;
+        }
+
+        if (event.key === "Enter") {
+            blurCustomSongInput(true);
+            stopInputEvent(event);
+            return;
+        }
+
+        if (event.key === "Backspace") {
+            customInput = customInput.slice(0, -1);
+            updateSongUi();
+            stopInputEvent(event);
+            return;
+        }
+
+        if (/^[0-9]$/.test(event.key) && customInput.length < 12) {
+            customInput += event.key;
+            updateSongUi();
+            stopInputEvent(event);
+            return;
+        }
+
+        if (event.key.length === 1 || ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " "].includes(event.key)) {
+            stopInputEvent(event);
+        }
+    };
+
+    window.addEventListener("keydown", this._editorLevelSettingsKeyHandler);
+
+    updateSongUi();
+
+    this._makeEditorOkButton(inner, 0, (panelH / 2) - 45, "OK", () => {
+        if (songCategory === "custom") {
+            commitCustomSongDraft();
+        }
+
+        this._closeEditorLevelSettingsPopup();
+    });
+};
+
 _initEditorPauseMenu = () => {
     this._editorMenuContainer = this.add.container(0, 0).setDepth(2000).setVisible(false);
 
@@ -7232,7 +9873,7 @@ _initEditorPauseMenu = () => {
 
         this._editorMenuContainer.add([btnImg, label]);
 
-        this._makeBouncyButton(btnImg, 0.75, () => {
+        this._makeCompositeBouncyButton(btnImg, [btnImg, label], 0.75, () => {
             data.cb();
         }, () => true);
     });
@@ -7343,23 +9984,32 @@ _serializeObject(object) {
 
 _saveEditorLevel = () => {
     const levelData = {
-      objects: window.levelObjects,
-      settings: window.settingslist
-    }
+        objects: window.levelObjects,
+        settings: window.settingslist
+    };
+
     const newLevelString = this._serializeLevel(levelData);
-    console.log(newLevelString);
-    
+
     let createdLevels = JSON.parse(localStorage.getItem("created_levels") || "[]");
     let levelIndex = createdLevels.findIndex(l => l.createdId === window.currentlevel[2]);
 
     if (levelIndex !== -1) {
         createdLevels[levelIndex].levelString = newLevelString;
         createdLevels[levelIndex].lastModified = Date.now();
-        
+
+        if (this._editorPendingSongId !== undefined) {
+            createdLevels[levelIndex].songId = this._editorPendingSongId;
+            createdLevels[levelIndex].song = this._editorPendingSongName || createdLevels[levelIndex].song;
+        }
+
         localStorage.setItem("created_levels", JSON.stringify(createdLevels));
+
         window._onlineLevelString = createdLevels[levelIndex].levelString;
         window._onlineLevelName = createdLevels[levelIndex].levelName;
         window._onlineLevelId = createdLevels[levelIndex].createdId;
+
+        this._editorPendingSongId = undefined;
+        this._editorPendingSongName = undefined;
     }
 };
 
