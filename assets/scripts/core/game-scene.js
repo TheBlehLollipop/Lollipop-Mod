@@ -301,6 +301,10 @@ class GameScene extends Phaser.Scene {
       },
       _v: -centerX
     };
+	  this._searchOverlay = null;
+    this._searchOverlayObjects = [];
+    this._searchHtmlInput = null;
+    this._searchInputResizeFn = null;
     this._state = new PlayerState();
     this._level = new window.LevelObject(this, this._cameraXRef);
     this._orbGfx = null;
@@ -630,11 +634,12 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         const isSavedButton = frame === "GJ_savedBtn_001.png";
         const isScoresButton = frame === "GJ_highscoreBtn_001.png";
         if (isSearchButton) {
-          btn.setInteractive();
-          this._makeBouncyButton(btn, btnScale, () => {
-            this._closeCreatorMenu(true);
-            this._openSearchMenu();
-          }, () => true);
+        btn.setInteractive();
+        this._makeBouncyButton(btn, btnScale, () => {
+        this._closeCreatorMenu(true); // Closes the creator overlay
+        this._openSearchMenu();       // Opens the level search frame!
+        }, () => true);
+        }
         } else if (isFeaturedButton) {
           btn.setInteractive();
           this._makeBouncyButton(btn, btnScale, () => {
@@ -10041,6 +10046,108 @@ _applyMirrorEffect() {
       targets: this._endLayerOverlay,
       alpha: 0,
       duration: 500
+    });
+  }
+_openSearchMenu() {
+    if (this._searchOverlay) return;
+    const sw = screenWidth;
+    const sh = screenHeight;
+
+    const fadeIn = this.add.graphics().setScrollFactor(0).setDepth(200);
+    fadeIn.fillStyle(0x000000, 1);
+    fadeIn.fillRect(0, 0, sw, sh);
+    this.tweens.add({ targets: fadeIn, alpha: 0, duration: 300, onComplete: () => fadeIn.destroy() });
+
+    const overlay = this.add.graphics().setScrollFactor(0).setDepth(100);
+    const gradientSteps = 80;
+    for (let gi = 0; gi < gradientSteps; gi++) {
+      const t = gi / (gradientSteps - 1);
+      const r1 = Math.round(0x00 + (0x01 - 0x00) * t);
+      const g1 = Math.round(0x65 + (0x2c - 0x65) * t);
+      const b1 = Math.round(0xff + (0x71 - 0xff) * t);
+      overlay.fillStyle((r1 << 16) | (g1 << 8) | b1, 1);
+      overlay.fillRect(0, Math.floor(gi * sh / gradientSteps), sw, Math.ceil(sh / gradientSteps) + 1);
+    }
+    this._searchOverlay = overlay;
+
+    const blocker = this.add.zone(sw / 2, sh / 2, sw, sh).setScrollFactor(0).setDepth(101).setInteractive();
+    const cornerTL = this.add.image(0, 0, "GJ_GameSheet03", "GJ_sideArt_001.png").setScrollFactor(0).setDepth(102).setOrigin(1, 0).setAngle(-90);
+    const cornerBL = this.add.image(0, sh, "GJ_GameSheet03", "GJ_sideArt_001.png").setScrollFactor(0).setDepth(102).setOrigin(1, 1).setFlipY(true).setAngle(90);
+    const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_03_001.png").setScrollFactor(0).setDepth(104).setFlipX(true).setFlipY(true).setRotation(Math.PI).setInteractive();
+    this._makeBouncyButton(backBtn, 1, () => this._closeSearchMenu());
+
+    this._searchOverlayObjects = [overlay, blocker, cornerTL, cornerBL, backBtn];
+
+    if (!window._wdSearchFrame) {
+      const iframe = document.createElement('iframe');
+      iframe.id = 'wd-search-iframe';
+      iframe.src = 'https://web-dashers.github.io/search-layer/';
+      iframe.style.position = 'absolute';
+      iframe.style.border = 'none';
+      iframe.style.zIndex = '9999';
+      document.body.appendChild(iframe);
+      window._wdSearchFrame = iframe;
+
+      const _repositionInput = () => {
+        const canvas = this.sys.game.canvas;
+        const rect = canvas.getBoundingClientRect();
+        iframe.style.left = `${rect.left + (rect.width * 0.15)}px`;
+        iframe.style.top = `${rect.top + (rect.height * 0.15)}px`;
+        iframe.style.width = `${rect.width * 0.70}px`;
+        iframe.style.height = `${rect.height * 0.70}px`;
+      };
+      _repositionInput();
+      window.addEventListener("resize", _repositionInput);
+      this._searchHtmlInput = iframe;
+      this._searchInputResizeFn = _repositionInput;
+
+      window.addEventListener('message', async (e) => {
+        if (e.data && e.data.type === 'WD_CLOSE_SEARCH') this._closeSearchMenu();
+        if (e.data && e.data.type === 'WD_PLAY_LEVEL') {
+          if (iframe) iframe.remove();
+          window._wdSearchFrame = null;
+          window.levelID = String(e.data.id);
+          window.alreadydownloaded = false;
+          if (e.data.levelString) {
+            window._onlineLevelString = e.data.levelString;
+            window._onlineLevelName = e.data.levelName || "Online Level";
+            window._onlineLevelId = String(e.data.id);
+            this.game.registry.set("autoStartGame", true);
+            window.currentlevel = [e.data.songKey || "game_song_01", window._onlineLevelName, window._onlineLevelId, ["Online", e.data.author || "Unknown"]];
+            this.scene.restart();
+          }
+        }
+      });
+    }
+  }
+
+  _closeSearchMenu(silent = false, onComplete = null) {
+    if (!this._searchOverlay) return;
+    if (this._searchHtmlInput) { this._searchHtmlInput.remove(); this._searchHtmlInput = null; }
+    if (this._searchInputResizeFn) { window.removeEventListener("resize", this._searchInputResizeFn); this._searchInputResizeFn = null; }
+    if (window._wdSearchFrame) { window._wdSearchFrame.remove(); window._wdSearchFrame = null; }
+
+    const destroy = () => {
+      for (const obj of this._searchOverlayObjects) { if (obj && obj.destroy) obj.destroy(); }
+      this._searchOverlayObjects = [];
+      this._searchOverlay = null;
+    };
+
+    if (silent) { destroy(); if (onComplete) onComplete(); return; }
+    const sw = screenWidth, sh = screenHeight;
+    const fadeOut = this.add.graphics().setScrollFactor(0).setDepth(200).setAlpha(0);
+    fadeOut.fillStyle(0x000000, 1);
+    fadeOut.fillRect(0, 0, sw, sh);
+
+    this.tweens.add({
+      targets: fadeOut,
+      alpha: 1,
+      duration: 150,
+      onComplete: () => {
+        destroy();
+        if (onComplete) onComplete();
+        this.tweens.add({ targets: fadeOut, alpha: 0, duration: 150, onComplete: () => fadeOut.destroy() });
+      }
     });
   }
 }
