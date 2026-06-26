@@ -296,12 +296,12 @@ class GameScene extends Phaser.Scene {
     this._cameraX = -centerX;
     this._cameraY = 0;
     this._cameraXRef = {
-      get value() {
-        return this._v;
+    get value() {
+    return this._v;
       },
       _v: -centerX
     };
-	  this._searchOverlay = null;
+    this._searchOverlay = null;
     this._searchOverlayObjects = [];
     this._searchHtmlInput = null;
     this._searchInputResizeFn = null;
