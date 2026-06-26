@@ -639,7 +639,6 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         this._closeCreatorMenu(true); // Closes the creator overlay
         this._openSearchMenu();       // Opens the level search frame!
         }, () => true);
-        }
         } else if (isFeaturedButton) {
           btn.setInteractive();
           this._makeBouncyButton(btn, btnScale, () => {
