@@ -2484,6 +2484,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     this._spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this._upKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
     this._wKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+    this._enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
     this._lKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.L);
     this._leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
     this._rightKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
@@ -5068,6 +5069,19 @@ _buildSettingsPopup() {
     if (this._player && this._player._hitboxTrail) {
       this._player._hitboxTrail = [];
     }
+
+    this._physicsFrame = checkpoint.physicsFrame;
+    if (this._macroBot?.recording == true){
+      this._macroBot?.rollbackRecording(this._physicsFrame);
+      if (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown || this._enterKey.isDown){
+        this._macroBot.recordEdge(true, this._physicsFrame);
+      } else {
+        this._macroBot.recordEdge(false, this._physicsFrame);
+      }
+    }
+    if (this._macroBot?.playing == true){
+      this._macroBot?.rollbackPlayback(this._physicsFrame);
+    }
   }
   _onFullscreenChange(_0x310c5b) {
     if (!_0x310c5b) {
@@ -5230,7 +5244,7 @@ _buildSettingsPopup() {
       this._fpsFrames = 0;
     }
     if (this._paused) {
-      if (!this._updateLogPopup && (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown) && !this._spaceWasDown && !this._settingsPopup) {
+      if (!this._updateLogPopup && (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown || this._enterKey.isDown) && !this._spaceWasDown && !this._settingsPopup) {
         setTimeout(() => {
           this._resumeGame();
         }, 75);
@@ -5242,7 +5256,7 @@ _buildSettingsPopup() {
       const _anyOverlayOpen = this._iconOverlay || this._creatorOverlay || this._searchOverlay ||
         this._onlineLevelsOverlay || this._settingsLayerOverlay || this._settingsPopup ||
         this._infoPopup || this._newgroundsPopup || this._statsLayerOverlay || this._updateLogPopup;
-      if (!_anyOverlayOpen && (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown) && !this._spaceWasDown) {
+      if (!_anyOverlayOpen && (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._enterKey.isDown) && !this._spaceWasDown) {
         if (this._creatorMenuOpen) return;
         this._spaceWasDown = true;
         if (this._levelSelectOverlay) {
@@ -5265,7 +5279,7 @@ _buildSettingsPopup() {
         }
       }
       this._arrowWasDown = _arrowLeft || _arrowRight;
-      this._spaceWasDown = this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown;
+      this._spaceWasDown = this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown || this._enterKey.isDown;
       const menuDelta = Math.min(deltaTime / 1000 * 60, 2);
       const menuSpeed = 0.85;
       this._menuCameraX = (this._menuCameraX || 0) + menuDelta * playerSpeed * d * menuSpeed;
@@ -5330,13 +5344,15 @@ _buildSettingsPopup() {
       }
       return;
     }
-    let _0x368ad9 = this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown;
-    if (!this._updateLogPopup && _0x368ad9 && !this._spaceWasDown) {
-      this._pushButton();
-    } else if (!_0x368ad9 && this._spaceWasDown) {
-      this._releaseButton();
-    }
-    this._spaceWasDown = _0x368ad9;
+    this._applyJumpInput = () => {
+      const jumpHeld = this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown || this._enterKey.isDown;
+      if (!this._updateLogPopup && jumpHeld && !this._spaceWasDown) {
+        this._pushButton();
+      } else if (!jumpHeld && this._spaceWasDown) {
+        this._releaseButton();
+      }
+      this._spaceWasDown = jumpHeld;
+    };
 
     const objectsUnderPointer = this.input.manager.hitTest(
       this.input.activePointer, 
