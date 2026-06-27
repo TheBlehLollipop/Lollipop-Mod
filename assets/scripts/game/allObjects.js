@@ -1757,7 +1757,7 @@ window.allobjects = function() {
     "default_z_order": 2
   },
   "144": {
-    "type": "deco",
+    "type": "hazard",
     "frame": "invis_spike_01_glow_001.png",
     "gridW": 1,
     "gridH": 1,
@@ -1770,7 +1770,7 @@ window.allobjects = function() {
     "default_z_order": 2
   },
   "145": {
-    "type": "deco",
+    "type": "hazard",
     "frame": "invis_spike_03_glow_001.png",
     "gridW": 0.5,
     "gridH": 0.5,
@@ -2780,7 +2780,7 @@ window.allobjects = function() {
   "205": {
     "can_color": true,
     "default_base_color_channel": 1004,
-    "frame": "invis_spike_02_001.png",
+    "frame": "invis_spike_02_glow_001.png",
     "glow_frame": "invis_spike_02_glow_001.png",
     "gridH": 0.46666666865348816,
     "gridW": 1,

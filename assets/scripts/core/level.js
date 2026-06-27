@@ -765,8 +765,9 @@ window.LevelObject = class LevelObject {
   }
   _updateGlowVisibility = () => {
       if (!this._glowSprites) return;
+      const glowVisible = (!window.isEditor || window.showEditorGlow);
       for (const glow of this._glowSprites) {
-          glow.setVisible(!window.isEditor || window.showEditorGlow);
+          glow.setVisible(glowVisible);
       }
   };
   _addGlowSprite(scene, x, y, frameName, objectData, worldX) {
@@ -786,7 +787,7 @@ window.LevelObject = class LevelObject {
         this._glowSprites = [];
       }
       this._glowSprites.push(glowSprite);
-      glowSprite.setVisible(!window.isEditor || window.showEditorGlow);
+      glowSprite.setVisible((!window.isEditor || window.showEditorGlow));
       if (worldX !== undefined) {
         glowSprite._eeWorldX = worldX;
         glowSprite._eeBaseY = y;
@@ -921,6 +922,8 @@ window.LevelObject = class LevelObject {
     this._nextObjectId = 0;
   }
   const linkedObjectId = this._nextObjectId++;
+  levelObj._eeObjectId = linkedObjectId;
+  if (levelObj._raw) delete levelObj._raw._eeObjectId;
   let hasCollisionEntry = false;
 
   const worldX = levelObj.x * 2;
