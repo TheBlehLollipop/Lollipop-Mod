@@ -246,6 +246,7 @@ class BootScene extends Phaser.Scene {
       this.load.atlas("GJ_LaunchSheet", "assets/sheets/GJ_LaunchSheet.png", "assets/sheets/GJ_LaunchSheet.json");
       this.load.atlas("player_ball_00", "assets/sheets/player_ball_00.png", "assets/sheets/player_ball_00.json");
       this.load.atlas("player_dart_00", "assets/sheets/player_dart_00.png", "assets/sheets/player_dart_00.json");
+      this.load.atlas("CCControlColourPickerSpriteSheet-uhd", "assets/sheets/CCControlColourPickerSpriteSheet-uhd.png", "assets/sheets/CCControlColourPickerSpriteSheet-uhd.json");
       this.load.image("bigFont", "assets/fonts/bigFont.png");
       this.load.text("bigFontFnt", "assets/fonts/bigFont.fnt");
       this.load.image("square04_001", "assets/sprites/square04_001.png");
