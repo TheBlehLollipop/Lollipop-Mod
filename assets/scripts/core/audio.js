@@ -14,12 +14,15 @@ class AudioManager {
     this._pendingMusicLoadOffset = 0;
     this._pendingMusicFadeDuration = null;
     this._missingMusicWarned = new Set();
+    this._pendingOnlineSongLoadKey = null;
+    this._pendingOnlineSongLoadOffset = 0;
+    this._pendingOnlineSongFadeDuration = null;
   }
   _effectiveVolume() {
     return this._userMusicVol * 0.8;
   }
   get musicPlaying() {
-    return !!this._pendingMusicLoadKey || this.isplaying();
+    return !!this._pendingMusicLoadKey || !!this._pendingOnlineSongLoadKey || this.isplaying();
   }
   _getLevelSongStartOffset() {
     const rawOffset = window.settingsMap?.["kA13"] ?? 0;
@@ -104,6 +107,90 @@ class AudioManager {
       return false;
     }
   }
+  _loadMissingOnlineSong(songKey, startPosOffset = 0, fadeDuration = null) {
+    const match = String(songKey || "").match(/^ng_song_(\d+)$/);
+    const songId = match ? match[1] : null;
+    const proxyBase = (window._gdProxyUrl || "").replace(/\/$/, "");
+    const soundMgr = this._scene?.game?.sound;
+    const ctx = soundMgr?.context;
+
+    if (!songId || !proxyBase || !ctx) {
+      return false;
+    }
+
+    if (this._pendingOnlineSongLoadKey === songKey) {
+      this._pendingOnlineSongLoadOffset = startPosOffset;
+      this._pendingOnlineSongFadeDuration = fadeDuration;
+      return true;
+    }
+
+    this._pendingOnlineSongLoadKey = songKey;
+    this._pendingOnlineSongLoadOffset = startPosOffset;
+    this._pendingOnlineSongFadeDuration = fadeDuration;
+
+    (async () => {
+      try {
+        if (ctx.state === "suspended") await ctx.resume();
+
+        const ngRes = await fetch(`${proxyBase}/getGJSongInfo.php`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `songID=${encodeURIComponent(songId)}&secret=Wmfd2893gb7`
+        });
+
+        const ngText = ngRes.ok ? await ngRes.text() : "-1";
+        if (!ngText || ngText === "-1") throw new Error("Song info unavailable");
+
+        const ngParts = ngText.split("~|~");
+        const ngMap = {};
+        for (let i = 0; i + 1 < ngParts.length; i += 2) ngMap[ngParts[i]] = ngParts[i + 1];
+
+        const songUrl = decodeURIComponent((ngMap["10"] || "").trim());
+        if (!songUrl) throw new Error("Song URL unavailable");
+
+        const songTitle = (ngMap["2"] || `Song #${songId}`).replace(/:$/, "").trim();
+        const songArtist = (ngMap["4"] || "Unknown").replace(/:$/, "").trim();
+        const proxiedUrl = `${proxyBase}/audio-proxy?url=${encodeURIComponent(songUrl)}`;
+        const audioRes = await fetch(proxiedUrl);
+        if (!audioRes.ok) throw new Error(`Audio proxy failed: ${audioRes.status}`);
+
+        const arrayBuf = await audioRes.arrayBuffer();
+        const decoded = await ctx.decodeAudioData(arrayBuf);
+
+        if (this._pendingOnlineSongLoadKey !== songKey) return;
+
+        const nextOffset = this._pendingOnlineSongLoadOffset;
+        const nextFadeDuration = this._pendingOnlineSongFadeDuration;
+
+        this._pendingOnlineSongLoadKey = null;
+        this._pendingOnlineSongLoadOffset = 0;
+        this._pendingOnlineSongFadeDuration = null;
+
+        window._onlineSongBuffer = decoded;
+        window._onlineSongKey = songKey;
+        window._onlineSongTitle = songTitle;
+        window._onlineSongArtist = songArtist;
+
+        if (Array.isArray(window.currentlevel) && window.currentlevel[0] === songKey) {
+          window.currentlevel[3] = ["Local", songArtist];
+          if (nextFadeDuration !== null && nextFadeDuration !== undefined) {
+            this.fadeInMusic(nextFadeDuration);
+          } else {
+            this.startMusic(nextOffset);
+          }
+        }
+      } catch (err) {
+        if (this._pendingOnlineSongLoadKey === songKey) {
+          this._pendingOnlineSongLoadKey = null;
+          this._pendingOnlineSongLoadOffset = 0;
+          this._pendingOnlineSongFadeDuration = null;
+        }
+        console.warn("Failed to load online song audio", songKey, err);
+      }
+    })();
+
+    return true;
+  }
   startMusic(StartPosOffset = 0) {
     let savedPosition = 0;
     let savedKey = null;
@@ -144,7 +231,7 @@ class AudioManager {
       return;
     }
     if (!this._scene.cache.audio.exists(_songKey)) {
-      if (this._loadMissingOfficialSong(_songKey, StartPosOffset)) {
+      if (this._loadMissingOnlineSong(_songKey, StartPosOffset) || this._loadMissingOfficialSong(_songKey, StartPosOffset)) {
         this._setupAnalyser();
         return;
       }
@@ -317,7 +404,7 @@ class AudioManager {
     }
 
     if (!this._scene.cache.audio.exists(songKey)) {
-      if (this._loadMissingOfficialSong(songKey, 0, durationMillis)) {
+      if (this._loadMissingOnlineSong(songKey, 0, durationMillis) || this._loadMissingOfficialSong(songKey, 0, durationMillis)) {
         this._setupAnalyser();
         return;
       }
@@ -373,7 +460,7 @@ class AudioManager {
     }
   }
   _ensureCorrectMusicMode() {
-    if (this._pendingMusicLoadKey) return;
+    if (this._pendingMusicLoadKey || this._pendingOnlineSongLoadKey) return;
     if (!this._music) return;
     const isPracticeMode = this._scene._practicedMode && this._scene._practicedMode.practiceMode;
     const expectedSongKey = isPracticeMode ? "StayInsideMe" : window.currentlevel?.[0];
@@ -424,6 +511,9 @@ class AudioManager {
     this._pendingMusicLoadKey = null;
     this._pendingMusicLoadOffset = 0;
     this._pendingMusicFadeDuration = null;
+    this._pendingOnlineSongLoadKey = null;
+    this._pendingOnlineSongLoadOffset = 0;
+    this._pendingOnlineSongFadeDuration = null;
     this.stopMusic();
   }
 }

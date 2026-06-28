@@ -2826,7 +2826,9 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     const menuMusicEnabled = localStorage.getItem("menuMusicEnabled");
     const shouldPlayMenuMusic = menuMusicEnabled === null ? true : menuMusicEnabled === "true";
     
-    if (!this._audio.isplaying() && shouldPlayMenuMusic) {
+    if (window.isEditor) {
+      this._audio.stopMusic();
+    } else if (!this._audio.isplaying() && shouldPlayMenuMusic) {
       this._audio.startMenuMusic();
     } else if (this._audio.isplaying() && !shouldPlayMenuMusic) {
       this._audio.stopMusic();
@@ -3476,6 +3478,11 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         this._restartLevel();
   }
   toggleGlitter(_0x34c21a) {
+    if (this._editorPlaytestActive) {
+      this._glitterEmitter.stop();
+      return;
+    }
+
     if (_0x34c21a) {
       this._glitterEmitter.start();
     } else {
@@ -4248,8 +4255,9 @@ _buildSettingsPopup() {
     const creditsEntries = [
       { text: "Made by RobTop Games", scale: 0.8, font: "goldFont" },
       { text: "Modded by:", scale: 0.9, font: "bigFont" },
-      { text: "breadbb, PinkDev, rohanis0000, bog,", scale: 0.7, font: "goldFont" },
-      { text: "Lasokar, AntiMatter, arbstro, aloaf", scale: 0.7, font: "goldFont" },
+      { text: "breadbb, PinkDev, rohanis0000,", scale: 0.7, font: "goldFont" },
+      { text: "bog, Lasokar, AntiMatter,", scale: 0.7, font: "goldFont" },
+      { text: "arbstro, and aloaf", scale: 0.7, font: "goldFont" },
       { text: "Contributors:", scale: 0.9, font: "bigFont" },
       { text: "t0nchi7 and Itzar.", scale: 0.7, font: "goldFont" },
       { text: "© 2026 RobTop Games. All rights reserved.", scale: 0.4, font: "Arial", color: 0x000000 },
@@ -5176,6 +5184,7 @@ _buildSettingsPopup() {
     }
 
     if (window.isEditor) {
+        this._audio.stopMusic();
         this._cameraX = 0;
         this._cameraY = 0;
         this._playerWorldX = 0;
@@ -5838,6 +5847,13 @@ _buildSettingsPopup() {
   }
   update(_0x54fa47, deltaTime) {
     if (window.isEditor) {
+        if (this._editorPlaytestActive && !this._editorPlaytestPaused) {
+            this._updateEditorPlaytest(deltaTime);
+            this._updateEditorGrid();
+            this._updateEditorTimeline();
+            return;
+        }
+
         if (window.isEditorPause) return;
         const pointer = this.input.activePointer;
         this._hitObjects = this.input.hitTestPointer(pointer);
@@ -5867,6 +5883,10 @@ _buildSettingsPopup() {
             }
         }
         this._updateEditorTimeline();
+        if (this._editorPlaytestActive && this._editorPlaytestPaused) {
+            this._refreshEditorPlaytestGlowVisibility();
+            this._syncEditorPlaytestPlayerVisual(deltaTime / 1000);
+        }
         return;
     }
     let rawPercent = (this._playerWorldX / this._level.endXPos) * 100;
@@ -6388,7 +6408,13 @@ _initEditorLogic = () => {
     this._editorTab = "build";
     window.editorSelectedObject = -1;
     this._editorZoom = 1.0;
+    this._editorPlaytestActive = false;
+    this._editorPlaytestPaused = false;
+    this._editorPlaytestSavedView = null;
+    this._editorPlaytestPauseView = null;
+    this._editorPlaytestLastTrailPoint = null;
     this.input.on('pointerdown', (pointer) => {
+        if (this._editorPlaytestActive && !this._editorPlaytestPaused) return;
         this._clickStartPos.x = pointer.x;
         this._clickStartPos.y = pointer.y;
         this._cameraStartX = this._cameraX;
@@ -6396,6 +6422,13 @@ _initEditorLogic = () => {
         this._isDragging = false;
     });
     this.input.on('pointerup', (pointer) => {
+        if (this._editorPlaytestActive && !this._editorPlaytestPaused) {
+            this._lastSwipeGridX = -1;
+            this._lastSwipeGridY = -1;
+            this._isDragging = false;
+            this._isDraggingSlider = false;
+            return;
+        }
         if (!this._isSwipeEnabled && !this._isDragging && !this._isDraggingSlider && this._hitObjects.length === 0) {
             this._editorAction();
         }
@@ -6508,6 +6541,24 @@ _createEditorGui = () => {
     this._makeBouncyButton(zoomInBtn, 0.9, () => this._adjustZoom(0.1));
     this._makeBouncyButton(zoomOutBtn, 0.9, () => this._adjustZoom(-0.1));
 
+    this._editorPlaytestControls = this.add.container(48, screenHeight / 2 - 110).setScrollFactor(0).setDepth(1500);
+    const playtestButtonScale = 1.1;
+
+    this._editorPlaytestPlayBtn = this.add.image(0, 0, "GJ_GameSheet03", "GJ_playEditorBtn_001.png").setAngle(90).setFlipY(true).setInteractive().setScale(playtestButtonScale);
+    this._editorPlaytestPauseBtn = this.add.image(0, 0, "GJ_GameSheet03", "GJ_pauseEditorBtn_001.png").setAngle(90).setFlipY(true).setInteractive().setScale(playtestButtonScale).setVisible(false);
+    this._editorPlaytestStopBtn = this.add.image(90, 0, "GJ_GameSheet03", "GJ_stopEditorBtn_001.png").setAngle(90).setFlipY(true).setInteractive().setScale(playtestButtonScale).setVisible(false);
+
+    this._editorPlaytestControls.add([
+        this._editorPlaytestPlayBtn,
+        this._editorPlaytestPauseBtn,
+        this._editorPlaytestStopBtn
+    ]);
+
+    this._makeBouncyButton(this._editorPlaytestPlayBtn, playtestButtonScale, () => this._startEditorPlaytest(), () => !this._editorPlaytestActive);
+    this._makeBouncyButton(this._editorPlaytestPauseBtn, playtestButtonScale, () => this._toggleEditorPlaytestPause(), () => this._editorPlaytestActive);
+    this._makeBouncyButton(this._editorPlaytestStopBtn, playtestButtonScale, () => this._stopEditorPlaytest(), () => this._editorPlaytestActive);
+    this._refreshEditorPlaytestControls();
+
     this._zoomText = this.add.bitmapText(screenWidth / 2, 80, "bigFont", "Zoom: 1.00x", 40).setOrigin(0.5).setScrollFactor(0).setDepth(2000).setAlpha(0);
 
     this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
@@ -6521,7 +6572,736 @@ _createEditorGui = () => {
     this._initEditorTimeline();
 };
 
+_refreshEditorPlaytestControls = () => {
+    if (!this._editorPlaytestPlayBtn || !this._editorPlaytestPauseBtn || !this._editorPlaytestStopBtn) return;
+
+    const active = !!this._editorPlaytestActive;
+    this._editorPlaytestPlayBtn.setVisible(!active);
+    this._editorPlaytestPauseBtn.setVisible(active);
+    this._editorPlaytestStopBtn.setVisible(active);
+
+    if (active) {
+        this._editorPlaytestPauseBtn
+            .setTexture(
+                "GJ_GameSheet03",
+                this._editorPlaytestPaused ? "GJ_playEditorBtn_001.png" : "GJ_pauseEditorBtn_001.png"
+            )
+            .setAlpha(1);
+        this._editorPlaytestStopBtn.setAlpha(1);
+    } else {
+        this._editorPlaytestPauseBtn
+            .setTexture("GJ_GameSheet03", "GJ_pauseEditorBtn_001.png")
+            .setAlpha(1);
+        this._editorPlaytestStopBtn.setAlpha(1);
+    }
+};
+
+_setEditorPlaytestGuiVisible = (visible) => {
+    const guiObjects = [
+        this._editorGui,
+        this._toolbox,
+        this._zoomButtons,
+        this._sideButtons,
+        this._timelineContainer,
+        this._zoomText
+    ];
+
+    for (const obj of guiObjects) {
+        if (obj && typeof obj.setVisible === "function") {
+            obj.setVisible(visible);
+        }
+    }
+};
+
+_setEditorLevelSectionsFullyVisible = () => {
+    if (!this._level?._sectionContainers) return;
+
+    for (let i = 0; i < this._level._sectionContainers.length; i++) {
+        if (typeof this._level._setSectionVisible === "function") {
+            this._level._setSectionVisible(i, true);
+            continue;
+        }
+
+        const section = this._level._sectionContainers[i];
+        if (section?.additive) section.additive.visible = true;
+        if (section?.normal) section.normal.visible = true;
+    }
+
+    this._level.resetVisibility?.();
+};
+
+_resetEditorPlaytestSectionCulling = () => {
+    if (!this._level) return;
+
+    this._level.resetVisibility?.();
+    this._level.updateVisibility?.(this._cameraX);
+};
+
+_refreshEditorPlaytestGlowVisibility = () => {
+    if (!this._level) return;
+
+    if (this._editorPlaytestActive) {
+        const glowVisible = !!window.showEditorGlow;
+        this._level.additiveContainer?.setVisible(glowVisible);
+        if (this._level._glowSprites) {
+            for (const glow of this._level._glowSprites) {
+                glow?.setVisible?.(glowVisible);
+            }
+        }
+        return;
+    }
+
+    this._level.additiveContainer?.setVisible(true);
+    this._level._updateGlowVisibility?.();
+};
+
+_getEditorPlaytestCameraYTarget = () => {
+    let currentNormalCameraY = -(this._cameraY || 0);
+    let targetNormalCameraY = currentNormalCameraY;
+
+    if (this._level?.flyCameraTarget !== null && this._level?.flyCameraTarget !== undefined) {
+        targetNormalCameraY = this._level.flyCameraTarget;
+    } else {
+        const playerY = this._state?.y || 0;
+        const highMargin = 140;
+        const lowMargin = 80;
+        const cameraCenterY = currentNormalCameraY - o + 320;
+
+        if (this._state?.gravityFlipped) {
+            if (playerY > cameraCenterY + lowMargin) {
+                targetNormalCameraY = playerY - 320 - lowMargin + o;
+            } else if (playerY < cameraCenterY - highMargin) {
+                targetNormalCameraY = playerY - 320 + highMargin + o;
+            }
+        } else {
+            if (playerY > cameraCenterY + highMargin) {
+                targetNormalCameraY = playerY - 320 - highMargin + o;
+            } else if (playerY < cameraCenterY - lowMargin) {
+                targetNormalCameraY = playerY - 320 + lowMargin + o;
+            }
+        }
+    }
+
+    return -Math.max(0, targetNormalCameraY || 0);
+};
+
+_updateEditorPlaytestCameraY = (delta = 0, instant = false) => {
+    const targetCameraY = this._getEditorPlaytestCameraYTarget();
+
+    if (instant || delta === 0) {
+        this._cameraY = targetCameraY;
+        return;
+    }
+
+    const currentNormalCameraY = -(this._cameraY || 0);
+    const targetNormalCameraY = -targetCameraY;
+    let nextNormalCameraY = currentNormalCameraY + ((targetNormalCameraY - currentNormalCameraY) / (10 / delta));
+
+    if (nextNormalCameraY < 0) nextNormalCameraY = 0;
+    this._cameraY = -nextNormalCameraY;
+};
+
+_updateEditorPlaytestBackground = () => {
+    this._bg.tilePositionX += (this._cameraX - this._prevCameraX) * this._bgSpeedX;
+    this._prevCameraX = this._cameraX;
+    this._bg.tilePositionY = this._bgInitY + this._cameraY * this._bgSpeedY;
+};
+
+_setEditorZoomInstant = (zoom, cameraX = this._cameraX, cameraY = this._cameraY) => {
+    this._editorZoom = Phaser.Math.Clamp(zoom, 0.1, 4.0);
+    this._cameraX = cameraX;
+    this._cameraY = cameraY;
+
+    this._level.topContainer.setScale(this._editorZoom);
+    this._level.additiveContainer.setScale(this._editorZoom);
+    this._level.container.setScale(this._editorZoom);
+
+    this._level.topContainer.x = -this._cameraX;
+    this._level.topContainer.y = -this._cameraY;
+    this._level.additiveContainer.x = -this._cameraX;
+    this._level.additiveContainer.y = -this._cameraY;
+    this._level.container.x = -this._cameraX;
+    this._level.container.y = -this._cameraY;
+
+    this._cameraXRef._v = this._cameraX;
+    this._bg.tilePositionX = this._cameraX * 0.1;
+    this._bg.tilePositionY = this._bgInitY + this._cameraY * 0.1;
+    this._updateEditorGrid();
+    this._updateEditorTimeline();
+};
+
+_clearEditorPlaytestMarks = () => {
+    if (this._editorPlaytestTrailGfx) {
+        this._editorPlaytestTrailGfx.destroy();
+        this._editorPlaytestTrailGfx = null;
+    }
+
+    if (this._editorPlaytestDeathMarks) {
+        for (const mark of this._editorPlaytestDeathMarks) {
+            if (mark && mark.destroy) mark.destroy();
+        }
+    }
+
+    this._editorPlaytestDeathMarks = [];
+    this._editorPlaytestLastTrailPoint = null;
+};
+
+_ensureEditorPlaytestTrail = () => {
+    if (this._editorPlaytestTrailGfx) return this._editorPlaytestTrailGfx;
+
+    const gfx = this.add.graphics();
+    gfx.setDepth(100);
+    this._level.topContainer.add(gfx);
+    this._editorPlaytestTrailGfx = gfx;
+    return gfx;
+};
+
+_drawEditorPlaytestTrailPoint = () => {
+    if (!this._editorPlaytestActive || !this._player) return;
+
+    const point = {
+        x: this._playerWorldX,
+        y: b(this._state.y)
+    };
+
+    const last = this._editorPlaytestLastTrailPoint;
+    if (last) {
+        const dx = point.x - last.x;
+        const dy = point.y - last.y;
+        if ((dx * dx) + (dy * dy) >= 2) {
+            const gfx = this._ensureEditorPlaytestTrail();
+            gfx.lineStyle(2, 0x00ff00, 0.95);
+            gfx.lineBetween(last.x, last.y, point.x, point.y);
+        }
+    }
+
+    this._editorPlaytestLastTrailPoint = point;
+};
+
+_addEditorPlaytestDeathMark = () => {
+    const x = this._playerWorldX;
+    const y = b(this._state.y);
+    const size = 28;
+    const mark = this.add.graphics();
+
+    mark.setDepth(110);
+    mark.lineStyle(13, 0xff0000, 1);
+    mark.lineBetween(x - size, y - size, x + size, y + size);
+    mark.lineBetween(x - size, y + size, x + size, y - size);
+
+    this._level.topContainer.add(mark);
+    if (!this._editorPlaytestDeathMarks) this._editorPlaytestDeathMarks = [];
+    this._editorPlaytestDeathMarks.push(mark);
+};
+
+_resetEditorPlaytestLevelState = () => {
+    this._level.resetObjects();
+    this._level.resetGroundState();
+    this._level.resetColorTriggers();
+    this._level.resetAlphaTriggers();
+    this._level.resetRotateTriggers();
+    this._level.resetPulseTriggers();
+    this._level.resetEnterEffectTriggers();
+    this._level.resetMoveTriggers();
+    this._level.resetVisibility();
+
+    this._colorManager.reset();
+    this._level.applyColorChannels(this._colorManager);
+    this._bg.setTint(this._colorManager.getHex(fs));
+    this._level.setGroundColor(this._colorManager.getHex(gs));
+};
+
+_refreshEditorCollisionCaches = () => {
+    if (!this._level) return;
+
+    const liveObjectIds = new Set();
+    if (Array.isArray(window.levelObjects)) {
+        window.levelObjects.forEach((obj, index) => {
+            if (!obj || !obj.id) return;
+            const linkedId = Number.isInteger(obj._eeObjectId) ? obj._eeObjectId : index;
+            liveObjectIds.add(linkedId);
+        });
+    }
+
+    const sourceColliders = Array.isArray(this._level.objects) ? this._level.objects : [];
+    this._level.objects = sourceColliders.filter(collider => {
+        if (!collider) return false;
+        const objectId = Number.isInteger(collider._eeObjectId) ? collider._eeObjectId : -1;
+        return liveObjectIds.has(objectId);
+    });
+
+    this._level._collisionSections = [];
+    this._level._groupColliders = {};
+
+    for (const collider of this._level.objects) {
+        if (!collider) continue;
+
+        if (typeof this._level._addCollisionToSection === "function") {
+            this._level._addCollisionToSection(collider);
+        }
+
+        if (Array.isArray(collider._eeGroups)) {
+            for (const groupId of collider._eeGroups) {
+                if (!this._level._groupColliders[groupId]) this._level._groupColliders[groupId] = [];
+                this._level._groupColliders[groupId].push(collider);
+            }
+        }
+    }
+};
+
+_getEditorSaveIndexForObjectId = (objectId) => {
+    if (!Array.isArray(window.levelObjects) || !Number.isInteger(objectId)) return -1;
+
+    for (let i = 0; i < window.levelObjects.length; i++) {
+        const obj = window.levelObjects[i];
+        if (obj && Number.isInteger(obj._eeObjectId) && obj._eeObjectId === objectId) {
+            return i;
+        }
+    }
+
+    const fallback = window.levelObjects[objectId];
+    return fallback && fallback.id ? objectId : -1;
+};
+
+_getEditorSaveObjectForObjectId = (objectId) => {
+    const saveIndex = this._getEditorSaveIndexForObjectId(objectId);
+    return saveIndex === -1 ? null : window.levelObjects[saveIndex];
+};
+
+_getEditorCollidersForObjectId = (objectId) => {
+    if (!Array.isArray(this._level?.objects) || !Number.isInteger(objectId)) return [];
+    return this._level.objects.filter(collider => {
+        if (!collider) return false;
+        return Number.isInteger(collider._eeObjectId) && collider._eeObjectId === objectId;
+    });
+};
+
+_hideEditorPlaytestGlowLayers = () => {
+    const hideForPlayer = (player) => {
+        if (!player) return;
+
+        const glowLayers = [
+            player._playerGlowLayer,
+            player._shipGlowLayer,
+            player._ballGlowLayer,
+            player._waveGlowLayer,
+            player._spiderGlowLayer,
+            player._birdGlowLayer
+        ];
+
+        if (!window.showEditorGlow) {
+            for (const layer of glowLayers) {
+                if (layer?.sprite) layer.sprite.setVisible(false);
+            }
+        }
+
+        if (player._dashAnimationSprite) {
+            player._dashAnimationSprite.setVisible(false);
+        }
+    };
+
+    hideForPlayer(this._player);
+    hideForPlayer(this._player2);
+};
+
+_hideEditorPlaytestPlayer = () => {
+    const hidePlayer = (player) => {
+        if (!player) return;
+        player.setCubeVisible(false);
+        player.setShipVisible(false);
+        player.setBallVisible(false);
+        player.setWaveVisible(false);
+        player.setBirdVisible(false);
+        player.setSpiderVisible(false);
+    };
+
+    hidePlayer(this._player);
+    hidePlayer(this._player2);
+    this._hideEditorPlaytestGlowLayers();
+};
+
+_syncEditorPlaytestPlayerVisual = (deltaSeconds = 0) => {
+    if (!this._editorPlaytestActive || !this._player || this._state.isDead) return;
+
+    const zoom = this._editorZoom || 1;
+    const playerScreenX = (this._playerWorldX * zoom) - this._cameraX;
+    const playerScreenY = (b(this._state.y) * zoom) - this._cameraY;
+    const playerScreenYCameraOffset = (b(this._state.y) * (zoom - 1)) - this._cameraY;
+
+    this._player.syncSprites(
+        this._cameraX,
+        playerScreenYCameraOffset,
+        deltaSeconds,
+        this._getMirrorXOffset(playerScreenX)
+    );
+
+    if (this._isDual && this._player2 && !this._state2.isDead) {
+        this._player2.syncSprites(
+            this._cameraX,
+            (b(this._state2.y) * (zoom - 1)) - this._cameraY,
+            deltaSeconds,
+            this._getMirrorXOffset(playerScreenX)
+        );
+    }
+
+    if (zoom !== 1) {
+        const scalePlayer = (player, anchorY) => {
+            for (const layer of (player?._allLayers || [])) {
+                if (!layer?.sprite) continue;
+                layer.sprite.x = playerScreenX + ((layer.sprite.x - playerScreenX) * zoom);
+                layer.sprite.y = anchorY + ((layer.sprite.y - anchorY) * zoom);
+                layer.sprite.scaleX *= zoom;
+                layer.sprite.scaleY *= zoom;
+            }
+            if (player?._dashAnimationSprite) {
+                player._dashAnimationSprite.x = playerScreenX + ((player._dashAnimationSprite.x - playerScreenX) * zoom);
+                player._dashAnimationSprite.y = anchorY + ((player._dashAnimationSprite.y - anchorY) * zoom);
+                player._dashAnimationSprite.scaleX *= zoom;
+                player._dashAnimationSprite.scaleY *= zoom;
+            }
+        };
+
+        scalePlayer(this._player, playerScreenY);
+        if (this._isDual && this._player2 && !this._state2.isDead) {
+            scalePlayer(this._player2, (b(this._state2.y) * zoom) - this._cameraY);
+        }
+    }
+
+    this._hideEditorPlaytestGlowLayers();
+};
+
+_applyEditorPlaytestStartMode = () => {
+    let speedKey = parseInt(window.settingsMap?.["kA4"] || "0", 10);
+    if (speedKey == 0) {
+      playerSpeed = SpeedPortal.ONE_TIMES;
+    } else if (speedKey == 1) {
+      playerSpeed = SpeedPortal.HALF;
+    } else if (speedKey == 2) {
+      playerSpeed = SpeedPortal.TWO_TIMES;
+    } else if (speedKey == 3) {
+      playerSpeed = SpeedPortal.THREE_TIMES;
+    } else if (speedKey == 4) {
+      playerSpeed = SpeedPortal.FOUR_TIMES;
+    }
+
+    const gamemode = parseInt(window.settingsMap?.["kA2"] || "0", 10);
+    if (gamemode == 1) {
+      this._player.enterShipMode();
+    } else if (gamemode == 2) {
+      this._state.y = 30;
+      this._player.enterBallMode({ y: 30 });
+    } else if (gamemode == 3) {
+      this._player.enterUfoMode();
+    } else if (gamemode == 4) {
+      this._player.enterWaveMode();
+    } else if (gamemode == 6) {
+      this._player.enterSpiderMode();
+    }
+
+    const getBool = (key) => parseInt(window.settingsMap?.[key] || "0", 10) === 1;
+    this._state.isMini = getBool("kA3");
+    this._state.gravityFlipped = getBool("kA11");
+    this._state.mirrored = false;
+
+    if (getBool("kA8")) {
+        this._enableDualMode();
+        this._state2.mirrored = false;
+    }
+
+    this._hideEditorPlaytestGlowLayers();
+    this._refreshEditorPlaytestGlowVisibility();
+};
+
+_startEditorPlaytest = () => {
+    if (this._editorPlaytestActive) return;
+
+    this._closeEditorLevelSettingsPopup();
+    this._closeEditorHorizontalOptionPopup();
+    this._closeEditorColorPickerPopup();
+    this._closeEditorStartOptionsPopup();
+    this._clearEditorSelection();
+    this._clearEditorPlaytestMarks();
+    this._refreshEditorCollisionCaches();
+
+    this._editorPlaytestSavedView = {
+        zoom: this._editorZoom || 1,
+        cameraX: this._cameraX || 0,
+        cameraY: this._cameraY || 0
+    };
+    this._editorPlaytestPauseView = null;
+
+    this._editorPlaytestActive = true;
+    this._editorPlaytestPaused = false;
+    this._spaceWasDown = !!this.input.activePointer?.isDown;
+    this._deltaBuffer = 0;
+    this._physicsFrame = 0;
+    this._playerWorldX = 0;
+    this._cameraX = -centerX;
+    this._cameraY = 0;
+    this._cameraXRef._v = this._cameraX;
+    this._prevCameraX = this._cameraX;
+
+    this._resetEditorPlaytestLevelState();
+    this._state.reset();
+    this._player.reset();
+    this._isDual = false;
+    this._state2.reset();
+    this._player2.reset();
+    this._player2.setCubeVisible(false);
+    this._player2.setShipVisible(false);
+    this._player2.setBallVisible(false);
+    this._player2.setWaveVisible(false);
+    this._player2.setBirdVisible(false);
+    this._player2.setSpiderVisible(false);
+
+    this._state.y = 30;
+    this._state.onGround = true;
+    this._state.canJump = true;
+    this._player.setCubeVisible(true);
+    this._applyEditorPlaytestStartMode();
+    this._state.mirrored = false;
+    this._state2.mirrored = false;
+    this._bg.setFlipX(false);
+    this._updateEditorPlaytestCameraY(0, true);
+    this._setEditorZoomInstant(1, -centerX, this._cameraY);
+    this._refreshEditorPlaytestGlowVisibility();
+    this._audio.reset();
+    this._audio.startMusic(0);
+    this._setEditorPlaytestGuiVisible(false);
+    this._refreshEditorPlaytestControls();
+    this._drawEditorPlaytestTrailPoint();
+};
+
+_toggleEditorPlaytestPause = () => {
+    if (!this._editorPlaytestActive) return;
+
+    if (!this._editorPlaytestPaused) {
+        this._editorPlaytestPauseView = {
+            zoom: this._editorZoom || 1,
+            cameraX: this._cameraX || 0,
+            cameraY: this._cameraY || 0
+        };
+        this._editorPlaytestPaused = true;
+        this._audio.pauseMusic();
+        this._setEditorPlaytestGuiVisible(true);
+        this._setEditorLevelSectionsFullyVisible();
+        this._refreshEditorPlaytestControls();
+        return;
+    }
+
+    const resumeView = this._editorPlaytestPauseView || {
+        zoom: 1,
+        cameraX: this._playerWorldX - centerX,
+        cameraY: this._cameraY || 0
+    };
+
+    this._editorPlaytestPaused = false;
+    this._setEditorPlaytestGuiVisible(false);
+    this._setEditorZoomInstant(resumeView.zoom || 1, resumeView.cameraX || 0, resumeView.cameraY || 0);
+    this._cameraXRef._v = this._cameraX;
+    this._prevCameraX = this._cameraX;
+    this._resetEditorPlaytestSectionCulling();
+    this._editorPlaytestPauseView = null;
+    this._audio.resumeMusic();
+    this._syncEditorPlaytestPlayerVisual(0);
+    this._refreshEditorPlaytestControls();
+};
+
+_stopEditorPlaytest = (leaveDeathMark = false) => {
+    if (!this._editorPlaytestActive) return;
+
+    if (leaveDeathMark) {
+        this._addEditorPlaytestDeathMark();
+    }
+
+    this._editorPlaytestActive = false;
+    this._editorPlaytestPaused = false;
+    this._spaceWasDown = false;
+    this._deltaBuffer = 0;
+
+    this._audio.reset();
+    this._hideEditorPlaytestPlayer();
+    this._resetEditorPlaytestLevelState();
+    this._refreshEditorPlaytestGlowVisibility();
+
+    const savedView = this._editorPlaytestSavedView;
+    const currentZoom = this._editorZoom || 1;
+    const restoreZoom = savedView?.zoom || currentZoom;
+    const worldCenterX = (this._cameraX + centerX) / currentZoom;
+    const worldCenterY = (this._cameraY + (screenHeight / 2)) / currentZoom;
+    const restoredCameraX = (worldCenterX * restoreZoom) - centerX;
+    const restoredCameraY = (worldCenterY * restoreZoom) - (screenHeight / 2);
+
+    this._editorPlaytestSavedView = null;
+    this._editorPlaytestPauseView = null;
+    this._setEditorZoomInstant(restoreZoom, restoredCameraX, restoredCameraY);
+    this._setEditorLevelSectionsFullyVisible();
+
+    this._setEditorPlaytestGuiVisible(true);
+    this._refreshEditorPlaytestControls();
+};
+
+_editorPlaytestPress = () => {
+    if (this._state.isDead) return;
+
+    this._state.upKeyDown = true;
+    this._state.upKeyPressed = true;
+    this._state.queuedHold = true;
+
+    if (!this._state.isFlying && !this._state.isWave && !this._state.isUfo && this._state.canJump) {
+        this._player.updateJump(0);
+    } else if (this._state.isUfo) {
+        this._player.updateJump(0);
+    }
+};
+
+_editorPlaytestRelease = () => {
+    this._state.upKeyDown = false;
+    this._state.upKeyPressed = false;
+    this._state.queuedHold = false;
+};
+
+_updateEditorPlaytestInput = () => {
+    const pointer = this.input.activePointer;
+    const hitObjects = this.input.hitTestPointer(pointer);
+    const overPlaytestControls = hitObjects.some(obj =>
+        obj === this._editorPlaytestPauseBtn ||
+        obj === this._editorPlaytestStopBtn ||
+        obj === this._editorPlaytestPlayBtn
+    );
+    const pointerHeld = pointer.isDown && !overPlaytestControls;
+    const jumpHeld = this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown || pointerHeld;
+
+    if (jumpHeld && !this._spaceWasDown) {
+        this._editorPlaytestPress();
+    } else if (!jumpHeld && this._spaceWasDown) {
+        this._editorPlaytestRelease();
+    }
+
+    this._spaceWasDown = jumpHeld;
+};
+
+_updateEditorPlaytest = (deltaTime) => {
+    if (!this._editorPlaytestActive || this._editorPlaytestPaused) return;
+
+    this._updateEditorPlaytestInput();
+    this._audio.update(deltaTime / 1000);
+    this._state.mirrored = false;
+    this._state2.mirrored = false;
+    this._bg.setFlipX(false);
+    this._refreshEditorPlaytestGlowVisibility();
+    this._level.updateEndPortalY(-this._cameraY, this._state.isFlying || this._state.isWave || this._state.isUfo);
+
+    let quantizedDelta = this._quantizeDelta(deltaTime);
+    let subSteps = quantizedDelta > 0 ? Math.max(1, Math.round(quantizedDelta * 4)) : 0;
+    if (subSteps > 60) subSteps = 60;
+
+    const subStepDelta = subSteps > 0 ? quantizedDelta / subSteps : 0;
+    const verticalDelta = subStepDelta * d;
+    const horizontalDelta = subStepDelta * playerSpeed * d;
+    const previousNoClip = window.noClip;
+
+    window.noClip = false;
+
+    try {
+        for (let i = 0; i < subSteps; i++) {
+            this._state.lastY = this._state.y;
+            this._physicsFrame++;
+            this._player.updateJump(verticalDelta);
+            this._state.y += this._state.yVelocity * verticalDelta;
+            this._player.checkCollisions(this._playerWorldX - centerX);
+
+            if (this._isDual && !this._state2.isDead) {
+                this._state2.upKeyDown = this._state.upKeyDown;
+                this._state2.upKeyPressed = this._state.upKeyPressed;
+                this._state2.queuedHold = this._state.queuedHold;
+                this._state2.lastY = this._state2.y;
+                this._player2.updateJump(verticalDelta);
+                this._state2.y += this._state2.yVelocity * verticalDelta;
+                this._player2.checkCollisions(this._playerWorldX - centerX);
+                if (this._state2.isDead && !this._state.isDead) {
+                    this._player.killPlayer();
+                }
+            }
+
+            if (this._state.isDead) break;
+
+            this._playerWorldX += horizontalDelta;
+
+            if (!this._state.isFlying && !this._state.isWave && !this._state.isUfo) {
+                if (this._state.isBall) {
+                    const ballOnSurface = this._state.onGround || this._state.onCeiling;
+                    this._player.updateBallRoll(horizontalDelta, ballOnSurface);
+                } else if (this._state.onGround) {
+                    this._player.updateGroundRotation(verticalDelta);
+                } else if (this._player.rotateActionActive) {
+                    this._player.updateRotateAction(u);
+                } else if (this._state.isDashing) {
+                    this._player.updateDashRotation(u);
+                }
+            }
+        }
+    } finally {
+        window.noClip = previousNoClip;
+    }
+
+    if (this._state.isDead) {
+        this._drawEditorPlaytestTrailPoint();
+        this._stopEditorPlaytest(true);
+        return;
+    }
+
+    this._state.ignorePortals = false;
+    this._state2.ignorePortals = false;
+
+    this._cameraX = this._playerWorldX - centerX;
+    this._updateEditorPlaytestCameraY(quantizedDelta);
+    this._cameraXRef._v = this._cameraX;
+
+    this._level.additiveContainer.x = -this._cameraX;
+    this._level.additiveContainer.y = -this._cameraY;
+    this._level.container.x = -this._cameraX;
+    this._level.container.y = -this._cameraY;
+    this._level.topContainer.x = -this._cameraX;
+    this._level.topContainer.y = -this._cameraY;
+
+    const playerX = this._playerWorldX;
+    for (let colorTrigger of this._level.checkColorTriggers(playerX)) {
+        this._colorManager.triggerColor(colorTrigger.index, colorTrigger.color, colorTrigger.duration);
+        if (colorTrigger.tintGround) {
+            this._colorManager.triggerColor(gs, colorTrigger.color, colorTrigger.duration);
+        }
+    }
+
+    this._level.checkMoveTriggers(playerX);
+    this._level.stepMoveTriggers(deltaTime / 1000);
+    this._level.checkAlphaTriggers(playerX);
+    this._level.stepAlphaTriggers(deltaTime / 1000);
+    this._level.checkRotateTriggers(playerX);
+    this._level.stepRotateTriggers(deltaTime / 1000);
+    this._level.checkPulseTriggers(playerX);
+    this._level.stepPulseTriggers(deltaTime / 1000, this._colorManager);
+    this._colorManager.step(deltaTime / 1000);
+    this._level.stepGroundAnimation(deltaTime / 1000);
+    this._level.applyColorChannels(this._colorManager);
+    this._bg.setTint(this._colorManager.getHex(fs));
+    this._level.setGroundColor(this._colorManager.getHex(gs));
+    this._level.updateVisibility(this._cameraX);
+    this._level.updateObjectDebugIds();
+    this._refreshEditorPlaytestGlowVisibility();
+
+    if (this._state.isFlying) {
+        this._player.updateShipRotation(quantizedDelta);
+    }
+
+    this._syncEditorPlaytestPlayerVisual(deltaTime / 1000);
+    this._drawEditorPlaytestTrailPoint();
+    this._updateEditorPlaytestBackground();
+};
+
 _adjustZoom = (delta, anchorX = screenWidth / 2, anchorY = screenHeight / 2) => {
+    if (this._editorPlaytestActive && !this._editorPlaytestPaused) return;
+
     const oldZoom = this._editorZoom;
     let newZoom = oldZoom + delta;
     newZoom = Phaser.Math.Clamp(newZoom, 0.1, 4.0);
@@ -6666,10 +7446,10 @@ _createEditorObjectButtonPreview = (x, y, objId) => {
     let glowSprite = null;
 
     if (
+        false &&
         objectDef.glow &&
         this._level &&
-        this._level._getGlowFrameName &&
-        (!window.isEditor || window.showEditorGlow)
+        this._level._getGlowFrameName
     ) {
         const glowFrame = this._level._getGlowFrameName(frameName);
 
@@ -7051,22 +7831,26 @@ _buildObjectGrid = () => {
 };
 
 _moveObject = (dx, dy) => {
-    const selectedIndex = window.editorSelectedObject;
-    if (selectedIndex === -1) return;
+    const selectedObjectId = window.editorSelectedObject;
+    if (selectedObjectId === -1) return;
 
-    const collider = this._level.objects[selectedIndex];
-    const sprites = this._level.objectSprites[selectedIndex];
-    const saveObj = window.levelObjects[selectedIndex];
+    const sprites = this._level.objectSprites[selectedObjectId];
+    const saveObj = this._getEditorSaveObjectForObjectId(selectedObjectId);
+    const colliders = this._getEditorCollidersForObjectId(selectedObjectId);
 
     if (!saveObj) return;
 
-    if (collider) {
-      collider.x += dx; collider.y += dy;
-      collider._baseX += dx; collider._baseY += dy;
-      collider._origBaseX += dx; collider._origBaseY += dy;
+    for (const collider of colliders) {
+        collider.x += dx;
+        collider.y += dy;
+        collider._baseX = (collider._baseX ?? collider.x - dx) + dx;
+        collider._baseY = (collider._baseY ?? collider.y - dy) + dy;
+        collider._origBaseX = (collider._origBaseX ?? collider.x - dx) + dx;
+        collider._origBaseY = (collider._origBaseY ?? collider.y - dy) + dy;
     }
 
-    saveObj.x += dx / 2; saveObj.y -= dy / 2;
+    saveObj.x += dx / 2;
+    saveObj.y -= dy / 2;
     if (saveObj._raw) {
         saveObj._raw["2"] = String(saveObj.x);
         saveObj._raw["3"] = String(saveObj.y);
@@ -7075,61 +7859,67 @@ _moveObject = (dx, dy) => {
     if (sprites) {
         for (const s of sprites) {
             if (!s) continue;
-            s.x += dx; s.y += dy;
+            s.x += dx;
+            s.y += dy;
             if (s._eeWorldX !== undefined) s._eeWorldX += dx;
             if (s._eeBaseY !== undefined) s._eeBaseY += dy;
             if (s._origWorldX !== undefined) s._origWorldX += dx;
             if (s._origBaseY !== undefined) s._origBaseY += dy;
         }
     }
+
+    this._refreshEditorCollisionCaches();
 };
 
 _rotateObject = (degrees) => {
-    const selectedIndex = window.editorSelectedObject;
-    if (selectedIndex === -1) return;
+    const selectedObjectId = window.editorSelectedObject;
+    if (selectedObjectId === -1) return;
 
-    const collider = this._level.objects[selectedIndex];
-    const sprites = this._level.objectSprites[selectedIndex];
-    const saveObj = window.levelObjects[selectedIndex];
+    const sprites = this._level.objectSprites[selectedObjectId];
+    const saveObj = this._getEditorSaveObjectForObjectId(selectedObjectId);
+    const colliders = this._getEditorCollidersForObjectId(selectedObjectId);
 
     if (!saveObj) return;
 
     saveObj.rot = (saveObj.rot || 0) + degrees;
-    
+
     if (saveObj._raw) {
         saveObj._raw["6"] = String(saveObj.rot);
     }
 
-    if (collider) {
+    for (const collider of colliders) {
         collider.rotation = saveObj.rot;
+        collider.rotationDegrees = saveObj.rot;
     }
 
     if (sprites) {
         for (const s of sprites) {
             if (!s) continue;
-            s.angle += degrees; 
+            s.angle += degrees;
         }
     }
+
+    this._refreshEditorCollisionCaches();
 };
 
 _flipObject = (axis) => {
-    const selectedIndex = window.editorSelectedObject;
-    if (selectedIndex === -1) return;
+    const selectedObjectId = window.editorSelectedObject;
+    if (selectedObjectId === -1) return;
 
-    const sprites = this._level.objectSprites[selectedIndex];
-    const saveObj = window.levelObjects[selectedIndex];
+    const sprites = this._level.objectSprites[selectedObjectId];
+    const saveObj = this._getEditorSaveObjectForObjectId(selectedObjectId);
 
     if (!saveObj) return;
 
     if (axis === "x") {
         saveObj.flipX = !saveObj.flipX;
         if (saveObj._raw) saveObj._raw["4"] = saveObj.flipX ? "1" : "0";
-        
+
         if (sprites) {
             for (const s of sprites) {
                 if (!s) continue;
                 s.setFlipX(!s.flipX);
-                s.angle = -s.angle; 
+                s.angle = -s.angle;
             }
         }
     } else {
@@ -7144,7 +7934,10 @@ _flipObject = (axis) => {
             }
         }
     }
+
     saveObj.rot = -saveObj.rot;
+    if (saveObj._raw) saveObj._raw["6"] = String(saveObj.rot || 0);
+    this._refreshEditorCollisionCaches();
 };
 
 _clearEditorSelection = () => {
@@ -7194,19 +7987,25 @@ _selectEditorObjectByIndex = (index) => {
 };
 
 _duplicateSelectedObject = () => {
-    const selectedIndex = window.editorSelectedObject;
-    if (selectedIndex === -1) return;
+    const selectedObjectId = window.editorSelectedObject;
+    if (selectedObjectId === -1) return;
 
-    const src = window.levelObjects[selectedIndex];
-    if (!src) return;
+    const src = this._getEditorSaveObjectForObjectId(selectedObjectId);
+    if (!src) {
+        this._clearEditorSelection();
+        return;
+    }
 
     const clone = JSON.parse(JSON.stringify(src));
+    delete clone._eeObjectId;
 
     window.levelObjects.push(clone);
     this._level._spawnObject(clone);
 
-    const newIndex = this._level.objects.length - 1;
-    const newestSprites = this._level.objectSprites[newIndex];
+    const newObjectId = Number.isInteger(clone._eeObjectId)
+        ? clone._eeObjectId
+        : Math.max(0, (this._level._nextObjectId || 1) - 1);
+    const newestSprites = this._level.objectSprites[newObjectId];
 
     if (newestSprites && newestSprites.length) {
         const depthBase = {
@@ -7227,43 +8026,51 @@ _duplicateSelectedObject = () => {
 
             spr.setDepth((spr._eeZDepth || finalDepth) + 10);
 
-            if (this._level.container && !this._level.container.exists(spr)) {
+            if (spr._eeLayer === 2) {
+                if (this._level.topContainer && !this._level.topContainer.exists(spr)) {
+                    this._level.topContainer.add(spr);
+                }
+            } else if (this._level.container && !this._level.container.exists(spr)) {
                 this._level.container.add(spr);
             }
         }
     }
 
-    this._selectEditorObjectByIndex(newIndex);
+    this._selectEditorObjectByIndex(newObjectId);
+    this._refreshEditorCollisionCaches();
     this._buildObjectGrid();
 };
 
 _deleteSelectedObject = () => {
-    const selectedIndex = window.editorSelectedObject;
-    if (selectedIndex === -1) return;
+    const selectedObjectId = window.editorSelectedObject;
+    if (selectedObjectId === -1) return;
+
+    const saveIndex = this._getEditorSaveIndexForObjectId(selectedObjectId);
 
     this._clearEditorSelection();
 
-    const sprites = this._level.objectSprites[selectedIndex] || [];
+    const sprites = this._level.objectSprites[selectedObjectId] || [];
     for (const spr of sprites) {
         if (spr && spr.destroy) spr.destroy();
     }
 
-    const collider = this._level.objects[selectedIndex];
-    if (collider && collider.destroy) collider.destroy();
-
-    this._level.objectSprites.splice(selectedIndex, 1);
-    this._level.objects.splice(selectedIndex, 1);
-    window.levelObjects.splice(selectedIndex, 1);
-
-    for (let i = selectedIndex; i < this._level.objectSprites.length; i++) {
-        const list = this._level.objectSprites[i];
-        if (!list || !list.length) continue;
-
-        for (const spr of list) {
-            if (spr) spr._eeObjectId = i;
-        }
+    if (Array.isArray(this._level.objectSprites)) {
+        this._level.objectSprites[selectedObjectId] = null;
     }
 
+    if (Array.isArray(this._level.objects)) {
+        this._level.objects = this._level.objects.filter(collider => {
+            if (!collider) return false;
+            const objectId = Number.isInteger(collider._eeObjectId) ? collider._eeObjectId : -1;
+            return objectId !== selectedObjectId;
+        });
+    }
+
+    if (Array.isArray(window.levelObjects) && saveIndex !== -1) {
+        window.levelObjects[saveIndex] = null;
+    }
+
+    this._refreshEditorCollisionCaches();
     this._buildObjectGrid();
     this._updateEditorActionButtons();
 };
@@ -7337,14 +8144,32 @@ _updateEditorGrid = () => {
     if (startLineX >= -50 && startLineX <= screenWidth + 50) {
         g.lineBetween(startLineX, 0, startLineX, screenHeight);
     }
-    const worldGroundY = -20 + (60 * 8);
+    let worldGroundY = -20 + (60 * 8);
+    if (this._editorPlaytestActive && this._level?.getFloorY) {
+        const floorY = this._level.getFloorY();
+        if (floorY !== null && floorY !== undefined && Number.isFinite(floorY)) {
+            worldGroundY = b(floorY);
+        }
+    }
     const groundLineY = (worldGroundY * zoom) - this._cameraY;
     if (groundLineY >= -50 && groundLineY <= screenHeight + 50) {
         g.lineBetween(0, groundLineY, screenWidth, groundLineY);
     }
+
+    if (this._editorPlaytestActive && this._level?.getCeilingY) {
+        const ceilingY = this._level.getCeilingY();
+        if (ceilingY !== null && ceilingY !== undefined) {
+            const ceilingLineY = (b(ceilingY) * zoom) - this._cameraY;
+            if (ceilingLineY >= -50 && ceilingLineY <= screenHeight + 50) {
+                g.lineBetween(0, ceilingLineY, screenWidth, ceilingLineY);
+            }
+        }
+    }
 };
 
 _editorAction = () => {
+  if (this._editorPlaytestActive && !this._editorPlaytestPaused) return;
+
   if (this._editorTab === "build") {
     this._placeObject();
   } else if (this._editorTab === "edit") {
@@ -7413,10 +8238,10 @@ _placeObject = () => {
     window.levelObjects.push(saveData);
     this._level._spawnObject(saveData);
 
-    const placedIndex = this._level.objectSprites.length - 1;
+    const placedIndex = Math.max(0, (this._level._nextObjectId || 1) - 1);
     const newestSprites = this._level.objectSprites[placedIndex];
 
-    if (newestSprites && newestSprites.sprites) {
+    if (newestSprites && newestSprites.length) {
         const depthBase = {
             "-3": -6,
             "-1": -3,
@@ -7430,7 +8255,7 @@ _placeObject = () => {
             (depthBase[saveData.zLayer] || 0) +
             (saveData.zOrder * 0.01);
 
-        for (const spr of newestSprites.sprites) {
+        for (const spr of newestSprites) {
             if (!spr) continue;
 
             spr.setDepth((spr._eeZDepth || finalDepth) + 10);
@@ -7579,36 +8404,35 @@ _deleteObjectAtPointer = () => {
 
     if (foundObjectIndex === -1) return;
 
+    const saveIndex = this._getEditorSaveIndexForObjectId(foundObjectIndex);
+
     if (window.editorSelectedObject === foundObjectIndex) {
         this._clearEditorSelection();
     }
 
-    const linkedSprites = this._level.objectSprites[foundObjectIndex];
-    const collider = this._level.objects[foundObjectIndex];
+    const linkedSprites = this._level.objectSprites[foundObjectIndex] || [];
 
-    if (linkedSprites && linkedSprites.length) {
-        for (const spr of linkedSprites) {
-            if (spr && spr.destroy) spr.destroy();
-        }
+    for (const spr of linkedSprites) {
+        if (spr && spr.destroy) spr.destroy();
     }
 
-    if (collider && collider.destroy) {
-        collider.destroy();
+    if (Array.isArray(this._level.objectSprites)) {
+        this._level.objectSprites[foundObjectIndex] = null;
     }
 
-    this._level.objectSprites.splice(foundObjectIndex, 1);
-    this._level.objects.splice(foundObjectIndex, 1);
-    window.levelObjects.splice(foundObjectIndex, 1);
-
-    for (let i = foundObjectIndex; i < this._level.objectSprites.length; i++) {
-        const list = this._level.objectSprites[i];
-        if (!list || !list.length) continue;
-
-        for (const spr of list) {
-            if (spr) spr._eeObjectId = i;
-        }
+    if (Array.isArray(this._level.objects)) {
+        this._level.objects = this._level.objects.filter(collider => {
+            if (!collider) return false;
+            const objectId = Number.isInteger(collider._eeObjectId) ? collider._eeObjectId : -1;
+            return objectId !== foundObjectIndex;
+        });
     }
 
+    if (Array.isArray(window.levelObjects) && saveIndex !== -1) {
+        window.levelObjects[saveIndex] = null;
+    }
+
+    this._refreshEditorCollisionCaches();
     window.editorSelectedObject = -1;
     this._updateEditorActionButtons();
 };
@@ -10169,6 +10993,8 @@ _initEditorPauseMenu = () => {
         { 
             text: "Save and Play", 
             cb: async () => { 
+                this._showEditorPauseMenu(false);
+                this._stopEditorPlaytest?.();
                 this._saveEditorLevel(); 
                 await this._showLoadingBuffer("Loading...");
                 window.isEditor = false; 
@@ -10179,6 +11005,8 @@ _initEditorPauseMenu = () => {
         { 
             text: "Save and Exit", 
             cb: async () => { 
+                this._showEditorPauseMenu(false);
+                this._stopEditorPlaytest?.();
                 this._saveEditorLevel(); 
                 await this._showLoadingBuffer("Loading...");
                 window.isEditor = false; 
@@ -10186,7 +11014,7 @@ _initEditorPauseMenu = () => {
             } 
         },
         { text: "Save", cb: () => this._saveEditorLevel() },
-        { text: "Exit", cb: () => { window.isEditor = false; this.scene.restart(); } }
+        { text: "Exit", cb: () => { this._showEditorPauseMenu(false); this._stopEditorPlaytest?.(); window.isEditor = false; this.scene.restart(); } }
     ];
 
     buttonData.forEach((data, i) => {
@@ -10219,6 +11047,7 @@ _initEditorPauseMenu = () => {
 
     createToggle(this._editorMenuContainer, 200, screenHeight - 60, "Show Glow", () => window.showEditorGlow, v => window.showEditorGlow = v,() => {
         this._level._updateGlowVisibility();
+        this._buildObjectGrid?.();
     }
 );
 };
@@ -10246,6 +11075,12 @@ _showLoadingBuffer = (statusText) => {
 _showEditorPauseMenu = (show) => {
     this._editorMenuContainer.setVisible(show);
     window.isEditorPaused = show;
+    window.isEditorPause = show;
+
+    if (this._editorPlaytestControls && !this._editorPlaytestActive) {
+        this._editorPlaytestControls.setVisible(true);
+        this._editorPlaytestControls.setDepth(show ? 900 : 1500);
+    }
 };
 
 _serializeLevel(levelData) {
