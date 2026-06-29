@@ -331,6 +331,16 @@ class GameScene extends Phaser.Scene {
     if (_0x591888) {
       this._level.loadLevel(_0x591888);
     }
+    const _resolveEditorArtId = (key, fallback, displayOffset = 0) => {
+      const raw = window.settingsMap?.[key];
+      const parsed = parseInt(raw ?? fallback, 10);
+      const value = Number.isFinite(parsed) ? parsed : fallback;
+      return String(value + displayOffset).padStart(2, "0");
+    };
+
+    window._backgroundId = _resolveEditorArtId("kA6", parseInt(window._backgroundId || "01", 10) - 1, 1);
+    window._groundId = _resolveEditorArtId("kA7", parseInt(window._groundId || "00", 10), 0);
+
     const _bgId = window._backgroundId || "01";
     const _bgKey = "game_bg_" + (parseInt(_bgId, 10) - 1);
     if (this.textures.exists(_bgKey)) {
@@ -762,12 +772,17 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             const songIcon = this.add.image(tableX + 150, infoY, "GJ_GameSheet03", "GJ_musicIcon_001.png").setScale(0.65);
             const songTxt = this.add.bitmapText(songIcon.x + 22, infoY, "bigFont", level.song, 18).setOrigin(0, 0.5);
             const statusIcon = this.add.image(tableX + 380, infoY, "GJ_GameSheet03", "GJ_infoIcon_001.png").setScale(0.65).setFlipY(true).setAngle(90);
+            const songTxtMaxW = Math.max(20, (statusIcon.x - 25) - songTxt.x);
+            songTxt.setScale(1);
+            if (songTxt.width > songTxtMaxW) {
+                songTxt.setScale(songTxtMaxW / songTxt.width);
+            }
             const statusTxt = this.add.bitmapText(statusIcon.x + 22, infoY, "bigFont", level.status, 18).setOrigin(0, 0.5);
             
             const viewBtn = this.add.nineslice(tableX + tableW - 80, slotY, "GJ_button01", null, 120, 60, 24, 24, 24, 24 ).setScale(0.75).setInteractive();
             const viewTxt = this.add.bitmapText(viewBtn.x - 2, viewBtn.y - 1, "bigFont", "View", 32).setOrigin(0.5).setScale(0.8);
             
-            this._makeBouncyButton(viewBtn, 0.75, () => {
+            this._makeCompositeBouncyButton(viewBtn, [viewBtn, viewTxt], 0.75, () => {
                 this._closeEditorMenu(false);
                 this._openLevelView(level);
             });
@@ -970,36 +985,87 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
 
         fileInput.click();
     };
+    this._escapeXml = (value) => {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&apos;");
+    };
+    this._decodeWebLevelStringForGMD = (levelString) => {
+        if (!levelString) return "";
+        try {
+            let base64 = String(levelString)
+                .trim()
+                .replace(/-/g, "+")
+                .replace(/_/g, "/");
+
+            while (base64.length % 4 !== 0) {
+                base64 += "=";
+            }
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return pako.inflate(bytes, { to: "string" });
+        } catch (err) {
+            console.warn("Why the fuck didnt it work", err);
+            return String(levelString);
+        }
+    };
     this._exportGMD = (level) => {
-        const encodedDesc = btoa(level.description || "");
+        const encodedDesc = btoa(unescape(encodeURIComponent(level.description || "")));
         const authorName = "Web Dashers";
-        
         const officialSong = level.songId < 0 ? Math.abs(level.songId) : 0;
         const customSong = level.songId > 0 ? level.songId : 0;
+        const rawLevelData = this._decodeWebLevelStringForGMD(level.levelString);
+        const safeName = this._escapeXml(level.levelName || "Unnamed");
+        const safeDesc = this._escapeXml(encodedDesc);
+        const safeAuthor = this._escapeXml(authorName);
+        const safeLevelData = this._escapeXml(rawLevelData);
 
-        let xml = '<?xml version="1.0"?>';
+        let xml = "";
+        xml += '<?xml version="1.0"?>';
         xml += '<plist version="1.0" gjver="2.0">';
         xml += '<dict>';
         xml += '<k>kCEK</k><i>4</i>';
-        xml += `<k>k1</k><i>${level.levelId && level.levelId !== "NA" ? level.levelId.replace(/\D/g, "") : 0}</i>`;
-        xml += `<k>k18</k><i>${level.levelLength || 0}</i>`;
-        xml += `<k>k23</k><i>${level.levelLength || 0}</i>`;
-        xml += `<k>k2</k><s>${level.levelName}</s>`;
-        xml += `<k>k4</k><s>${level.levelString}</s>`;
-        xml += `<k>k3</k><s>${encodedDesc}</s>`;
-        xml += `<k>k5</k><s>${authorName}</s>`;
-        xml += '<k>k101</k><s>0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0</s>';
+        xml += `<k>k1</k><i>${
+            level.levelId && level.levelId !== "NA"
+                ? String(level.levelId).replace(/\D/g, "")
+                : 0
+        }</i>`;
+        xml += `<k>k2</k><s>${safeName}</s>`;
+        xml += `<k>k3</k><s>${safeDesc}</s>`;
+        xml += `<k>k4</k><s>${safeLevelData}</s>`;
+        xml += `<k>k5</k><s>${safeAuthor}</s>`;
         xml += `<k>k8</k><i>${officialSong - 1}</i>`;
         xml += `<k>k45</k><i>${customSong}</i>`;
         xml += `<k>k16</k><i>${level.version || 1}</i>`;
-        xml += '<k>k13</k><t/><k>k21</k><i>2</i><k>k50</k><i>47</i>';
-        xml += '<k>kI1</k><r>0</r><k>kI2</k><r>0</r><k>kI3</k><r>0.1</r>';
-        xml += '<k>kI6</k><d><k>0</k><s>0</s><k>1</k><s>0</s><k>2</k><s>0</s><k>3</k><s>0</s><k>4</k><s>0</s><k>5</k><s>0</s><k>6</k><s>0</s><k>7</k><s>0</s><k>8</k><s>0</s><k>9</k><s>0</s><k>10</k><s>0</s><k>11</k><s>0</s><k>12</k><s>0</s><k>13</k><s>0</s></d>';
-        xml += '</dict></plist>';
-        const blob = new Blob([xml], { type: 'text/xml' });
+        xml += `<k>k18</k><i>${level.levelLength || 0}</i>`;
+        xml += `<k>k23</k><i>${level.levelLength || 0}</i>`;
+        xml += '<k>k13</k><t/>';
+        xml += '<k>k21</k><i>2</i>';
+        xml += '<k>k50</k><i>47</i>';
+        xml += '<k>k101</k><s>0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0</s>';
+        xml += '<k>kI1</k><r>0</r>';
+        xml += '<k>kI2</k><r>0</r>';
+        xml += '<k>kI3</k><r>0.1</r>';
+        xml += '<k>kI6</k><d>';
+        xml += '<k>0</k><s>0</s><k>1</k><s>0</s><k>2</k><s>0</s><k>3</k><s>0</s>';
+        xml += '<k>4</k><s>0</s><k>5</k><s>0</s><k>6</k><s>0</s><k>7</k><s>0</s>';
+        xml += '<k>8</k><s>0</s><k>9</k><s>0</s><k>10</k><s>0</s><k>11</k><s>0</s>';
+        xml += '<k>12</k><s>0</s><k>13</k><s>0</s>';
+        xml += '</d>';
+        xml += '</dict>';
+        xml += '</plist>';
+
+        const blob = new Blob([xml], { type: "text/xml" });
         const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        const fileName = `${level.levelName.replace(/[^a-z0-9]/gi, '_')}.gmd`;
+        const link = document.createElement("a");
+        const fileName = `${String(level.levelName || "Unnamed").replace(/[^a-z0-9]/gi, "_")}.gmd`;
+
         link.href = url;
         link.download = fileName;
         document.body.appendChild(link);
@@ -1178,6 +1244,11 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         const songIcon = this.add.image(centerX - 160, footerY, "GJ_GameSheet03", "GJ_musicIcon_001.png").setScale(1).setDepth(152);
         const songLabel = this.add.bitmapText(centerX - 115, footerY, "bigFont", level.song, 29).setOrigin(0, 0.5).setDepth(152);
         const statusIcon = this.add.image(centerX + 200, footerY, "GJ_GameSheet03", "GJ_infoIcon_001.png").setScale(1).setDepth(152).setFlipY(true).setAngle(90);
+        const songLabelMaxW = Math.max(40, (statusIcon.x - 30) - songLabel.x);
+        songLabel.setScale(1);
+        if (songLabel.width > songLabelMaxW) {
+            songLabel.setScale(songLabelMaxW / songLabel.width);
+        }
         const statusLabel = this.add.bitmapText(centerX + 245, footerY, "bigFont", level.status, 33).setOrigin(0, 0.5).setDepth(152);
         const versionText = this.add.bitmapText(centerX - 180, subFooterY, "goldFont", `Version: ${level.version || 1}`, 30).setOrigin(0.5).setDepth(152);
         const idText = this.add.bitmapText(centerX + 180, subFooterY, "goldFont", `ID: ${level.levelId || "na"}`, 30).setOrigin(0.5).setDepth(152);
@@ -3027,6 +3098,22 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         this._hideAchievementsScreen();
         return;
       }
+      if (this._editorColorPickerPopup) {
+          this._closeEditorColorPickerPopup();
+          return;
+      }
+      if (this._editorHorizontalOptionPopup) {
+          this._closeEditorHorizontalOptionPopup();
+          return;
+      }
+      if (this._editorStartOptionsPopup) {
+          this._closeEditorStartOptionsPopup();
+          return;
+      }
+      if (this._editorLevelSettingsPopup) {
+          this._closeEditorLevelSettingsPopup();
+          return;
+      }
       if (this._statsLayerOverlay) {
         this._hideStatsScreen();
         return;
@@ -3147,7 +3234,9 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     const menuMusicEnabled = localStorage.getItem("menuMusicEnabled");
     const shouldPlayMenuMusic = menuMusicEnabled === null ? true : menuMusicEnabled === "true";
     
-    if (!this._audio.isplaying() && shouldPlayMenuMusic) {
+    if (window.isEditor) {
+      this._audio.stopMusic();
+    } else if (!this._audio.isplaying() && shouldPlayMenuMusic) {
       this._audio.startMenuMusic();
     } else if (this._audio.isplaying() && !shouldPlayMenuMusic) {
       this._audio.stopMusic();
@@ -3857,6 +3946,11 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         this._restartLevel();
   }
   toggleGlitter(_0x34c21a) {
+    if (this._editorPlaytestActive) {
+      this._glitterEmitter.stop();
+      return;
+    }
+
     if (_0x34c21a) {
       this._glitterEmitter.start();
     } else {
@@ -4813,9 +4907,10 @@ _buildSettingsPopup() {
       { text: "Made by RobTop Games", scale: 0.8, font: "goldFont" },
       { text: "Modded by:", scale: 0.9, font: "bigFont" },
       { text: "breadbb, PinkDev, rohanis0000,", scale: 0.7, font: "goldFont" },
-      { text: "bog, AntiMatter, arbstro, aloaf", scale: 0.7, font: "goldFont" },
+      { text: "bog, Lasokar, AntiMatter,", scale: 0.7, font: "goldFont" },
+      { text: "arbstro, and aloaf", scale: 0.7, font: "goldFont" },
       { text: "Contributors:", scale: 0.9, font: "bigFont" },
-      { text: "t0nchi7 and Lasokar.", scale: 0.7, font: "goldFont" },
+      { text: "t0nchi7 and Itzar.", scale: 0.7, font: "goldFont" },
       { text: "© 2026 RobTop Games. All rights reserved.", scale: 0.4, font: "Arial", color: 0x000000 },
     ]; 
     let yPos = 0;
@@ -5320,40 +5415,109 @@ _buildSettingsPopup() {
     _0x122213.input.hitArea.setTo(-_0x960250, -_0x3f88a1, _0x46ea45 + _0x960250 * 2, _0x43b461 + _0x3f88a1 * 2);
   }
   _makeBouncyButton(textureX, _0x57b645, _0x2f13d0, _0xda0c21) {
-    const _0x396ca0 = _0x57b645 * 1.26;
-    textureX.on("pointerdown", () => {
-      if (!_0xda0c21 || !!_0xda0c21()) {
-        textureX._pressed = true;
-        this.tweens.killTweensOf(textureX, "scale");
+    textureX._bouncyBaseScale = _0x57b645;
+    const getBouncyVisualTargets = () => {
+      const configured = Array.isArray(textureX._bouncyVisualTargets) && textureX._bouncyVisualTargets.length
+        ? textureX._bouncyVisualTargets
+        : [textureX._bouncyVisualTarget || textureX];
+      return configured
+        .map(entry => {
+          const target = entry && entry.target ? entry.target : entry;
+          if (!target || typeof target.setScale !== "function") return null;
+          const baseScale =
+            (entry && typeof entry.getBaseScale === "function" ? entry.getBaseScale() : undefined) ??
+            (entry && entry.baseScale !== undefined ? entry.baseScale : undefined) ??
+            target._bouncyBaseScale ??
+            textureX._bouncyBaseScale ??
+            _0x57b645;
+          const baseScaleX =
+            (entry && typeof entry.getBaseScaleX === "function" ? entry.getBaseScaleX() : undefined) ??
+            (entry && entry.baseScaleX !== undefined ? entry.baseScaleX : undefined) ??
+            baseScale;
+          const baseScaleY =
+            (entry && typeof entry.getBaseScaleY === "function" ? entry.getBaseScaleY() : undefined) ??
+            (entry && entry.baseScaleY !== undefined ? entry.baseScaleY : undefined) ??
+            baseScale;
+          return { target, baseScaleX, baseScaleY };
+        })
+        .filter(Boolean);
+    };
+    const tweenBouncyTargets = (scaleMultiplier, duration) => {
+      for (const entry of getBouncyVisualTargets()) {
+        this.tweens.killTweensOf(entry.target);
         this.tweens.add({
-          targets: textureX,
-          scale: _0x396ca0,
-          duration: 300,
+          targets: entry.target,
+          scaleX: entry.baseScaleX * scaleMultiplier,
+          scaleY: entry.baseScaleY * scaleMultiplier,
+          duration,
           ease: "Bounce.Out"
         });
       }
+    };
+    const resetBouncyTargets = (instant = false) => {
+      for (const entry of getBouncyVisualTargets()) {
+        this.tweens.killTweensOf(entry.target);
+
+        if (instant) {
+          entry.target.setScale(entry.baseScaleX, entry.baseScaleY);
+        } else {
+          this.tweens.add({
+            targets: entry.target,
+            scaleX: entry.baseScaleX,
+            scaleY: entry.baseScaleY,
+            duration: 400,
+            ease: "Bounce.Out"
+          });
+        }
+      }
+    };
+    textureX.on("pointerdown", () => {
+      if (!_0xda0c21 || !!_0xda0c21()) {
+        textureX._pressed = true;
+        tweenBouncyTargets(1.26, 300);
+      }
     });
-    textureX.on("pointerout", (pointer) => {
+    textureX.on("pointerout", () => {
       if (textureX._pressed) {
         textureX._pressed = false;
-        this.tweens.killTweensOf(textureX, "scale");
-        this.tweens.add({
-          targets: textureX,
-          scale: _0x57b645,
-          duration: 400,
-          ease: "Bounce.Out"
-        });
+        resetBouncyTargets(false);
       }
     });
     textureX.on("pointerup", () => {
       if (textureX._pressed) {
         textureX._pressed = false;
-        this.tweens.killTweensOf(textureX);
-        textureX.setScale(_0x57b645);
-        _0x2f13d0();
+        resetBouncyTargets(true);
+        _0x2f13d0?.();
+      }
+    });
+    textureX.on("pointerupoutside", () => {
+      if (textureX._pressed) {
+        textureX._pressed = false;
+        resetBouncyTargets(false);
       }
     });
     return textureX;
+  }
+  _makeCompositeBouncyButton(trigger, visualTargets, baseScale, callback, condition) {
+    trigger._bouncyVisualTargets = (Array.isArray(visualTargets) ? visualTargets : [visualTargets])
+      .filter(Boolean)
+      .map(entry => {
+        const target = entry && entry.target ? entry.target : entry;
+        const currentScaleX = target?.scaleX ?? baseScale;
+        const currentScaleY = target?.scaleY ?? baseScale;
+        const entryBase = entry && entry.baseScale !== undefined ? entry.baseScale : undefined;
+
+        return {
+          target,
+          baseScaleX: entry && entry.baseScaleX !== undefined ? entry.baseScaleX : (entryBase ?? currentScaleX),
+          baseScaleY: entry && entry.baseScaleY !== undefined ? entry.baseScaleY : (entryBase ?? currentScaleY),
+          getBaseScale: entry && entry.getBaseScale,
+          getBaseScaleX: entry && entry.getBaseScaleX,
+          getBaseScaleY: entry && entry.getBaseScaleY
+        };
+      });
+
+    return this._makeBouncyButton(trigger, baseScale, callback, condition);
   }
   _toggleFullscreen() {
     if (this.scale.isFullscreen) {
@@ -5671,6 +5835,7 @@ _buildSettingsPopup() {
     }
 
     if (window.isEditor) {
+        this._audio.stopMusic();
         this._cameraX = 0;
         this._cameraY = 0;
         this._playerWorldX = 0;
@@ -5737,6 +5902,8 @@ _buildSettingsPopup() {
     } else if (gamemode == 4) {
       this._player.enterWaveMode();
     }
+
+    this._applyLevelStartOptions();
   }
   _pushButton(ignoreMacro = false) {
     const objectsUnderPointer = this.input.manager.hitTest(
@@ -6003,8 +6170,9 @@ _buildSettingsPopup() {
 
     const musicOffset = this._getStartPosMusicOffset();
     const startPositions = this._level.getStartPositions();
+    const activeStartPos = this._startPosIndex !== -1 && !!startPositions[this._startPosIndex];
 
-    if (this._startPosIndex !== -1 && startPositions[this._startPosIndex]) {
+    if (activeStartPos) {
       const pos = startPositions[this._startPosIndex];
 
       this._playerWorldX = pos.x;
@@ -6048,18 +6216,22 @@ _buildSettingsPopup() {
     this._attemptsLabel.setText("Attempt " + this._levelAttempts);
     this._attemptsLabel.setVisible(true);
     this._positionAttemptsLabel();
-    let gamemode = parseInt(window.settingsMap["kA2"] || "0");
-    if (gamemode == 1) {
-      this._player.enterShipMode();
-    } else if (gamemode == 2) {
-      this._state.y = 30;
-      this._player.enterBallMode({ y: 30 });
-    } else if (gamemode == 3) {
-      this._player.enterUfoMode();
-    } else if (gamemode == 4) {
-      this._player.enterWaveMode();
-    } else if (gamemode == 6) {
-      this._player.enterSpiderMode();
+    if (!activeStartPos) {
+      let gamemode = parseInt(window.settingsMap["kA2"] || "0");
+      if (gamemode == 1) {
+        this._player.enterShipMode();
+      } else if (gamemode == 2) {
+        this._state.y = 30;
+        this._player.enterBallMode({ y: 30 });
+      } else if (gamemode == 3) {
+        this._player.enterUfoMode();
+      } else if (gamemode == 4) {
+        this._player.enterWaveMode();
+      } else if (gamemode == 6) {
+        this._player.enterSpiderMode();
+      }
+
+      this._applyLevelStartOptions();
     }
 
     if (this._player && this._player._hitboxTrail) {
@@ -6330,6 +6502,13 @@ _buildSettingsPopup() {
   }
   update(_0x54fa47, deltaTime) {
     if (window.isEditor) {
+        if (this._editorPlaytestActive && !this._editorPlaytestPaused) {
+            this._updateEditorPlaytest(deltaTime);
+            this._updateEditorGrid();
+            this._updateEditorTimeline();
+            return;
+        }
+
         if (window.isEditorPause) return;
         const pointer = this.input.activePointer;
         this._hitObjects = this.input.hitTestPointer(pointer);
@@ -6359,6 +6538,10 @@ _buildSettingsPopup() {
             }
         }
         this._updateEditorTimeline();
+        if (this._editorPlaytestActive && this._editorPlaytestPaused) {
+            this._refreshEditorPlaytestGlowVisibility();
+            this._syncEditorPlaytestPlayerVisual(deltaTime / 1000);
+        }
         return;
     }
     let rawPercent = (this._playerWorldX / this._level.endXPos) * 100;
@@ -6748,7 +6931,8 @@ _buildSettingsPopup() {
       if (!this._player._scene._slideIn){
         if (!this._player._hitboxTrail) this._player._hitboxTrail = [];
         if (!this._player.p.isDead) {
-          this._player._hitboxTrail.push({ x: this._playerWorldX, y: this._player.p.y, rotation: this._player._rotation });
+          const _trailSize = this._player.p.isMini ? 18 : 30;
+          this._player._hitboxTrail.push({ x: this._playerWorldX, y: this._player.p.y, rotation: this._player._rotation, size: _trailSize, isWave: this._player.p.isWave });
           if (this._player._hitboxTrail.length > 180) this._player._hitboxTrail.shift();
         }
       }
@@ -6841,6 +7025,16 @@ _buildSettingsPopup() {
   }
 
 _handleEditorCamera = (delta) => {
+    if (this._editorTextInputFocused) {
+        this._level.container.x = -this._cameraX;
+        this._level.container.y = -this._cameraY;
+        this._level.additiveContainer.x = -this._cameraX;
+        this._level.additiveContainer.y = -this._cameraY;
+        this._level.topContainer.x = -this._cameraX;
+        this._level.topContainer.y = -this._cameraY;
+        return;
+    }
+
     const camSpeed = 15;
     const cursors = this.input.keyboard.createCursorKeys();
     const wasd = this.input.keyboard.addKeys('W,A,S,D');
@@ -6889,7 +7083,13 @@ this._totalIds = maxId;
     this._editorTab = "build";
     window.editorSelectedObject = -1;
     this._editorZoom = 1.0;
+    this._editorPlaytestActive = false;
+    this._editorPlaytestPaused = false;
+    this._editorPlaytestSavedView = null;
+    this._editorPlaytestPauseView = null;
+    this._editorPlaytestLastTrailPoint = null;
     this.input.on('pointerdown', (pointer) => {
+        if (this._editorPlaytestActive && !this._editorPlaytestPaused) return;
         this._clickStartPos.x = pointer.x;
         this._clickStartPos.y = pointer.y;
         this._cameraStartX = this._cameraX;
@@ -6897,6 +7097,13 @@ this._totalIds = maxId;
         this._isDragging = false;
     });
     this.input.on('pointerup', (pointer) => {
+        if (this._editorPlaytestActive && !this._editorPlaytestPaused) {
+            this._lastSwipeGridX = -1;
+            this._lastSwipeGridY = -1;
+            this._isDragging = false;
+            this._isDraggingSlider = false;
+            return;
+        }
         if (!this._isSwipeEnabled && !this._isDragging && !this._isDraggingSlider && this._hitObjects.length === 0) {
             this._editorAction();
         }
@@ -6913,9 +7120,11 @@ _createEditorGui = () => {
     const bottomY = screenHeight - 100;
 
     this._editorGui = this.add.container(screenWidth - 40, 40).setScrollFactor(0).setDepth(1000);
+    const editorSettings = this.add.image(-87, 0, "GJ_GameSheet03", "GJ_optionsBtn02_001.png").setInteractive().setAngle(-90).setFlipX(true);
     const editorPause = this.add.image(0, 0, "GJ_GameSheet03", "GJ_pauseBtn_001.png").setInteractive().setFlipX(true).setAngle(-90);
-    this._deleteButton = this.add.image(50, 40, "GJ_GameSheet03", "GJ_trashBtn_001.png").setInteractive();
-    this._editorGui.add(editorPause, this._deleteButton);
+    this._deleteButton = this.add.image(-(screenWidth - 40) + 50, 0, "GJ_GameSheet03", "GJ_trashBtn_001.png").setInteractive();
+    this._editorGui.add([editorSettings, editorPause, this._deleteButton]);
+    this._makeBouncyButton(editorSettings, 1.0, () => {this._openEditorLevelSettingsPopup();}, () => !this._editorLevelSettingsPopup);
     this._makeBouncyButton(editorPause, 1.0, () => this._showEditorPauseMenu(true), () => true);
     this._makeBouncyButton(this._deleteButton, 0.9, () => this._deleteSelectedObject(), () => true);
     this._initEditorPauseMenu();
@@ -6944,7 +7153,7 @@ _createEditorGui = () => {
 
     this._swipeContainer.add([this._swipeBg, this._swipeText]);
 
-    this._makeBouncyButton(this._swipeBg, 0.8, () => {
+    this._makeCompositeBouncyButton(this._swipeBg, [this._swipeBg, this._swipeText], 0.8, () => {
         this._isSwipeEnabled = !this._isSwipeEnabled;
 
         if (this._isSwipeEnabled) {
@@ -7007,6 +7216,24 @@ _createEditorGui = () => {
     this._makeBouncyButton(zoomInBtn, 0.9, () => this._adjustZoom(0.1));
     this._makeBouncyButton(zoomOutBtn, 0.9, () => this._adjustZoom(-0.1));
 
+    this._editorPlaytestControls = this.add.container(48, screenHeight / 2 - 110).setScrollFactor(0).setDepth(1500);
+    const playtestButtonScale = 1.1;
+
+    this._editorPlaytestPlayBtn = this.add.image(0, 0, "GJ_GameSheet03", "GJ_playEditorBtn_001.png").setAngle(90).setFlipY(true).setInteractive().setScale(playtestButtonScale);
+    this._editorPlaytestPauseBtn = this.add.image(0, 0, "GJ_GameSheet03", "GJ_pauseEditorBtn_001.png").setAngle(90).setFlipY(true).setInteractive().setScale(playtestButtonScale).setVisible(false);
+    this._editorPlaytestStopBtn = this.add.image(90, 0, "GJ_GameSheet03", "GJ_stopEditorBtn_001.png").setAngle(90).setFlipY(true).setInteractive().setScale(playtestButtonScale).setVisible(false);
+
+    this._editorPlaytestControls.add([
+        this._editorPlaytestPlayBtn,
+        this._editorPlaytestPauseBtn,
+        this._editorPlaytestStopBtn
+    ]);
+
+    this._makeBouncyButton(this._editorPlaytestPlayBtn, playtestButtonScale, () => this._startEditorPlaytest(), () => !this._editorPlaytestActive);
+    this._makeBouncyButton(this._editorPlaytestPauseBtn, playtestButtonScale, () => this._toggleEditorPlaytestPause(), () => this._editorPlaytestActive);
+    this._makeBouncyButton(this._editorPlaytestStopBtn, playtestButtonScale, () => this._stopEditorPlaytest(), () => this._editorPlaytestActive);
+    this._refreshEditorPlaytestControls();
+
     this._zoomText = this.add.bitmapText(screenWidth / 2, 80, "bigFont", "Zoom: 1.00x", 40).setOrigin(0.5).setScrollFactor(0).setDepth(2000).setAlpha(0);
 
     this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
@@ -7020,7 +7247,736 @@ _createEditorGui = () => {
     this._initEditorTimeline();
 };
 
+_refreshEditorPlaytestControls = () => {
+    if (!this._editorPlaytestPlayBtn || !this._editorPlaytestPauseBtn || !this._editorPlaytestStopBtn) return;
+
+    const active = !!this._editorPlaytestActive;
+    this._editorPlaytestPlayBtn.setVisible(!active);
+    this._editorPlaytestPauseBtn.setVisible(active);
+    this._editorPlaytestStopBtn.setVisible(active);
+
+    if (active) {
+        this._editorPlaytestPauseBtn
+            .setTexture(
+                "GJ_GameSheet03",
+                this._editorPlaytestPaused ? "GJ_playEditorBtn_001.png" : "GJ_pauseEditorBtn_001.png"
+            )
+            .setAlpha(1);
+        this._editorPlaytestStopBtn.setAlpha(1);
+    } else {
+        this._editorPlaytestPauseBtn
+            .setTexture("GJ_GameSheet03", "GJ_pauseEditorBtn_001.png")
+            .setAlpha(1);
+        this._editorPlaytestStopBtn.setAlpha(1);
+    }
+};
+
+_setEditorPlaytestGuiVisible = (visible) => {
+    const guiObjects = [
+        this._editorGui,
+        this._toolbox,
+        this._zoomButtons,
+        this._sideButtons,
+        this._timelineContainer,
+        this._zoomText
+    ];
+
+    for (const obj of guiObjects) {
+        if (obj && typeof obj.setVisible === "function") {
+            obj.setVisible(visible);
+        }
+    }
+};
+
+_setEditorLevelSectionsFullyVisible = () => {
+    if (!this._level?._sectionContainers) return;
+
+    for (let i = 0; i < this._level._sectionContainers.length; i++) {
+        if (typeof this._level._setSectionVisible === "function") {
+            this._level._setSectionVisible(i, true);
+            continue;
+        }
+
+        const section = this._level._sectionContainers[i];
+        if (section?.additive) section.additive.visible = true;
+        if (section?.normal) section.normal.visible = true;
+    }
+
+    this._level.resetVisibility?.();
+};
+
+_resetEditorPlaytestSectionCulling = () => {
+    if (!this._level) return;
+
+    this._level.resetVisibility?.();
+    this._level.updateVisibility?.(this._cameraX);
+};
+
+_refreshEditorPlaytestGlowVisibility = () => {
+    if (!this._level) return;
+
+    if (this._editorPlaytestActive) {
+        const glowVisible = !!window.showEditorGlow;
+        this._level.additiveContainer?.setVisible(glowVisible);
+        if (this._level._glowSprites) {
+            for (const glow of this._level._glowSprites) {
+                glow?.setVisible?.(glowVisible);
+            }
+        }
+        return;
+    }
+
+    this._level.additiveContainer?.setVisible(true);
+    this._level._updateGlowVisibility?.();
+};
+
+_getEditorPlaytestCameraYTarget = () => {
+    let currentNormalCameraY = -(this._cameraY || 0);
+    let targetNormalCameraY = currentNormalCameraY;
+
+    if (this._level?.flyCameraTarget !== null && this._level?.flyCameraTarget !== undefined) {
+        targetNormalCameraY = this._level.flyCameraTarget;
+    } else {
+        const playerY = this._state?.y || 0;
+        const highMargin = 140;
+        const lowMargin = 80;
+        const cameraCenterY = currentNormalCameraY - o + 320;
+
+        if (this._state?.gravityFlipped) {
+            if (playerY > cameraCenterY + lowMargin) {
+                targetNormalCameraY = playerY - 320 - lowMargin + o;
+            } else if (playerY < cameraCenterY - highMargin) {
+                targetNormalCameraY = playerY - 320 + highMargin + o;
+            }
+        } else {
+            if (playerY > cameraCenterY + highMargin) {
+                targetNormalCameraY = playerY - 320 - highMargin + o;
+            } else if (playerY < cameraCenterY - lowMargin) {
+                targetNormalCameraY = playerY - 320 + lowMargin + o;
+            }
+        }
+    }
+
+    return -Math.max(0, targetNormalCameraY || 0);
+};
+
+_updateEditorPlaytestCameraY = (delta = 0, instant = false) => {
+    const targetCameraY = this._getEditorPlaytestCameraYTarget();
+
+    if (instant || delta === 0) {
+        this._cameraY = targetCameraY;
+        return;
+    }
+
+    const currentNormalCameraY = -(this._cameraY || 0);
+    const targetNormalCameraY = -targetCameraY;
+    let nextNormalCameraY = currentNormalCameraY + ((targetNormalCameraY - currentNormalCameraY) / (10 / delta));
+
+    if (nextNormalCameraY < 0) nextNormalCameraY = 0;
+    this._cameraY = -nextNormalCameraY;
+};
+
+_updateEditorPlaytestBackground = () => {
+    this._bg.tilePositionX += (this._cameraX - this._prevCameraX) * this._bgSpeedX;
+    this._prevCameraX = this._cameraX;
+    this._bg.tilePositionY = this._bgInitY + this._cameraY * this._bgSpeedY;
+};
+
+_setEditorZoomInstant = (zoom, cameraX = this._cameraX, cameraY = this._cameraY) => {
+    this._editorZoom = Phaser.Math.Clamp(zoom, 0.1, 4.0);
+    this._cameraX = cameraX;
+    this._cameraY = cameraY;
+
+    this._level.topContainer.setScale(this._editorZoom);
+    this._level.additiveContainer.setScale(this._editorZoom);
+    this._level.container.setScale(this._editorZoom);
+
+    this._level.topContainer.x = -this._cameraX;
+    this._level.topContainer.y = -this._cameraY;
+    this._level.additiveContainer.x = -this._cameraX;
+    this._level.additiveContainer.y = -this._cameraY;
+    this._level.container.x = -this._cameraX;
+    this._level.container.y = -this._cameraY;
+
+    this._cameraXRef._v = this._cameraX;
+    this._bg.tilePositionX = this._cameraX * 0.1;
+    this._bg.tilePositionY = this._bgInitY + this._cameraY * 0.1;
+    this._updateEditorGrid();
+    this._updateEditorTimeline();
+};
+
+_clearEditorPlaytestMarks = () => {
+    if (this._editorPlaytestTrailGfx) {
+        this._editorPlaytestTrailGfx.destroy();
+        this._editorPlaytestTrailGfx = null;
+    }
+
+    if (this._editorPlaytestDeathMarks) {
+        for (const mark of this._editorPlaytestDeathMarks) {
+            if (mark && mark.destroy) mark.destroy();
+        }
+    }
+
+    this._editorPlaytestDeathMarks = [];
+    this._editorPlaytestLastTrailPoint = null;
+};
+
+_ensureEditorPlaytestTrail = () => {
+    if (this._editorPlaytestTrailGfx) return this._editorPlaytestTrailGfx;
+
+    const gfx = this.add.graphics();
+    gfx.setDepth(100);
+    this._level.topContainer.add(gfx);
+    this._editorPlaytestTrailGfx = gfx;
+    return gfx;
+};
+
+_drawEditorPlaytestTrailPoint = () => {
+    if (!this._editorPlaytestActive || !this._player) return;
+
+    const point = {
+        x: this._playerWorldX,
+        y: b(this._state.y)
+    };
+
+    const last = this._editorPlaytestLastTrailPoint;
+    if (last) {
+        const dx = point.x - last.x;
+        const dy = point.y - last.y;
+        if ((dx * dx) + (dy * dy) >= 2) {
+            const gfx = this._ensureEditorPlaytestTrail();
+            gfx.lineStyle(2, 0x00ff00, 0.95);
+            gfx.lineBetween(last.x, last.y, point.x, point.y);
+        }
+    }
+
+    this._editorPlaytestLastTrailPoint = point;
+};
+
+_addEditorPlaytestDeathMark = () => {
+    const x = this._playerWorldX;
+    const y = b(this._state.y);
+    const size = 28;
+    const mark = this.add.graphics();
+
+    mark.setDepth(110);
+    mark.lineStyle(13, 0xff0000, 1);
+    mark.lineBetween(x - size, y - size, x + size, y + size);
+    mark.lineBetween(x - size, y + size, x + size, y - size);
+
+    this._level.topContainer.add(mark);
+    if (!this._editorPlaytestDeathMarks) this._editorPlaytestDeathMarks = [];
+    this._editorPlaytestDeathMarks.push(mark);
+};
+
+_resetEditorPlaytestLevelState = () => {
+    this._level.resetObjects();
+    this._level.resetGroundState();
+    this._level.resetColorTriggers();
+    this._level.resetAlphaTriggers();
+    this._level.resetRotateTriggers();
+    this._level.resetPulseTriggers();
+    this._level.resetEnterEffectTriggers();
+    this._level.resetMoveTriggers();
+    this._level.resetVisibility();
+
+    this._colorManager.reset();
+    this._level.applyColorChannels(this._colorManager);
+    this._bg.setTint(this._colorManager.getHex(fs));
+    this._level.setGroundColor(this._colorManager.getHex(gs));
+};
+
+_refreshEditorCollisionCaches = () => {
+    if (!this._level) return;
+
+    const liveObjectIds = new Set();
+    if (Array.isArray(window.levelObjects)) {
+        window.levelObjects.forEach((obj, index) => {
+            if (!obj || !obj.id) return;
+            const linkedId = Number.isInteger(obj._eeObjectId) ? obj._eeObjectId : index;
+            liveObjectIds.add(linkedId);
+        });
+    }
+
+    const sourceColliders = Array.isArray(this._level.objects) ? this._level.objects : [];
+    this._level.objects = sourceColliders.filter(collider => {
+        if (!collider) return false;
+        const objectId = Number.isInteger(collider._eeObjectId) ? collider._eeObjectId : -1;
+        return liveObjectIds.has(objectId);
+    });
+
+    this._level._collisionSections = [];
+    this._level._groupColliders = {};
+
+    for (const collider of this._level.objects) {
+        if (!collider) continue;
+
+        if (typeof this._level._addCollisionToSection === "function") {
+            this._level._addCollisionToSection(collider);
+        }
+
+        if (Array.isArray(collider._eeGroups)) {
+            for (const groupId of collider._eeGroups) {
+                if (!this._level._groupColliders[groupId]) this._level._groupColliders[groupId] = [];
+                this._level._groupColliders[groupId].push(collider);
+            }
+        }
+    }
+};
+
+_getEditorSaveIndexForObjectId = (objectId) => {
+    if (!Array.isArray(window.levelObjects) || !Number.isInteger(objectId)) return -1;
+
+    for (let i = 0; i < window.levelObjects.length; i++) {
+        const obj = window.levelObjects[i];
+        if (obj && Number.isInteger(obj._eeObjectId) && obj._eeObjectId === objectId) {
+            return i;
+        }
+    }
+
+    const fallback = window.levelObjects[objectId];
+    return fallback && fallback.id ? objectId : -1;
+};
+
+_getEditorSaveObjectForObjectId = (objectId) => {
+    const saveIndex = this._getEditorSaveIndexForObjectId(objectId);
+    return saveIndex === -1 ? null : window.levelObjects[saveIndex];
+};
+
+_getEditorCollidersForObjectId = (objectId) => {
+    if (!Array.isArray(this._level?.objects) || !Number.isInteger(objectId)) return [];
+    return this._level.objects.filter(collider => {
+        if (!collider) return false;
+        return Number.isInteger(collider._eeObjectId) && collider._eeObjectId === objectId;
+    });
+};
+
+_hideEditorPlaytestGlowLayers = () => {
+    const hideForPlayer = (player) => {
+        if (!player) return;
+
+        const glowLayers = [
+            player._playerGlowLayer,
+            player._shipGlowLayer,
+            player._ballGlowLayer,
+            player._waveGlowLayer,
+            player._spiderGlowLayer,
+            player._birdGlowLayer
+        ];
+
+        if (!window.showEditorGlow) {
+            for (const layer of glowLayers) {
+                if (layer?.sprite) layer.sprite.setVisible(false);
+            }
+        }
+
+        if (player._dashAnimationSprite) {
+            player._dashAnimationSprite.setVisible(false);
+        }
+    };
+
+    hideForPlayer(this._player);
+    hideForPlayer(this._player2);
+};
+
+_hideEditorPlaytestPlayer = () => {
+    const hidePlayer = (player) => {
+        if (!player) return;
+        player.setCubeVisible(false);
+        player.setShipVisible(false);
+        player.setBallVisible(false);
+        player.setWaveVisible(false);
+        player.setBirdVisible(false);
+        player.setSpiderVisible(false);
+    };
+
+    hidePlayer(this._player);
+    hidePlayer(this._player2);
+    this._hideEditorPlaytestGlowLayers();
+};
+
+_syncEditorPlaytestPlayerVisual = (deltaSeconds = 0) => {
+    if (!this._editorPlaytestActive || !this._player || this._state.isDead) return;
+
+    const zoom = this._editorZoom || 1;
+    const playerScreenX = (this._playerWorldX * zoom) - this._cameraX;
+    const playerScreenY = (b(this._state.y) * zoom) - this._cameraY;
+    const playerScreenYCameraOffset = (b(this._state.y) * (zoom - 1)) - this._cameraY;
+
+    this._player.syncSprites(
+        this._cameraX,
+        playerScreenYCameraOffset,
+        deltaSeconds,
+        this._getMirrorXOffset(playerScreenX)
+    );
+
+    if (this._isDual && this._player2 && !this._state2.isDead) {
+        this._player2.syncSprites(
+            this._cameraX,
+            (b(this._state2.y) * (zoom - 1)) - this._cameraY,
+            deltaSeconds,
+            this._getMirrorXOffset(playerScreenX)
+        );
+    }
+
+    if (zoom !== 1) {
+        const scalePlayer = (player, anchorY) => {
+            for (const layer of (player?._allLayers || [])) {
+                if (!layer?.sprite) continue;
+                layer.sprite.x = playerScreenX + ((layer.sprite.x - playerScreenX) * zoom);
+                layer.sprite.y = anchorY + ((layer.sprite.y - anchorY) * zoom);
+                layer.sprite.scaleX *= zoom;
+                layer.sprite.scaleY *= zoom;
+            }
+            if (player?._dashAnimationSprite) {
+                player._dashAnimationSprite.x = playerScreenX + ((player._dashAnimationSprite.x - playerScreenX) * zoom);
+                player._dashAnimationSprite.y = anchorY + ((player._dashAnimationSprite.y - anchorY) * zoom);
+                player._dashAnimationSprite.scaleX *= zoom;
+                player._dashAnimationSprite.scaleY *= zoom;
+            }
+        };
+
+        scalePlayer(this._player, playerScreenY);
+        if (this._isDual && this._player2 && !this._state2.isDead) {
+            scalePlayer(this._player2, (b(this._state2.y) * zoom) - this._cameraY);
+        }
+    }
+
+    this._hideEditorPlaytestGlowLayers();
+};
+
+_applyEditorPlaytestStartMode = () => {
+    let speedKey = parseInt(window.settingsMap?.["kA4"] || "0", 10);
+    if (speedKey == 0) {
+      playerSpeed = SpeedPortal.ONE_TIMES;
+    } else if (speedKey == 1) {
+      playerSpeed = SpeedPortal.HALF;
+    } else if (speedKey == 2) {
+      playerSpeed = SpeedPortal.TWO_TIMES;
+    } else if (speedKey == 3) {
+      playerSpeed = SpeedPortal.THREE_TIMES;
+    } else if (speedKey == 4) {
+      playerSpeed = SpeedPortal.FOUR_TIMES;
+    }
+
+    const gamemode = parseInt(window.settingsMap?.["kA2"] || "0", 10);
+    if (gamemode == 1) {
+      this._player.enterShipMode();
+    } else if (gamemode == 2) {
+      this._state.y = 30;
+      this._player.enterBallMode({ y: 30 });
+    } else if (gamemode == 3) {
+      this._player.enterUfoMode();
+    } else if (gamemode == 4) {
+      this._player.enterWaveMode();
+    } else if (gamemode == 6) {
+      this._player.enterSpiderMode();
+    }
+
+    const getBool = (key) => parseInt(window.settingsMap?.[key] || "0", 10) === 1;
+    this._state.isMini = getBool("kA3");
+    this._state.gravityFlipped = getBool("kA11");
+    this._state.mirrored = false;
+
+    if (getBool("kA8")) {
+        this._enableDualMode();
+        this._state2.mirrored = false;
+    }
+
+    this._hideEditorPlaytestGlowLayers();
+    this._refreshEditorPlaytestGlowVisibility();
+};
+
+_startEditorPlaytest = () => {
+    if (this._editorPlaytestActive) return;
+
+    this._closeEditorLevelSettingsPopup();
+    this._closeEditorHorizontalOptionPopup();
+    this._closeEditorColorPickerPopup();
+    this._closeEditorStartOptionsPopup();
+    this._clearEditorSelection();
+    this._clearEditorPlaytestMarks();
+    this._refreshEditorCollisionCaches();
+
+    this._editorPlaytestSavedView = {
+        zoom: this._editorZoom || 1,
+        cameraX: this._cameraX || 0,
+        cameraY: this._cameraY || 0
+    };
+    this._editorPlaytestPauseView = null;
+
+    this._editorPlaytestActive = true;
+    this._editorPlaytestPaused = false;
+    this._spaceWasDown = !!this.input.activePointer?.isDown;
+    this._deltaBuffer = 0;
+    this._physicsFrame = 0;
+    this._playerWorldX = 0;
+    this._cameraX = -centerX;
+    this._cameraY = 0;
+    this._cameraXRef._v = this._cameraX;
+    this._prevCameraX = this._cameraX;
+
+    this._resetEditorPlaytestLevelState();
+    this._state.reset();
+    this._player.reset();
+    this._isDual = false;
+    this._state2.reset();
+    this._player2.reset();
+    this._player2.setCubeVisible(false);
+    this._player2.setShipVisible(false);
+    this._player2.setBallVisible(false);
+    this._player2.setWaveVisible(false);
+    this._player2.setBirdVisible(false);
+    this._player2.setSpiderVisible(false);
+
+    this._state.y = 30;
+    this._state.onGround = true;
+    this._state.canJump = true;
+    this._player.setCubeVisible(true);
+    this._applyEditorPlaytestStartMode();
+    this._state.mirrored = false;
+    this._state2.mirrored = false;
+    this._bg.setFlipX(false);
+    this._updateEditorPlaytestCameraY(0, true);
+    this._setEditorZoomInstant(1, -centerX, this._cameraY);
+    this._refreshEditorPlaytestGlowVisibility();
+    this._audio.reset();
+    this._audio.startMusic(0);
+    this._setEditorPlaytestGuiVisible(false);
+    this._refreshEditorPlaytestControls();
+    this._drawEditorPlaytestTrailPoint();
+};
+
+_toggleEditorPlaytestPause = () => {
+    if (!this._editorPlaytestActive) return;
+
+    if (!this._editorPlaytestPaused) {
+        this._editorPlaytestPauseView = {
+            zoom: this._editorZoom || 1,
+            cameraX: this._cameraX || 0,
+            cameraY: this._cameraY || 0
+        };
+        this._editorPlaytestPaused = true;
+        this._audio.pauseMusic();
+        this._setEditorPlaytestGuiVisible(true);
+        this._setEditorLevelSectionsFullyVisible();
+        this._refreshEditorPlaytestControls();
+        return;
+    }
+
+    const resumeView = this._editorPlaytestPauseView || {
+        zoom: 1,
+        cameraX: this._playerWorldX - centerX,
+        cameraY: this._cameraY || 0
+    };
+
+    this._editorPlaytestPaused = false;
+    this._setEditorPlaytestGuiVisible(false);
+    this._setEditorZoomInstant(resumeView.zoom || 1, resumeView.cameraX || 0, resumeView.cameraY || 0);
+    this._cameraXRef._v = this._cameraX;
+    this._prevCameraX = this._cameraX;
+    this._resetEditorPlaytestSectionCulling();
+    this._editorPlaytestPauseView = null;
+    this._audio.resumeMusic();
+    this._syncEditorPlaytestPlayerVisual(0);
+    this._refreshEditorPlaytestControls();
+};
+
+_stopEditorPlaytest = (leaveDeathMark = false) => {
+    if (!this._editorPlaytestActive) return;
+
+    if (leaveDeathMark) {
+        this._addEditorPlaytestDeathMark();
+    }
+
+    this._editorPlaytestActive = false;
+    this._editorPlaytestPaused = false;
+    this._spaceWasDown = false;
+    this._deltaBuffer = 0;
+
+    this._audio.reset();
+    this._hideEditorPlaytestPlayer();
+    this._resetEditorPlaytestLevelState();
+    this._refreshEditorPlaytestGlowVisibility();
+
+    const savedView = this._editorPlaytestSavedView;
+    const currentZoom = this._editorZoom || 1;
+    const restoreZoom = savedView?.zoom || currentZoom;
+    const worldCenterX = (this._cameraX + centerX) / currentZoom;
+    const worldCenterY = (this._cameraY + (screenHeight / 2)) / currentZoom;
+    const restoredCameraX = (worldCenterX * restoreZoom) - centerX;
+    const restoredCameraY = (worldCenterY * restoreZoom) - (screenHeight / 2);
+
+    this._editorPlaytestSavedView = null;
+    this._editorPlaytestPauseView = null;
+    this._setEditorZoomInstant(restoreZoom, restoredCameraX, restoredCameraY);
+    this._setEditorLevelSectionsFullyVisible();
+
+    this._setEditorPlaytestGuiVisible(true);
+    this._refreshEditorPlaytestControls();
+};
+
+_editorPlaytestPress = () => {
+    if (this._state.isDead) return;
+
+    this._state.upKeyDown = true;
+    this._state.upKeyPressed = true;
+    this._state.queuedHold = true;
+
+    if (!this._state.isFlying && !this._state.isWave && !this._state.isUfo && this._state.canJump) {
+        this._player.updateJump(0);
+    } else if (this._state.isUfo) {
+        this._player.updateJump(0);
+    }
+};
+
+_editorPlaytestRelease = () => {
+    this._state.upKeyDown = false;
+    this._state.upKeyPressed = false;
+    this._state.queuedHold = false;
+};
+
+_updateEditorPlaytestInput = () => {
+    const pointer = this.input.activePointer;
+    const hitObjects = this.input.hitTestPointer(pointer);
+    const overPlaytestControls = hitObjects.some(obj =>
+        obj === this._editorPlaytestPauseBtn ||
+        obj === this._editorPlaytestStopBtn ||
+        obj === this._editorPlaytestPlayBtn
+    );
+    const pointerHeld = pointer.isDown && !overPlaytestControls;
+    const jumpHeld = this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown || pointerHeld;
+
+    if (jumpHeld && !this._spaceWasDown) {
+        this._editorPlaytestPress();
+    } else if (!jumpHeld && this._spaceWasDown) {
+        this._editorPlaytestRelease();
+    }
+
+    this._spaceWasDown = jumpHeld;
+};
+
+_updateEditorPlaytest = (deltaTime) => {
+    if (!this._editorPlaytestActive || this._editorPlaytestPaused) return;
+
+    this._updateEditorPlaytestInput();
+    this._audio.update(deltaTime / 1000);
+    this._state.mirrored = false;
+    this._state2.mirrored = false;
+    this._bg.setFlipX(false);
+    this._refreshEditorPlaytestGlowVisibility();
+    this._level.updateEndPortalY(-this._cameraY, this._state.isFlying || this._state.isWave || this._state.isUfo);
+
+    let quantizedDelta = this._quantizeDelta(deltaTime);
+    let subSteps = quantizedDelta > 0 ? Math.max(1, Math.round(quantizedDelta * 4)) : 0;
+    if (subSteps > 60) subSteps = 60;
+
+    const subStepDelta = subSteps > 0 ? quantizedDelta / subSteps : 0;
+    const verticalDelta = subStepDelta * d;
+    const horizontalDelta = subStepDelta * playerSpeed * d;
+    const previousNoClip = window.noClip;
+
+    window.noClip = false;
+
+    try {
+        for (let i = 0; i < subSteps; i++) {
+            this._state.lastY = this._state.y;
+            this._physicsFrame++;
+            this._player.updateJump(verticalDelta);
+            this._state.y += this._state.yVelocity * verticalDelta;
+            this._player.checkCollisions(this._playerWorldX - centerX);
+
+            if (this._isDual && !this._state2.isDead) {
+                this._state2.upKeyDown = this._state.upKeyDown;
+                this._state2.upKeyPressed = this._state.upKeyPressed;
+                this._state2.queuedHold = this._state.queuedHold;
+                this._state2.lastY = this._state2.y;
+                this._player2.updateJump(verticalDelta);
+                this._state2.y += this._state2.yVelocity * verticalDelta;
+                this._player2.checkCollisions(this._playerWorldX - centerX);
+                if (this._state2.isDead && !this._state.isDead) {
+                    this._player.killPlayer();
+                }
+            }
+
+            if (this._state.isDead) break;
+
+            this._playerWorldX += horizontalDelta;
+
+            if (!this._state.isFlying && !this._state.isWave && !this._state.isUfo) {
+                if (this._state.isBall) {
+                    const ballOnSurface = this._state.onGround || this._state.onCeiling;
+                    this._player.updateBallRoll(horizontalDelta, ballOnSurface);
+                } else if (this._state.onGround) {
+                    this._player.updateGroundRotation(verticalDelta);
+                } else if (this._player.rotateActionActive) {
+                    this._player.updateRotateAction(u);
+                } else if (this._state.isDashing) {
+                    this._player.updateDashRotation(u);
+                }
+            }
+        }
+    } finally {
+        window.noClip = previousNoClip;
+    }
+
+    if (this._state.isDead) {
+        this._drawEditorPlaytestTrailPoint();
+        this._stopEditorPlaytest(true);
+        return;
+    }
+
+    this._state.ignorePortals = false;
+    this._state2.ignorePortals = false;
+
+    this._cameraX = this._playerWorldX - centerX;
+    this._updateEditorPlaytestCameraY(quantizedDelta);
+    this._cameraXRef._v = this._cameraX;
+
+    this._level.additiveContainer.x = -this._cameraX;
+    this._level.additiveContainer.y = -this._cameraY;
+    this._level.container.x = -this._cameraX;
+    this._level.container.y = -this._cameraY;
+    this._level.topContainer.x = -this._cameraX;
+    this._level.topContainer.y = -this._cameraY;
+
+    const playerX = this._playerWorldX;
+    for (let colorTrigger of this._level.checkColorTriggers(playerX)) {
+        this._colorManager.triggerColor(colorTrigger.index, colorTrigger.color, colorTrigger.duration);
+        if (colorTrigger.tintGround) {
+            this._colorManager.triggerColor(gs, colorTrigger.color, colorTrigger.duration);
+        }
+    }
+
+    this._level.checkMoveTriggers(playerX);
+    this._level.stepMoveTriggers(deltaTime / 1000);
+    this._level.checkAlphaTriggers(playerX);
+    this._level.stepAlphaTriggers(deltaTime / 1000);
+    this._level.checkRotateTriggers(playerX);
+    this._level.stepRotateTriggers(deltaTime / 1000);
+    this._level.checkPulseTriggers(playerX);
+    this._level.stepPulseTriggers(deltaTime / 1000, this._colorManager);
+    this._colorManager.step(deltaTime / 1000);
+    this._level.stepGroundAnimation(deltaTime / 1000);
+    this._level.applyColorChannels(this._colorManager);
+    this._bg.setTint(this._colorManager.getHex(fs));
+    this._level.setGroundColor(this._colorManager.getHex(gs));
+    this._level.updateVisibility(this._cameraX);
+    this._level.updateObjectDebugIds();
+    this._refreshEditorPlaytestGlowVisibility();
+
+    if (this._state.isFlying) {
+        this._player.updateShipRotation(quantizedDelta);
+    }
+
+    this._syncEditorPlaytestPlayerVisual(deltaTime / 1000);
+    this._drawEditorPlaytestTrailPoint();
+    this._updateEditorPlaytestBackground();
+};
+
 _adjustZoom = (delta, anchorX = screenWidth / 2, anchorY = screenHeight / 2) => {
+    if (this._editorPlaytestActive && !this._editorPlaytestPaused) return;
+
     const oldZoom = this._editorZoom;
     let newZoom = oldZoom + delta;
     newZoom = Phaser.Math.Clamp(newZoom, 0.1, 4.0);
@@ -7059,12 +8015,267 @@ _updateTabVisuals = () => {
 };
 
 _getSheetForFrameThingy = (frameName) => {
-    const sheets = ["GJ_WebSheet", "GJ_GameSheet", "GJ_GameSheet02", "GJ_GameSheet03", "GJ_GameSheet04"];
+    const sheets = ["GJ_WebSheet", "GJ_GameSheet", "GJ_GameSheet02", "GJ_GameSheet03", "GJ_GameSheet04", "GJ_GameSheetEditor"];
     for (const key of sheets) {
         if (this.textures.exists(key) && this.textures.get(key).has(frameName)) {
             return key;
         }
     }
+};
+
+_getTextureRefForFrameThingy = (frameName) => { // getSheetForFrameThingy: the sequel
+    const sheets = ["GJ_WebSheet", "GJ_GameSheet", "GJ_GameSheet02", "GJ_GameSheet03", "GJ_GameSheet04", "GJ_GameSheetEditor"];
+    for (const key of sheets) {
+        if (this.textures.exists(key) && this.textures.get(key).has(frameName)) {
+            return {
+                key,
+                frame: frameName
+            };
+        }
+    }
+    if (this.textures.exists(frameName)) {
+        return {
+            key: frameName,
+            frame: null
+        };
+    }
+    return null;
+};
+
+_createEditorObjectButtonPreview = (x, y, objId) => {
+    const objectDef = getObjectFromId(objId);
+    if (!objectDef) return null;
+
+    let frameName = objectDef.frame;
+
+    if (objectDef.randomFrames && objectDef.randomFrames.length) {
+        frameName = objectDef.randomFrames[0];
+    }
+
+    if (!frameName) return null;
+
+    const previewObj = {
+        id: objId,
+        x: 0,
+        y: 0,
+        flipX: false,
+        flipY: false,
+        rot: 0,
+        scale: 1,
+        zLayer: objectDef.default_z_layer || 0,
+        zOrder: objectDef.default_z_order || 0,
+        groups: "",
+        color1: 0,
+        color2: 0,
+        _raw: {}
+    };
+
+    const preview = this.add.container(x, y);
+    const sprites = [];
+
+    const addPreviewSprite = (frame, localX = 0, localY = 0, colorData = null, previewDepth = 0, extra = {}) => {
+        const tex = this._getTextureRefForFrameThingy(frame);
+        if (!tex) return null;
+
+        const spr = tex.frame
+            ? this.add.image(localX, localY, tex.key, tex.frame)
+            : this.add.image(localX, localY, tex.key);
+
+        if (!spr) return null;
+
+        if (this._level && this._level._applyVisualProps) {
+            this._level._applyVisualProps(this, spr, frame, previewObj, colorData);
+        }
+
+        if (extra.blendMode !== undefined) {
+            spr.setBlendMode(extra.blendMode);
+        }
+
+        if (extra.tint !== undefined) {
+            spr.setTint(extra.tint);
+        }
+
+        if (extra.rotationOffset !== undefined) {
+            spr.rotation += extra.rotationOffset;
+        }
+
+        spr._editorPreviewDepth = previewDepth;
+        sprites.push(spr);
+
+        return spr;
+    };
+
+    const isPortalFront =
+        (objectDef.type === portalType || objectDef.type === speedType) &&
+        frameName.includes("_front_");
+
+    let portalBackSprite = null;
+
+    if (isPortalFront) {
+        const backFrame = frameName.replace("_front_", "_back_");
+        if (this._getTextureRefForFrameThingy(backFrame)) {
+            portalBackSprite = addPreviewSprite(backFrame, 0, 0, null, -0.005);
+        }
+    }
+
+    let glowSprite = null;
+
+    if (
+        false &&
+        objectDef.glow &&
+        this._level &&
+        this._level._getGlowFrameName
+    ) {
+        const glowFrame = this._level._getGlowFrameName(frameName);
+
+        if (glowFrame && this._getTextureRefForFrameThingy(glowFrame)) {
+            glowSprite = addPreviewSprite(glowFrame, 0, 0, null, -0.003, {
+                blendMode: S
+            });
+        }
+    }
+
+    const visualDef = isPortalFront
+        ? {
+            ...objectDef,
+            _portalFront: true
+        }
+        : objectDef;
+
+    const mainSprite = addPreviewSprite(frameName, 0, 0, visualDef, 0);
+
+    if (mainSprite && portalBackSprite) {
+        portalBackSprite.x = mainSprite.x;
+        portalBackSprite.y = mainSprite.y;
+    }
+
+    if (objectDef.type === ringType) {
+        if (mainSprite) mainSprite.setScale(0.75);
+        if (glowSprite) glowSprite.setScale(0.75);
+    }
+
+    if (frameName.indexOf("sawblade") >= 0 && mainSprite) {
+        mainSprite.setTint(0x000000);
+
+        const sawMirror = addPreviewSprite(frameName, 0, 0, objectDef, 0.001, {
+            tint: 0x000000,
+            rotationOffset: Math.PI
+        });
+
+        if (sawMirror) {
+            sawMirror.x = mainSprite.x;
+            sawMirror.y = mainSprite.y;
+        }
+    }
+
+    if (objectDef.type === solidType || objectDef.type === hazardType) {
+        const overlayFrame = frameName.replace("_001.png", "_2_001.png");
+
+        if (this._getTextureRefForFrameThingy(overlayFrame)) {
+            addPreviewSprite(overlayFrame, 0, 0, null, 0.002);
+        }
+    }
+
+    if (objectDef.children) {
+        for (const childDef of objectDef.children) {
+            let childDx = childDef.dx || 0;
+            let childDy = childDef.dy || 0;
+
+            if (childDef.localDx !== undefined || childDef.localDy !== undefined) {
+                let localDx = childDef.localDx || 0;
+                let localDy = childDef.localDy || 0;
+
+                if (previewObj.flipX) localDx = -localDx;
+                if (previewObj.flipY) localDy = -localDy;
+
+                const rot = (previewObj.rot || 0) * Math.PI / 180;
+
+                childDx = localDx * Math.cos(rot) - localDy * Math.sin(rot);
+                childDy = localDx * Math.sin(rot) + localDy * Math.cos(rot);
+            }
+
+            const childDepth =
+                (childDef.z !== undefined ? childDef.z : -1) < 0
+                    ? -0.003
+                    : 0.001;
+
+            const childSprite = addPreviewSprite(
+                childDef.frame,
+                childDx,
+                childDy,
+                childDef,
+                childDepth
+            );
+
+            if (childSprite && childDef.audioScale) {
+                childSprite.setScale(0.1);
+                childSprite.setAlpha(0.9);
+            }
+
+            if (frameName.indexOf("sawblade") >= 0 && childSprite) {
+                childSprite.setTint(0x000000);
+
+                const childMirror = addPreviewSprite(
+                    childDef.frame,
+                    childDx,
+                    childDy,
+                    childDef,
+                    childDepth + 0.001,
+                    {
+                        tint: 0x000000,
+                        rotationOffset: Math.PI
+                    }
+                );
+
+                if (childMirror) {
+                    childMirror.x = childSprite.x;
+                    childMirror.y = childSprite.y;
+                }
+            }
+        }
+    }
+
+    if (!sprites.length) {
+        preview.destroy();
+        return null;
+    }
+
+    sprites.sort((a, b) => {
+        return (a._editorPreviewDepth || 0) - (b._editorPreviewDepth || 0);
+    });
+
+    preview.add(sprites);
+
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    for (const spr of sprites) {
+        const displayW = spr.displayWidth || spr.width || 1;
+        const displayH = spr.displayHeight || spr.height || 1;
+
+        const left = spr.x - displayW * spr.originX;
+        const right = spr.x + displayW * (1 - spr.originX);
+        const top = spr.y - displayH * spr.originY;
+        const bottom = spr.y + displayH * (1 - spr.originY);
+
+        minX = Math.min(minX, left);
+        maxX = Math.max(maxX, right);
+        minY = Math.min(minY, top);
+        maxY = Math.max(maxY, bottom);
+    }
+
+    const visualW = Math.max(1, maxX - minX);
+    const visualH = Math.max(1, maxY - minY);
+
+    const targetSize = 64;
+    const maxDim = Math.max(visualW, visualH);
+    const scaleMultiplier = targetSize / maxDim;
+
+    preview.setScale(Math.min(scaleMultiplier, 0.6));
+
+    return preview;
 };
 
 _buildObjectGrid = () => {
@@ -7242,24 +8453,16 @@ _buildObjectGrid = () => {
         const y = startY + (row * paddingY);
 
         if (item.type === "object") {
-            const btnBg = this.add.image(x, y, "GJ_GameSheet03", "GJ_checkOff_001.png")
-                .setScale(1.2)
-                .setInteractive();
-
-            const sheet = this._getSheetForFrameThingy(item.frame);
-            const icon = this.add.image(x, y, sheet, item.frame);
-
-            const targetSize = 64;
-            const maxDim = Math.max(icon.width, icon.height);
-            const scaleMultiplier = targetSize / maxDim;
-
-            icon.setScale(Math.min(scaleMultiplier, 0.6));
-
-            if (window.selectedObjId === item.id) btnBg.setTint(0x888888);
-
-            this._gridContainer.add([btnBg, icon]);
-
-            this._makeBouncyButton(btnBg, 1.2, () => {
+            const btnBg = this.add.image(x, y, "GJ_GameSheet03", "GJ_checkOff_001.png").setScale(1.2).setInteractive();
+            const icon = this._createEditorObjectButtonPreview(x, y, item.id);
+            if (window.selectedObjId === item.id) {
+                btnBg.setTint(0x888888);
+            }
+            this._gridContainer.add(btnBg);
+            if (icon) {
+                this._gridContainer.add(icon);
+            }
+            this._makeCompositeBouncyButton(btnBg, [btnBg, icon], 1.2, () => {
                 window.selectedObjId = item.id;
                 this._buildObjectGrid();
             });
@@ -7275,7 +8478,7 @@ _buildObjectGrid = () => {
 
             this._gridContainer.add([btn, icon]);
 
-            this._makeBouncyButton(btn, 0.92, () => {
+            this._makeCompositeBouncyButton(btn, [btn, icon], 0.92, () => {
                 if (item.subType === "move") {
                     this._moveObject(item.dx, item.dy);
                 } else if (item.subType === "rotate") {
@@ -7293,7 +8496,7 @@ _buildObjectGrid = () => {
 
             this._gridContainer.add([btnBg, icon]);
 
-            this._makeBouncyButton(btnBg, 1.2, () => {
+            this._makeCompositeBouncyButton(btnBg, [btnBg, icon], 1.2, () => {
                 this._deleteSelectedObject();
             });
 
@@ -7303,22 +8506,26 @@ _buildObjectGrid = () => {
 };
 
 _moveObject = (dx, dy) => {
-    const selectedIndex = window.editorSelectedObject;
-    if (selectedIndex === -1) return;
+    const selectedObjectId = window.editorSelectedObject;
+    if (selectedObjectId === -1) return;
 
-    const collider = this._level.objects[selectedIndex];
-    const sprites = this._level.objectSprites[selectedIndex];
-    const saveObj = window.levelObjects[selectedIndex];
+    const sprites = this._level.objectSprites[selectedObjectId];
+    const saveObj = this._getEditorSaveObjectForObjectId(selectedObjectId);
+    const colliders = this._getEditorCollidersForObjectId(selectedObjectId);
 
     if (!saveObj) return;
 
-    if (collider) {
-      collider.x += dx; collider.y += dy;
-      collider._baseX += dx; collider._baseY += dy;
-      collider._origBaseX += dx; collider._origBaseY += dy;
+    for (const collider of colliders) {
+        collider.x += dx;
+        collider.y += dy;
+        collider._baseX = (collider._baseX ?? collider.x - dx) + dx;
+        collider._baseY = (collider._baseY ?? collider.y - dy) + dy;
+        collider._origBaseX = (collider._origBaseX ?? collider.x - dx) + dx;
+        collider._origBaseY = (collider._origBaseY ?? collider.y - dy) + dy;
     }
 
-    saveObj.x += dx / 2; saveObj.y -= dy / 2;
+    saveObj.x += dx / 2;
+    saveObj.y -= dy / 2;
     if (saveObj._raw) {
         saveObj._raw["2"] = String(saveObj.x);
         saveObj._raw["3"] = String(saveObj.y);
@@ -7327,61 +8534,67 @@ _moveObject = (dx, dy) => {
     if (sprites) {
         for (const s of sprites) {
             if (!s) continue;
-            s.x += dx; s.y += dy;
+            s.x += dx;
+            s.y += dy;
             if (s._eeWorldX !== undefined) s._eeWorldX += dx;
             if (s._eeBaseY !== undefined) s._eeBaseY += dy;
             if (s._origWorldX !== undefined) s._origWorldX += dx;
             if (s._origBaseY !== undefined) s._origBaseY += dy;
         }
     }
+
+    this._refreshEditorCollisionCaches();
 };
 
 _rotateObject = (degrees) => {
-    const selectedIndex = window.editorSelectedObject;
-    if (selectedIndex === -1) return;
+    const selectedObjectId = window.editorSelectedObject;
+    if (selectedObjectId === -1) return;
 
-    const collider = this._level.objects[selectedIndex];
-    const sprites = this._level.objectSprites[selectedIndex];
-    const saveObj = window.levelObjects[selectedIndex];
+    const sprites = this._level.objectSprites[selectedObjectId];
+    const saveObj = this._getEditorSaveObjectForObjectId(selectedObjectId);
+    const colliders = this._getEditorCollidersForObjectId(selectedObjectId);
 
     if (!saveObj) return;
 
     saveObj.rot = (saveObj.rot || 0) + degrees;
-    
+
     if (saveObj._raw) {
         saveObj._raw["6"] = String(saveObj.rot);
     }
 
-    if (collider) {
+    for (const collider of colliders) {
         collider.rotation = saveObj.rot;
+        collider.rotationDegrees = saveObj.rot;
     }
 
     if (sprites) {
         for (const s of sprites) {
             if (!s) continue;
-            s.angle += degrees; 
+            s.angle += degrees;
         }
     }
+
+    this._refreshEditorCollisionCaches();
 };
 
 _flipObject = (axis) => {
-    const selectedIndex = window.editorSelectedObject;
-    if (selectedIndex === -1) return;
+    const selectedObjectId = window.editorSelectedObject;
+    if (selectedObjectId === -1) return;
 
-    const sprites = this._level.objectSprites[selectedIndex];
-    const saveObj = window.levelObjects[selectedIndex];
+    const sprites = this._level.objectSprites[selectedObjectId];
+    const saveObj = this._getEditorSaveObjectForObjectId(selectedObjectId);
 
     if (!saveObj) return;
 
     if (axis === "x") {
         saveObj.flipX = !saveObj.flipX;
         if (saveObj._raw) saveObj._raw["4"] = saveObj.flipX ? "1" : "0";
-        
+
         if (sprites) {
             for (const s of sprites) {
                 if (!s) continue;
                 s.setFlipX(!s.flipX);
-                s.angle = -s.angle; 
+                s.angle = -s.angle;
             }
         }
     } else {
@@ -7396,7 +8609,10 @@ _flipObject = (axis) => {
             }
         }
     }
+
     saveObj.rot = -saveObj.rot;
+    if (saveObj._raw) saveObj._raw["6"] = String(saveObj.rot || 0);
+    this._refreshEditorCollisionCaches();
 };
 
 _clearEditorSelection = () => {
@@ -7446,19 +8662,25 @@ _selectEditorObjectByIndex = (index) => {
 };
 
 _duplicateSelectedObject = () => {
-    const selectedIndex = window.editorSelectedObject;
-    if (selectedIndex === -1) return;
+    const selectedObjectId = window.editorSelectedObject;
+    if (selectedObjectId === -1) return;
 
-    const src = window.levelObjects[selectedIndex];
-    if (!src) return;
+    const src = this._getEditorSaveObjectForObjectId(selectedObjectId);
+    if (!src) {
+        this._clearEditorSelection();
+        return;
+    }
 
     const clone = JSON.parse(JSON.stringify(src));
+    delete clone._eeObjectId;
 
     window.levelObjects.push(clone);
     this._level._spawnObject(clone);
 
-    const newIndex = this._level.objects.length - 1;
-    const newestSprites = this._level.objectSprites[newIndex];
+    const newObjectId = Number.isInteger(clone._eeObjectId)
+        ? clone._eeObjectId
+        : Math.max(0, (this._level._nextObjectId || 1) - 1);
+    const newestSprites = this._level.objectSprites[newObjectId];
 
     if (newestSprites && newestSprites.length) {
         const depthBase = {
@@ -7479,43 +8701,51 @@ _duplicateSelectedObject = () => {
 
             spr.setDepth((spr._eeZDepth || finalDepth) + 10);
 
-            if (this._level.container && !this._level.container.exists(spr)) {
+            if (spr._eeLayer === 2) {
+                if (this._level.topContainer && !this._level.topContainer.exists(spr)) {
+                    this._level.topContainer.add(spr);
+                }
+            } else if (this._level.container && !this._level.container.exists(spr)) {
                 this._level.container.add(spr);
             }
         }
     }
 
-    this._selectEditorObjectByIndex(newIndex);
+    this._selectEditorObjectByIndex(newObjectId);
+    this._refreshEditorCollisionCaches();
     this._buildObjectGrid();
 };
 
 _deleteSelectedObject = () => {
-    const selectedIndex = window.editorSelectedObject;
-    if (selectedIndex === -1) return;
+    const selectedObjectId = window.editorSelectedObject;
+    if (selectedObjectId === -1) return;
+
+    const saveIndex = this._getEditorSaveIndexForObjectId(selectedObjectId);
 
     this._clearEditorSelection();
 
-    const sprites = this._level.objectSprites[selectedIndex] || [];
+    const sprites = this._level.objectSprites[selectedObjectId] || [];
     for (const spr of sprites) {
         if (spr && spr.destroy) spr.destroy();
     }
 
-    const collider = this._level.objects[selectedIndex];
-    if (collider && collider.destroy) collider.destroy();
-
-    this._level.objectSprites.splice(selectedIndex, 1);
-    this._level.objects.splice(selectedIndex, 1);
-    window.levelObjects.splice(selectedIndex, 1);
-
-    for (let i = selectedIndex; i < this._level.objectSprites.length; i++) {
-        const list = this._level.objectSprites[i];
-        if (!list || !list.length) continue;
-
-        for (const spr of list) {
-            if (spr) spr._eeObjectId = i;
-        }
+    if (Array.isArray(this._level.objectSprites)) {
+        this._level.objectSprites[selectedObjectId] = null;
     }
 
+    if (Array.isArray(this._level.objects)) {
+        this._level.objects = this._level.objects.filter(collider => {
+            if (!collider) return false;
+            const objectId = Number.isInteger(collider._eeObjectId) ? collider._eeObjectId : -1;
+            return objectId !== selectedObjectId;
+        });
+    }
+
+    if (Array.isArray(window.levelObjects) && saveIndex !== -1) {
+        window.levelObjects[saveIndex] = null;
+    }
+
+    this._refreshEditorCollisionCaches();
     this._buildObjectGrid();
     this._updateEditorActionButtons();
 };
@@ -7589,14 +8819,32 @@ _updateEditorGrid = () => {
     if (startLineX >= -50 && startLineX <= screenWidth + 50) {
         g.lineBetween(startLineX, 0, startLineX, screenHeight);
     }
-    const worldGroundY = -20 + (60 * 8);
+    let worldGroundY = -20 + (60 * 8);
+    if (this._editorPlaytestActive && this._level?.getFloorY) {
+        const floorY = this._level.getFloorY();
+        if (floorY !== null && floorY !== undefined && Number.isFinite(floorY)) {
+            worldGroundY = b(floorY);
+        }
+    }
     const groundLineY = (worldGroundY * zoom) - this._cameraY;
     if (groundLineY >= -50 && groundLineY <= screenHeight + 50) {
         g.lineBetween(0, groundLineY, screenWidth, groundLineY);
     }
+
+    if (this._editorPlaytestActive && this._level?.getCeilingY) {
+        const ceilingY = this._level.getCeilingY();
+        if (ceilingY !== null && ceilingY !== undefined) {
+            const ceilingLineY = (b(ceilingY) * zoom) - this._cameraY;
+            if (ceilingLineY >= -50 && ceilingLineY <= screenHeight + 50) {
+                g.lineBetween(0, ceilingLineY, screenWidth, ceilingLineY);
+            }
+        }
+    }
 };
 
 _editorAction = () => {
+  if (this._editorPlaytestActive && !this._editorPlaytestPaused) return;
+
   if (this._editorTab === "build") {
     this._placeObject();
   } else if (this._editorTab === "edit") {
@@ -7676,10 +8924,10 @@ _placeObject = () => {
         this._selectEditorObjectByIndex(outIndex);
     }
 
-    const placedIndex = this._level.objectSprites.length - 1;
+    const placedIndex = Math.max(0, (this._level._nextObjectId || 1) - 1);
     const newestSprites = this._level.objectSprites[placedIndex];
 
-    if (newestSprites && newestSprites.sprites) {
+    if (newestSprites && newestSprites.length) {
         const depthBase = {
             "-3": -6,
             "-1": -3,
@@ -7693,7 +8941,7 @@ _placeObject = () => {
             (depthBase[saveData.zLayer] || 0) +
             (saveData.zOrder * 0.01);
 
-        for (const spr of newestSprites.sprites) {
+        for (const spr of newestSprites) {
             if (!spr) continue;
 
             spr.setDepth((spr._eeZDepth || finalDepth) + 10);
@@ -7842,38 +9090,2580 @@ _deleteObjectAtPointer = () => {
 
     if (foundObjectIndex === -1) return;
 
+    const saveIndex = this._getEditorSaveIndexForObjectId(foundObjectIndex);
+
     if (window.editorSelectedObject === foundObjectIndex) {
         this._clearEditorSelection();
     }
 
-    const linkedSprites = this._level.objectSprites[foundObjectIndex];
-    const collider = this._level.objects[foundObjectIndex];
+    const linkedSprites = this._level.objectSprites[foundObjectIndex] || [];
 
-    if (linkedSprites && linkedSprites.length) {
-        for (const spr of linkedSprites) {
-            if (spr && spr.destroy) spr.destroy();
-        }
+    for (const spr of linkedSprites) {
+        if (spr && spr.destroy) spr.destroy();
     }
 
-    if (collider && collider.destroy) {
-        collider.destroy();
+    if (Array.isArray(this._level.objectSprites)) {
+        this._level.objectSprites[foundObjectIndex] = null;
     }
 
-    this._level.objectSprites.splice(foundObjectIndex, 1);
-    this._level.objects.splice(foundObjectIndex, 1);
-    window.levelObjects.splice(foundObjectIndex, 1);
-
-    for (let i = foundObjectIndex; i < this._level.objectSprites.length; i++) {
-        const list = this._level.objectSprites[i];
-        if (!list || !list.length) continue;
-
-        for (const spr of list) {
-            if (spr) spr._eeObjectId = i;
-        }
+    if (Array.isArray(this._level.objects)) {
+        this._level.objects = this._level.objects.filter(collider => {
+            if (!collider) return false;
+            const objectId = Number.isInteger(collider._eeObjectId) ? collider._eeObjectId : -1;
+            return objectId !== foundObjectIndex;
+        });
     }
 
+    if (Array.isArray(window.levelObjects) && saveIndex !== -1) {
+        window.levelObjects[saveIndex] = null;
+    }
+
+    this._refreshEditorCollisionCaches();
     window.editorSelectedObject = -1;
     this._updateEditorActionButtons();
+};
+
+_closeEditorLevelSettingsPopup = () => {
+    this._editorTextInputFocused = false;
+
+    if (!this._editorLevelSettingsPopup) return;
+
+    this._closeEditorHorizontalOptionPopup();
+    this._closeEditorColorPickerPopup();
+
+    if (this._editorLevelSettingsKeyHandler) {
+        window.removeEventListener("keydown", this._editorLevelSettingsKeyHandler);
+        this._editorLevelSettingsKeyHandler = null;
+    }
+
+    this._editorLevelSettingsPopup.destroy();
+    this._editorLevelSettingsPopup = null;
+};
+
+_closeEditorHorizontalOptionPopup = () => {
+    if (!this._editorHorizontalOptionPopup) return;
+
+    this._editorHorizontalOptionPopup.destroy();
+    this._editorHorizontalOptionPopup = null;
+};
+
+_closeEditorColorPickerPopup = () => {
+    this._editorTextInputFocused = false;
+
+    if (this._editorColorPickerKeyHandler) {
+        window.removeEventListener("keydown", this._editorColorPickerKeyHandler);
+        this._editorColorPickerKeyHandler = null;
+    }
+
+    if (!this._editorColorPickerPopup) return;
+
+    this._editorColorPickerPopup.destroy();
+    this._editorColorPickerPopup = null;
+};
+
+_editorSettingsToMap = () => {
+    const map = {};
+
+    const raw = window.settingslist || "";
+    const parts = String(raw).split(",");
+
+    for (let i = 0; i + 1 < parts.length; i += 2) {
+        map[parts[i]] = parts[i + 1];
+    }
+
+    window.settingsMap = window.settingsMap || {};
+
+    for (const key in window.settingsMap) {
+        if (map[key] === undefined) {
+            map[key] = window.settingsMap[key];
+        }
+    }
+
+    return map;
+};
+
+_editorMapToSettings = (map) => {
+    const parts = [];
+
+    for (const key in map) {
+        if (map[key] === undefined || map[key] === null) continue;
+        parts.push(key, String(map[key]));
+    }
+
+    window.settingsMap = map;
+    window.settingslist = parts.join(",");
+
+    return window.settingslist;
+};
+
+_makeColorStringEntry = (channelId, color) => {
+    return [
+        "1", String(color.r),
+        "2", String(color.g),
+        "3", String(color.b),
+        "6", String(channelId),
+        "5", "0",
+        "7", "0"
+    ].join("_");
+};
+
+_parseColorStringEntry = (entry) => {
+    const props = {};
+    const parts = String(entry || "").split("_");
+
+    for (let i = 0; i + 1 < parts.length; i += 2) {
+        props[parts[i]] = parts[i + 1];
+    }
+
+    return {
+        channel: parseInt(props["6"] || "0", 10),
+        r: parseInt(props["1"] || "255", 10),
+        g: parseInt(props["2"] || "255", 10),
+        b: parseInt(props["3"] || "255", 10)
+    };
+};
+
+_getEditorColorChannel = (channelId, fallback = { r: 255, g: 255, b: 255 }) => {
+    const map = this._editorSettingsToMap();
+
+    if (map["kS38"]) {
+        const entries = map["kS38"].split("|").filter(Boolean);
+
+        for (const entry of entries) {
+            const parsed = this._parseColorStringEntry(entry);
+
+            if (parsed.channel === channelId) {
+                return {
+                    r: parsed.r,
+                    g: parsed.g,
+                    b: parsed.b
+                };
+            }
+        }
+    }
+
+    const legacyKey =
+        channelId === 1000
+            ? "kS29"
+            : channelId === 1001
+                ? "kS30"
+                : null;
+
+    if (legacyKey && map[legacyKey]) {
+        const parsed = this._parseColorStringEntry(map[legacyKey]);
+
+        return {
+            r: parsed.r,
+            g: parsed.g,
+            b: parsed.b
+        };
+    }
+
+    return fallback;
+};
+
+_setEditorColorChannelDraft = (channelId, color) => {
+    const map = this._editorSettingsToMap();
+
+    const entries = map["kS38"]
+        ? map["kS38"].split("|").filter(Boolean)
+        : [];
+
+    let replaced = false;
+
+    for (let i = 0; i < entries.length; i++) {
+        const parsed = this._parseColorStringEntry(entries[i]);
+
+        if (parsed.channel === channelId) {
+            entries[i] = this._makeColorStringEntry(channelId, color);
+            replaced = true;
+            break;
+        }
+    }
+
+    if (!replaced) {
+        entries.push(this._makeColorStringEntry(channelId, color));
+    }
+
+    map["kS38"] = entries.join("|");
+
+    if (channelId === 1000) {
+        map["kS29"] = this._makeColorStringEntry(1000, color);
+    } else if (channelId === 1001) {
+        map["kS30"] = this._makeColorStringEntry(1001, color);
+    }
+
+    this._editorMapToSettings(map);
+
+    if (this._level) {
+        this._level._initialColors = this._level._initialColors || {};
+        this._level._initialColors[channelId] = color;
+    }
+
+    if (this._colorManager && this._colorManager.setInitialColor) {
+        this._colorManager.setInitialColor(channelId, color);
+    }
+
+    const hex = Phaser.Display.Color.GetColor(color.r, color.g, color.b);
+
+    if (channelId === 1000 && this._bg) {
+        this._bg.setTint(hex);
+    }
+
+    if (channelId === 1001 && this._level && this._level.setGroundColor) {
+        this._level.setGroundColor(hex);
+    }
+};
+
+_setEditorStartValueDraft = (key, value) => {
+    const map = this._editorSettingsToMap();
+    map[key] = String(value);
+    this._editorMapToSettings(map);
+};
+
+_getEditorStartValue = (key, fallback = 0) => {
+    const map = this._editorSettingsToMap();
+    const val = parseInt(map[key] ?? fallback, 10);
+
+    return isNaN(val) ? fallback : val;
+};
+
+_setEditorArtValueDraft = (key, value) => {
+    const numericValue = Math.max(0, parseInt(value ?? 0, 10) || 0);
+
+    this._setEditorStartValueDraft(key, numericValue);
+
+    if (key === "kA6") {
+        window._backgroundId = String(numericValue + 1).padStart(2, "0");
+
+        const bgKey = "game_bg_" + numericValue;
+
+        if (this._bg && this.textures.exists(bgKey)) {
+            this._bg.setTexture(bgKey);
+            const newBgH = this.textures.get(bgKey).source?.[0]?.height;
+
+            if (newBgH) {
+                this._bgInitY = newBgH - screenHeight - o;
+            }
+        }
+    } else if (key === "kA7") {
+        window._groundId = String(numericValue).padStart(2, "0");
+
+        if (this._level && typeof this._level.applyGroundTexture === "function") {
+            this._level.applyGroundTexture();
+        }
+    }
+};
+
+_getCurrentEditorLevelRecord = () => {
+    const levels = JSON.parse(localStorage.getItem("created_levels") || "[]");
+    const idx = levels.findIndex(l => l.createdId === window.currentlevel?.[2]);
+
+    return {
+        levels,
+        idx,
+        level: idx !== -1 ? levels[idx] : null
+    };
+};
+
+_setEditorSongDraft = (songId, songName) => {
+    this._editorPendingSongId = songId;
+    this._editorPendingSongName = songName;
+
+    window.currentlevel = window.currentlevel || [
+        "Placeholder",
+        "Unnamed",
+        window._onlineLevelId || "local_0",
+        ["Local", "SongAuthor"]
+    ];
+
+    if (songId < 0) {
+        const normalIndex = Math.abs(songId) - 1;
+        const levelSong = window.allLevels?.[normalIndex];
+
+        if (levelSong) {
+            window.currentlevel[0] = levelSong[0];
+            window.currentlevel[3] = ["Local", levelSong[3]];
+        }
+    } else {
+        window.currentlevel[0] = `ng_song_${songId}`;
+        window.currentlevel[3] = ["Local", "Newgrounds"];
+        window._onlineSongBuffer = null;
+        window._onlineSongKey = null;
+        window._onlineSongTitle = `NG#${songId}`;
+        window._onlineSongArtist = "Newgrounds";
+    }
+};
+
+_addSafeFrameImage = (x, y, frameName, scale = 1) => {
+    const tex =
+        this._getTextureRefForFrameThingy
+            ? this._getTextureRefForFrameThingy(frameName)
+            : null;
+
+    if (tex) {
+        return tex.frame
+            ? this.add.image(x, y, tex.key, tex.frame).setScale(scale)
+            : this.add.image(x, y, tex.key).setScale(scale);
+    }
+
+    return this.add.bitmapText(x, y, "bigFont", "?", 36)
+        .setOrigin(0.5)
+        .setScale(scale);
+};
+
+_getColourPickerFrameData = () => {
+    return {
+        "colourPicker.png": {
+            frame: { x: 1, y: 1591, w: 52, h: 52 },
+            rotated: false,
+            sourceSize: { w: 52, h: 52 }
+        },
+        "colourPickerBackground.png": {
+            frame: { x: 698, y: 325, w: 440, h: 440 },
+            rotated: false,
+            sourceSize: { w: 440, h: 440 }
+        },
+        "colourPickerOverlay.png": {
+            frame: { x: 698, y: 766, w: 440, h: 440 },
+            rotated: false,
+            sourceSize: { w: 440, h: 440 }
+        },
+        "colourPickerShadow.png": {
+            frame: { x: 602, y: 1207, w: 440, h: 440 },
+            rotated: false,
+            sourceSize: { w: 440, h: 440 }
+        },
+        "huePickerBackground.png": {
+            frame: { x: 1, y: 990, w: 600, h: 600 },
+            rotated: false,
+            sourceSize: { w: 600, h: 600 }
+        },
+        "menuColourPanelBackground.png": {
+            frame: { x: 1, y: 325, w: 696, h: 664 },
+            rotated: false,
+            sourceSize: { w: 720, h: 664 },
+            spriteSourceSize: { x: 24, y: 0, w: 696, h: 664 }
+        }
+    };
+};
+
+_getColourPickerTextureRef = (frameName) => {
+    const sheet = "CCControlColourPickerSpriteSheet-uhd";
+
+    if (
+        this.textures.exists(sheet) &&
+        this.textures.get(sheet).has(frameName)
+    ) {
+        return {
+            key: sheet,
+            frame: frameName
+        };
+    }
+
+    const generatedKey = `__cc_picker_${frameName}`;
+
+    if (this.textures.exists(generatedKey)) {
+        return {
+            key: generatedKey,
+            frame: null
+        };
+    }
+
+    if (!this.textures.exists(sheet)) {
+        return null;
+    }
+
+    const tex = this.textures.get(sheet);
+
+    const sourceImage =
+        typeof tex.getSourceImage === "function"
+            ? tex.getSourceImage()
+            : tex.source?.[0]?.image;
+
+    if (!sourceImage) {
+        return null;
+    }
+
+    const data = this._getColourPickerFrameData()[frameName];
+    if (!data) return null;
+
+    const frame = data.frame;
+    const outW = data.sourceSize.w;
+    const outH = data.sourceSize.h;
+
+    const canvasTexture = this.textures.createCanvas(generatedKey, outW, outH);
+    const canvas = canvasTexture.getCanvas();
+    const ctx = canvas.getContext("2d");
+
+    ctx.clearRect(0, 0, outW, outH);
+
+    if (data.rotated) {
+        ctx.save();
+        ctx.translate(outW / 2, outH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.drawImage(
+            sourceImage,
+            frame.x,
+            frame.y,
+            frame.w,
+            frame.h,
+            -frame.w / 2,
+            -frame.h / 2,
+            frame.w,
+            frame.h
+        );
+        ctx.restore();
+    } else {
+        ctx.drawImage(
+            sourceImage,
+            frame.x,
+            frame.y,
+            frame.w,
+            frame.h,
+            0,
+            0,
+            outW,
+            outH
+        );
+    }
+
+    canvasTexture.refresh();
+
+    return {
+        key: generatedKey,
+        frame: null
+    };
+};
+
+_addColourPickerImage = (x, y, frameName, scale = 1) => {
+    const tex = this._getColourPickerTextureRef(frameName);
+
+    if (tex) {
+        return tex.frame
+            ? this.add.image(x, y, tex.key, tex.frame).setScale(scale)
+            : this.add.image(x, y, tex.key).setScale(scale);
+    }
+
+    return this.add.rectangle(x, y, 80 * scale, 80 * scale, 0xffffff, 0.4)
+        .setStrokeStyle(2, 0xff0000, 1);
+};
+
+_setPickerObjectColor = (obj, hex, alpha = 1) => {
+    if (!obj) return;
+
+    if (typeof obj.setTint === "function") {
+        obj.setTint(hex);
+        return;
+    }
+
+    if (typeof obj.setFillStyle === "function") {
+        obj.setFillStyle(hex, alpha);
+    }
+};
+
+_rgbToHsv = (r, g, b) => {
+    r /= 255;
+    g /= 255;
+    b /= 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const d = max - min;
+
+    let h = 0;
+
+    if (d !== 0) {
+        if (max === r) {
+            h = ((g - b) / d) % 6;
+        } else if (max === g) {
+            h = ((b - r) / d) + 2;
+        } else {
+            h = ((r - g) / d) + 4;
+        }
+
+        h *= 60;
+
+        if (h < 0) h += 360;
+    }
+
+    const s = max === 0 ? 0 : d / max;
+    const v = max;
+
+    return { h, s, v };
+};
+
+_hsvToRgb = (h, s, v) => {
+    h = ((h % 360) + 360) % 360;
+
+    const c = v * s;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = v - c;
+
+    let r = 0;
+    let g = 0;
+    let b = 0;
+
+    if (h < 60) {
+        r = c;
+        g = x;
+    } else if (h < 120) {
+        r = x;
+        g = c;
+    } else if (h < 180) {
+        g = c;
+        b = x;
+    } else if (h < 240) {
+        g = x;
+        b = c;
+    } else if (h < 300) {
+        r = x;
+        b = c;
+    } else {
+        r = c;
+        b = x;
+    }
+
+    return {
+        r: Math.round((r + m) * 255),
+        g: Math.round((g + m) * 255),
+        b: Math.round((b + m) * 255)
+    };
+};
+
+_makeEditorOkButton = (parent, x, y, text, callback) => {
+    const btnW = 124;
+    const btnH = 62;
+    const btnBorder = this.textures.exists("GJ_button01") ? this.textures.get("GJ_button01").source[0].width * 0.3 : 28;
+
+    const grp = this.add.container(x, y);
+
+    const btn = this.add.nineslice(
+        0,
+        0,
+        "GJ_button01",
+        null,
+        btnW,
+        btnH,
+        btnBorder,
+        btnBorder,
+        btnBorder,
+        btnBorder
+    ).setOrigin(0.5);
+
+    const label = this.add.bitmapText(-5, -3, "goldFont", text, 42).setOrigin(0.5, 0.5);
+    const hitZone = this.add.zone(0, 0, btnW, btnH) .setInteractive();
+
+    grp.add([btn, label, hitZone]);
+    parent.add(grp);
+
+    const baseScale = 1;
+    const pressedScale = baseScale * 1.16;
+
+    hitZone.on("pointerdown", () => {
+        hitZone._pressed = true;
+        this.tweens.killTweensOf(grp, "scale");
+        this.tweens.add({
+            targets: grp,
+            scale: pressedScale,
+            duration: 300,
+            ease: "Bounce.Out"
+        });
+    });
+
+    const release = (runCallback = false) => {
+        if (!hitZone._pressed) return;
+
+        hitZone._pressed = false;
+        this.tweens.killTweensOf(grp, "scale");
+        this.tweens.add({
+            targets: grp,
+            scale: baseScale,
+            duration: 400,
+            ease: "Bounce.Out"
+        });
+
+        if (runCallback) {
+            callback?.();
+        }
+    };
+
+    hitZone.on("pointerup", () => release(true));
+    hitZone.on("pointerout", () => release(false));
+    hitZone.on("pointerupoutside", () => release(false));
+
+    return grp;
+};
+
+_makeEditorVisualHitButton = (parent, x, y, hitW, hitH, buildVisual, callback) => {
+    const root = this.add.container(x, y);
+    const visualRoot = this.add.container(0, 0);
+
+    const visual = buildVisual(visualRoot);
+
+    const hit = this.add.rectangle(0, 0, hitW, hitH, 0xffffff, 0.001)
+        .setOrigin(0.5)
+        .setInteractive();
+
+    root.add([visualRoot, hit]);
+    parent.add(root);
+
+    root._editorVisualBaseScale = visualRoot.scaleX || 1;
+
+    const getBaseScale = () => root._editorVisualBaseScale || visualRoot.scaleX || 1;
+
+    this._makeCompositeBouncyButton(
+        hit,
+        [{ target: visualRoot, getBaseScale }],
+        1,
+        () => {
+            callback?.();
+        }
+    );
+
+    return {
+        root,
+        hit,
+        visualRoot,
+        visual,
+        baseScale: getBaseScale(),
+        setBaseScale: (scale) => {
+            root._editorVisualBaseScale = scale;
+            visualRoot.setScale(scale);
+        }
+    };
+};
+
+_makeCurrentSpeedPreview = (parent, x, y, objectId, callback, targetHeight = 76, heightMultiplier = 1) => {
+    const objectDef = typeof getObjectFromId === "function" ? getObjectFromId(objectId) : null;
+    let frameName = objectDef?.frame || null;
+
+    if (objectDef?.randomFrames && objectDef.randomFrames.length) {
+        frameName = objectDef.randomFrames[0];
+    }
+
+    let icon = null;
+
+    if (frameName) {
+        icon = this._addSafeFrameImage(x, y, frameName, 1);
+    }
+
+    if (icon && typeof icon.setScale === "function") {
+        const rawHeight = icon.height || ((icon.displayHeight || 1) / (icon.scaleY || 1)) || 1;
+        let iconScale = (targetHeight * heightMultiplier) / rawHeight;
+
+        if (!Number.isFinite(iconScale) || iconScale <= 0) {
+            iconScale = 1;
+        }
+
+        icon.setScale(iconScale);
+        icon._bouncyBaseScale = iconScale;
+
+        if (typeof icon.setInteractive === "function") {
+            icon.setInteractive();
+        }
+
+        parent.add(icon);
+
+        this._makeBouncyButton(icon, iconScale, () => {
+            callback?.();
+        });
+
+        return {
+            root: icon,
+            hit: icon,
+            visualRoot: icon,
+            visual: icon,
+            baseScale: iconScale,
+            setBaseScale: (scale) => {
+                icon._bouncyBaseScale = scale;
+                icon.setScale(scale);
+            }
+        };
+    }
+
+    const fallback = this.add.bitmapText(x, y, "bigFont", "?", 42)
+        .setOrigin(0.5)
+        .setInteractive();
+
+    parent.add(fallback);
+
+    fallback._bouncyBaseScale = 1;
+
+    this._makeBouncyButton(fallback, 1, () => {
+        callback?.();
+    });
+
+    return {
+        root: fallback,
+        hit: fallback,
+        visualRoot: fallback,
+        visual: fallback,
+        baseScale: 1,
+        setBaseScale: (scale) => {
+            fallback._bouncyBaseScale = scale;
+            fallback.setScale(scale);
+        }
+    };
+};
+
+_makeGamemodeIconButton = (parent, x, y, modeDef, callback) => {
+    const iconScale = 0.88;
+    const icon = this._addSafeFrameImage(x, y, modeDef.frame, iconScale);
+
+    if (modeDef.rotateFlip) {
+        icon.setAngle(90);
+        icon.setFlipY(true);
+    }
+
+    if (typeof icon.setInteractive === "function") {
+        icon.setInteractive();
+    }
+
+    parent.add(icon);
+
+    this._makeBouncyButton(icon, iconScale, () => {
+        callback?.();
+    });
+
+    return {
+        root: icon,
+        hit: icon,
+        visualRoot: icon,
+        visual: icon,
+        baseScale: iconScale
+    };
+};
+
+_makeEditorAtlasIconButton = (parent, x, y, optionDef, callback, targetHeight = 58) => {
+    const icon = this._addSafeFrameImage(x, y, optionDef.frame, 1);
+
+    let iconScale = 1;
+    const rawHeight = icon.height || ((icon.displayHeight || 1) / (icon.scaleY || 1)) || 1;
+
+    if (rawHeight > 0) {
+        iconScale = targetHeight / rawHeight;
+    }
+
+    if (!Number.isFinite(iconScale) || iconScale <= 0) {
+        iconScale = 1;
+    }
+
+    if (typeof icon.setScale === "function") {
+        icon.setScale(iconScale);
+        icon._bouncyBaseScale = iconScale;
+    }
+
+    if (typeof icon.setInteractive === "function") {
+        icon.setInteractive();
+    }
+
+    parent.add(icon);
+
+    this._makeBouncyButton(icon, iconScale, () => {
+        callback?.();
+    });
+
+    return {
+        root: icon,
+        hit: icon,
+        visualRoot: icon,
+        visual: icon,
+        baseScale: iconScale,
+        setBaseScale: (scale) => {
+            icon._bouncyBaseScale = scale;
+            icon.setScale(scale);
+        }
+    };
+};
+
+_openEditorStartOptionsPopup = () => {
+    if (this._editorStartOptionsPopup) return;
+
+    const sw = screenWidth;
+    const sh = screenHeight;
+    const panelW = 520;
+    const panelH = 420;
+
+    const root = this.add.container(0, 0).setScrollFactor(0).setDepth(2650);
+    this._editorStartOptionsPopup = root;
+
+    const blocker = this.add.rectangle(0, 0, sw, sh, 0x000000, 0.25)
+        .setOrigin(0)
+        .setInteractive();
+
+    root.add(blocker);
+
+    const inner = this.add.container(sw / 2, sh / 2 + 15)
+        .setScale(1);
+
+    root.add(inner);
+
+    const corner = this.textures.exists("GJ_square01") ? this.textures.get("GJ_square01").source[0].width * 0.325 : 24;
+
+    const panel = this._drawScale9(
+        0,
+        0,
+        panelW,
+        panelH,
+        "GJ_square01",
+        corner,
+        0xffffff,
+        1
+    );
+
+    inner.add(panel);
+
+    const closeBtn = this.add.image(
+        -(panelW / 2) + 10,
+        -(panelH / 2) + 10,
+        "GJ_WebSheet",
+        "GJ_closeBtn_001.png"
+    )
+        .setScale(0.8)
+        .setInteractive();
+
+    inner.add(closeBtn);
+
+    this._makeBouncyButton(closeBtn, 0.8, () => {
+        this._closeEditorStartOptionsPopup();
+    });
+
+    const optionDefs = [
+        { label: "Mini Mode", key: "kA3" },
+        { label: "Flip Gravity", key: "kA11" },
+        { label: "Dual Mode", key: "kA8" },
+        { label: "Mirror Mode", key: "kA28" }
+    ];
+
+    const makeToggle = (label, key, y) => {
+        const row = this.add.container(-150, y);
+        const check = this.add.image(0, 0, "GJ_GameSheet03", "GJ_checkOff_001.png").setScale(0.9).setInteractive();
+        const text = this.add.bitmapText(48, -2, "bigFont", label, 28).setOrigin(0, 0.5).setInteractive();
+
+        row.add([check, text]);
+        inner.add(row);
+
+        const refresh = () => {
+            const checked = this._getEditorStartValue(key, 0) === 1;
+            check.setTexture(
+                "GJ_GameSheet03",
+                checked ? "GJ_checkOn_001.png" : "GJ_checkOff_001.png"
+            );
+        };
+
+        const toggle = () => {
+            const checked = this._getEditorStartValue(key, 0) === 1;
+            this._setEditorStartValueDraft(key, checked ? 0 : 1);
+            refresh();
+        };
+
+        this._makeBouncyButton(check, 0.9, toggle);
+        text.on("pointerdown", toggle);
+
+        refresh();
+
+        return row;
+    };
+
+    optionDefs.forEach((opt, i) => {
+        makeToggle(opt.label, opt.key, -130 + i * 80);
+    });
+};
+
+_applyLevelStartOptions = () => {
+    const getBool = (key) => parseInt(window.settingsMap?.[key] || "0", 10) === 1;
+
+    this._state.isMini = getBool("kA3");
+    this._state.gravityFlipped = getBool("kA11");
+    this._state.mirrored = getBool("kA28");
+
+    if (getBool("kA8")) {
+        this._enableDualMode();
+    }
+};
+
+_closeEditorStartOptionsPopup = () => {
+    if (this._editorStartOptionsPopup) {
+        this._editorStartOptionsPopup.destroy();
+        this._editorStartOptionsPopup = null;
+    }
+};
+
+_openEditorHorizontalOptionPopup = (titleText, options, selectedKey, onSelect, renderOption) => {
+    this._closeEditorHorizontalOptionPopup();
+
+    const sw = screenWidth;
+    const sh = screenHeight;
+    const isGamemodePopup = titleText === "Select Mode";
+    const isSpeedPopup = titleText === "Select Speed";
+    const isBgPopup = titleText === "Select Background";
+    const isGroundPopup = titleText === "Select Ground";
+    const isArtPopup = isBgPopup || isGroundPopup;
+
+    const root = this.add.container(0, 0).setScrollFactor(0).setDepth(2600);
+    this._editorHorizontalOptionPopup = root;
+
+    const blocker = this.add.rectangle(0, 0, sw, sh, 0x000000, 0.25).setOrigin(0).setInteractive();
+    root.add(blocker);
+
+    const optionCols = isArtPopup ? 10 : options.length;
+    const optionRows = isArtPopup ? Math.ceil(options.length / optionCols) : 1;
+
+    const optionGapX = isArtPopup ? 76 : (isGamemodePopup ? 84 : (isSpeedPopup ? 150 : 142));
+    const optionGapY = isArtPopup ? 68 : 0;
+
+    const panelW = isArtPopup ? 860 : 760;
+    const panelH = isArtPopup ? Math.min(650, 225 + optionRows * optionGapY) - 45 : 340;
+
+    const speedTargetHeight = 112;
+    const artGridYOffset = isArtPopup ? -20 : 0;
+
+    const inner = this.add.container(sw / 2, sh / 2 + 15).setScale(1);
+    root.add(inner);
+
+    const corner = this.textures.exists("GJ_square01")
+        ? this.textures.get("GJ_square01").source[0].width * 0.325
+        : 24;
+
+    const panel = this._drawScale9(0, 0, panelW, panelH, "GJ_square01", corner, 0xffffff, 1);
+    inner.add(panel);
+
+    const title = this.add.bitmapText(0, -(panelH / 2) + 50, "bigFont", titleText, isArtPopup ? 52 : 60).setOrigin(0.5);
+    inner.add(title);
+
+    let selected = selectedKey;
+    const optionObjects = [];
+
+    const setTintDeep = (obj, tint) => {
+        if (!obj) return;
+
+        if (tint === null) {
+            if (typeof obj.clearTint === "function") obj.clearTint();
+        } else if (typeof obj.setTint === "function") {
+            obj.setTint(tint);
+        }
+
+        if (Array.isArray(obj.list)) {
+            for (const child of obj.list) {
+                setTintDeep(child, tint);
+            }
+        }
+    };
+
+    const getVisualHeight = (obj) => {
+        if (!obj) return 0;
+
+        if (typeof obj.getBounds === "function") {
+            const bounds = obj.getBounds();
+            if (bounds && bounds.height > 0) {
+                return bounds.height;
+            }
+        }
+
+        if (obj.displayHeight > 0) return obj.displayHeight;
+        if (obj.height > 0) return obj.height * (obj.scaleY || 1);
+
+        return 0;
+    };
+
+    const refreshSelected = () => {
+        for (const entry of optionObjects) {
+            const isSelected = entry.key === selected;
+            const baseScale = entry.baseScale || 1;
+
+            entry.visualRoot.setScale(baseScale);
+            entry.visualRoot.setAlpha(1);
+            setTintDeep(entry.visualRoot, isSelected ? null : 0x666666);
+        }
+    };
+
+    options.forEach((opt, i) => {
+        const row = isArtPopup ? Math.floor(i / optionCols) : 0;
+        const col = isArtPopup ? (i % optionCols) : i;
+        const itemsInRow = isArtPopup ? Math.min(optionCols, options.length - row * optionCols) : options.length;
+
+        const ox = ((col - ((itemsInRow - 1) / 2)) * optionGapX) + (isSpeedPopup ? -15 : 0);
+        const oy = isArtPopup
+            ? (-(optionRows - 1) * optionGapY / 2) + row * optionGapY + 16 + artGridYOffset
+            : -2;
+
+        const buttonObj = renderOption(inner, opt, ox, oy, () => {
+            selected = opt.key;
+            onSelect(opt);
+            refreshSelected();
+        }, i);
+
+        const visualRoot = buttonObj.visualRoot || buttonObj.root;
+
+        let baseScale = buttonObj.baseScale || visualRoot.scaleX || 1;
+
+        if (isSpeedPopup) {
+            const currentHeight = getVisualHeight(visualRoot);
+
+            if (currentHeight > 0) {
+                const targetHeight = speedTargetHeight * (i === 0 ? 0.8 : 1);
+                baseScale = baseScale * (targetHeight / currentHeight);
+            }
+        }
+
+        if (buttonObj.setBaseScale) {
+            buttonObj.setBaseScale(baseScale);
+        } else {
+            visualRoot._bouncyBaseScale = baseScale;
+            visualRoot.setScale(baseScale);
+        }
+
+        optionObjects.push({
+            key: opt.key,
+            root: buttonObj.root,
+            visualRoot,
+            baseScale
+        });
+    });
+
+    this._makeEditorOkButton(inner, 0, (panelH / 2) - 52, "OK", () => {
+        this._closeEditorHorizontalOptionPopup();
+    });
+
+    refreshSelected();
+};
+
+_openEditorColorPickerPopup = (channelId, labelText, onColorChanged) => {
+    this._closeEditorColorPickerPopup();
+
+    const sw = screenWidth;
+    const sh = screenHeight;
+
+    const root = this.add.container(0, 0).setScrollFactor(0).setDepth(2700);
+    this._editorColorPickerPopup = root;
+
+    const blocker = this.add.rectangle(0, 0, sw, sh, 0x000000, 0.32).setOrigin(0).setInteractive();
+    root.add(blocker);
+
+    const panelW = 820;
+    const panelH = 520;
+
+    const inner = this.add.container(sw / 2, sh / 2).setScale(1);
+    root.add(inner);
+
+    const corner = this.textures.exists("GJ_square01") ? this.textures.get("GJ_square01").source[0].width * 0.325 : 24;
+    const panel = this._drawScale9(0, 0, panelW, panelH, "GJ_square01", corner, 0xffffff, 1);
+    inner.add(panel);
+
+    const title = this.add.bitmapText(0, -(panelH / 2) + 40, "goldFont", "Select Color", 34).setOrigin(0.5);
+    inner.add(title);
+
+    const currentColor = this._getEditorColorChannel(channelId);
+    const originalColor = {
+        r: currentColor.r,
+        g: currentColor.g,
+        b: currentColor.b
+    };
+    const currentHsv = this._rgbToHsv(currentColor.r, currentColor.g, currentColor.b);
+
+    const pickerX = 0;
+    const pickerY = 0;
+    const pickerScale = 0.42;
+    const hueRingInnerRadius = 94;
+    const hueRingOuterRadius = 126;
+    const shadowRadius = (220 * pickerScale) - 1;
+    const innerRadius = shadowRadius;
+
+    const startHueAngle = Phaser.Math.DegToRad(currentHsv.h - 90);
+
+    const state = {
+        h: currentHsv.h,
+
+        innerX: 0,
+        innerY: 0,
+
+        hueX: Math.cos(startHueAngle) * 110,
+        hueY: Math.sin(startHueAngle) * 110,
+
+        sampledColor: {
+            r: currentColor.r,
+            g: currentColor.g,
+            b: currentColor.b
+        }
+    };
+
+    let activePickerTarget = null;
+
+    const toHexNumber = (color) => {
+        return Phaser.Display.Color.GetColor(color.r, color.g, color.b);
+    };
+
+    const toHexString = (color) => {
+        const toPart = (v) => {
+            return Phaser.Math.Clamp(Math.round(v), 0, 255)
+                .toString(16)
+                .padStart(2, "0")
+                .toUpperCase();
+        };
+
+        return `${toPart(color.r)}${toPart(color.g)}${toPart(color.b)}`;
+    };
+
+    const normalizeColor = (color) => {
+        return {
+            r: Phaser.Math.Clamp(parseInt(color.r, 10) || 0, 0, 255),
+            g: Phaser.Math.Clamp(parseInt(color.g, 10) || 0, 0, 255),
+            b: Phaser.Math.Clamp(parseInt(color.b, 10) || 0, 0, 255)
+        };
+    };
+
+    const parseHexColor = (raw) => {
+        let value = String(raw || "")
+            .replace(/^#/, "")
+            .replace(/[^0-9a-fA-F]/g, "")
+            .toUpperCase();
+
+        if (value.length !== 6) return null;
+
+        return {
+            r: parseInt(value.slice(0, 2), 16),
+            g: parseInt(value.slice(2, 4), 16),
+            b: parseInt(value.slice(4, 6), 16)
+        };
+    };
+
+    const menuPanelBg = this._addColourPickerImage(
+        pickerX,
+        pickerY,
+        "menuColourPanelBackground.png",
+        pickerScale
+    );
+
+    if (menuPanelBg && typeof menuPanelBg.setFlipX === "function") {
+        menuPanelBg.setFlipX(true);
+    }
+
+    const hueBg = this._addColourPickerImage(
+        pickerX,
+        pickerY,
+        "huePickerBackground.png",
+        pickerScale
+    );
+
+    const innerCircleBg = this._addColourPickerImage(
+        pickerX,
+        pickerY,
+        "colourPickerBackground.png",
+        pickerScale
+    );
+
+    const selectedColorCircle = this.add.circle(
+        pickerX,
+        pickerY,
+        innerRadius,
+        0xffffff,
+        1
+    );
+
+    const innerShadow = this._addColourPickerImage(
+        pickerX,
+        pickerY,
+        "colourPickerShadow.png",
+        pickerScale
+    );
+
+    const innerOverlay = this._addColourPickerImage(
+        pickerX,
+        pickerY,
+        "colourPickerOverlay.png",
+        pickerScale
+    );
+
+    const hueHandle = this._addColourPickerImage(
+        pickerX,
+        pickerY,
+        "colourPicker.png",
+        pickerScale
+    );
+
+    const svHandle = this._addColourPickerImage(
+        pickerX,
+        pickerY,
+        "colourPicker.png",
+        pickerScale
+    );
+
+    const previewSize = 42;
+    const previewX = -(panelW / 2) + 46;
+    const previewY = -(panelH / 2) + 43;
+
+    const currentPreview = this.add.rectangle(
+        previewX,
+        previewY,
+        previewSize,
+        previewSize,
+        toHexNumber(currentColor),
+        1
+    );
+
+    const originalPreview = this.add.rectangle(
+        previewX,
+        previewY + previewSize,
+        previewSize,
+        previewSize,
+        toHexNumber(originalColor),
+        1
+    );
+
+    const inputState = {
+        focused: null,
+        values: {
+            r: String(currentColor.r),
+            g: String(currentColor.g),
+            b: String(currentColor.b),
+            hex: toHexString(currentColor)
+        },
+        fields: {}
+    };
+
+    const createInputField = (key, label, x, y, w, maxChars) => {
+        const labelObj = this.add.bitmapText(x, y - 37, "goldFont", label, 22).setOrigin(0.5).setAlpha(0.95);
+        const bg = this.add.rectangle(x, y, w, 34, 0x000000, 0.38).setOrigin(0.5).setInteractive();
+        const valueText = this.add.bitmapText(x, y, "bigFont", "", 20).setOrigin(0.5);
+        const hit = this.add.rectangle(x, y, w, 40, 0xffffff, 0.001).setOrigin(0.5).setInteractive();
+
+        inputState.fields[key] = {
+            key,
+            label,
+            bg,
+            valueText,
+            maxChars
+        };
+
+        hit.on("pointerdown", (pointer) => {
+            inputState.focused = key;
+            this._editorTextInputFocused = true;
+            renderInputFields();
+
+            if (pointer && pointer.event) {
+                pointer.event.preventDefault?.();
+                pointer.event.stopPropagation?.();
+                pointer.event.stopImmediatePropagation?.();
+            }
+        });
+
+        inner.add([labelObj, bg, valueText, hit]);
+    };
+
+    const inputLeftX = -(panelW / 2) + 60;
+    const rgbInputY = -34;
+    const rgbGap = 76;
+
+    createInputField("r", "R:", inputLeftX, rgbInputY, 68, 3);
+    createInputField("g", "G:", inputLeftX + rgbGap, rgbInputY, 68, 3);
+    createInputField("b", "B:", inputLeftX + (rgbGap * 2), rgbInputY, 68, 3);
+    createInputField("hex", "HEX:", inputLeftX + rgbGap, 50, 152, 6);
+
+    inner.add([
+        menuPanelBg,
+        hueBg,
+        innerCircleBg,
+        selectedColorCircle,
+        innerShadow,
+        innerOverlay,
+        hueHandle,
+        svHandle,
+        currentPreview,
+        originalPreview
+    ]);
+
+    const getTextureFrame = (frameName) => {
+        const ref = this._getColourPickerTextureRef(frameName);
+        if (!ref) return null;
+
+        const tex = this.textures.get(ref.key);
+        if (!tex) return null;
+
+        const frame =
+            typeof tex.get === "function"
+                ? tex.get(ref.frame || "__BASE")
+                : null;
+
+        if (!frame || !frame.source || !frame.source.image) {
+            return null;
+        }
+
+        return frame;
+    };
+
+    const drawFrameToCanvas = (ctx, frameName, destW, destH) => {
+        const frame = getTextureFrame(frameName);
+        if (!frame) return false;
+
+        const sourceImage = frame.source.image;
+
+        ctx.drawImage(
+            sourceImage,
+            frame.cutX,
+            frame.cutY,
+            frame.cutWidth,
+            frame.cutHeight,
+            0,
+            0,
+            destW,
+            destH
+        );
+
+        return true;
+    };
+
+    const colorDistanceSq = (a, b) => {
+        const dr = a.r - b.r;
+        const dg = a.g - b.g;
+        const db = a.b - b.b;
+
+        return dr * dr + dg * dg + db * db;
+    };
+
+    const hueDistance = (a, b) => {
+        let d = Math.abs(a - b) % 360;
+        if (d > 180) d = 360 - d;
+        return d;
+    };
+
+    const sampleSize = Math.ceil(440 * pickerScale);
+    const sampleRadius = sampleSize / 2;
+
+    const sampleCanvas = document.createElement("canvas");
+    sampleCanvas.width = sampleSize;
+    sampleCanvas.height = sampleSize;
+
+    const sampleCtx = sampleCanvas.getContext("2d", {
+        willReadFrequently: true
+    });
+
+    const hueSampleSize = Math.ceil(600 * pickerScale);
+    const hueSampleRadius = hueSampleSize / 2;
+
+    const hueSampleCanvas = document.createElement("canvas");
+    hueSampleCanvas.width = hueSampleSize;
+    hueSampleCanvas.height = hueSampleSize;
+
+    const hueSampleCtx = hueSampleCanvas.getContext("2d", {
+        willReadFrequently: true
+    });
+
+    let hueSampleReady = false;
+
+    const rebuildHueSampleCanvas = () => {
+        hueSampleCtx.clearRect(0, 0, hueSampleSize, hueSampleSize);
+
+        hueSampleReady = drawFrameToCanvas(
+            hueSampleCtx,
+            "huePickerBackground.png",
+            hueSampleSize,
+            hueSampleSize
+        );
+    };
+
+    const rebuildInnerSampleCanvas = () => {
+        const huePure = this._hsvToRgb(state.h, 1, 1);
+        const hueHex = Phaser.Display.Color.GetColor(huePure.r, huePure.g, huePure.b);
+
+        selectedColorCircle.setFillStyle(hueHex, 1);
+
+        sampleCtx.clearRect(0, 0, sampleSize, sampleSize);
+
+        drawFrameToCanvas(sampleCtx, "colourPickerBackground.png", sampleSize, sampleSize);
+
+        sampleCtx.save();
+        sampleCtx.globalCompositeOperation = "source-over";
+        sampleCtx.fillStyle = `rgb(${huePure.r}, ${huePure.g}, ${huePure.b})`;
+        sampleCtx.beginPath();
+        sampleCtx.arc(sampleRadius, sampleRadius, sampleRadius, 0, Math.PI * 2);
+        sampleCtx.fill();
+        sampleCtx.restore();
+
+        drawFrameToCanvas(sampleCtx, "colourPickerShadow.png", sampleSize, sampleSize);
+        drawFrameToCanvas(sampleCtx, "colourPickerOverlay.png", sampleSize, sampleSize);
+    };
+
+    const findHuePositionForLoadedColor = (targetColor) => {
+        if (!hueSampleReady) {
+            rebuildHueSampleCanvas();
+        }
+
+        const targetHsv = this._rgbToHsv(targetColor.r, targetColor.g, targetColor.b);
+        let best = null;
+
+        const fallbackAngle = Phaser.Math.DegToRad(targetHsv.h - 90);
+        const fallback = {
+            x: Math.cos(fallbackAngle) * ((hueRingInnerRadius + hueRingOuterRadius) / 2),
+            y: Math.sin(fallbackAngle) * ((hueRingInnerRadius + hueRingOuterRadius) / 2)
+        };
+
+        if (!hueSampleReady) {
+            return fallback;
+        }
+
+        for (let y = 0; y < hueSampleSize; y += 2) {
+            for (let x = 0; x < hueSampleSize; x += 2) {
+                const dx = x - hueSampleRadius;
+                const dy = y - hueSampleRadius;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < hueRingInnerRadius || dist > hueRingOuterRadius) continue;
+
+                const pixel = hueSampleCtx.getImageData(x, y, 1, 1).data;
+                if (pixel[3] < 12) continue;
+
+                const rgb = {
+                    r: pixel[0],
+                    g: pixel[1],
+                    b: pixel[2]
+                };
+
+                const hsv = this._rgbToHsv(rgb.r, rgb.g, rgb.b);
+                if (hsv.s < 0.08) continue;
+
+                const midRadius = (hueRingInnerRadius + hueRingOuterRadius) / 2;
+                const radiusPenalty = Math.abs(dist - midRadius) * 0.08;
+                const huePenalty = hueDistance(hsv.h, targetHsv.h);
+
+                const score = huePenalty + radiusPenalty;
+
+                if (!best || score < best.score) {
+                    best = {
+                        x: dx,
+                        y: dy,
+                        score
+                    };
+                }
+            }
+        }
+
+        return best || fallback;
+    };
+
+    const sampleHuePixel = () => {
+        if (!hueSampleReady) {
+            rebuildHueSampleCanvas();
+        }
+
+        const canvasX = Math.round(hueSampleRadius + state.hueX);
+        const canvasY = Math.round(hueSampleRadius + state.hueY);
+
+        const clampedX = Phaser.Math.Clamp(canvasX, 0, hueSampleSize - 1);
+        const clampedY = Phaser.Math.Clamp(canvasY, 0, hueSampleSize - 1);
+
+        const pixel = hueSampleCtx.getImageData(clampedX, clampedY, 1, 1).data;
+
+        const sampledRgb = {
+            r: pixel[0],
+            g: pixel[1],
+            b: pixel[2]
+        };
+
+        const sampledHsv = this._rgbToHsv(sampledRgb.r, sampledRgb.g, sampledRgb.b);
+
+        if (sampledHsv.s > 0.08) {
+            state.h = sampledHsv.h;
+        }
+
+        return sampledRgb;
+    };
+
+    const findInnerPositionForLoadedColor = (targetColor) => {
+        rebuildInnerSampleCanvas();
+
+        let best = null;
+        for (let y = 1; y < sampleSize - 1; y++) {
+            for (let x = 1; x < sampleSize - 1; x++) {
+                const dx = x - sampleRadius;
+                const dy = y - sampleRadius;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist > innerRadius) continue;
+
+                const pixel = sampleCtx.getImageData(x, y, 1, 1).data;
+                if (pixel[3] < 12) continue;
+
+                const rgb = {
+                    r: pixel[0],
+                    g: pixel[1],
+                    b: pixel[2]
+                };
+
+                const score = colorDistanceSq(rgb, targetColor);
+
+                if (!best || score < best.score) {
+                    best = {
+                        x: dx,
+                        y: dy,
+                        color: rgb,
+                        score
+                    };
+                }
+            }
+        }
+
+        if (best) return best;
+
+        return {
+            x: 0,
+            y: 0,
+            color: targetColor,
+            score: 0
+        };
+    };
+
+    const sampleInnerPixel = () => {
+        rebuildInnerSampleCanvas();
+
+        const canvasX = Math.round(sampleRadius + state.innerX);
+        const canvasY = Math.round(sampleRadius + state.innerY);
+
+        const clampedX = Phaser.Math.Clamp(canvasX, 1, sampleSize - 2);
+        const clampedY = Phaser.Math.Clamp(canvasY, 1, sampleSize - 2);
+
+        const pixel = sampleCtx.getImageData(clampedX, clampedY, 1, 1).data;
+
+        if (pixel[3] < 12) {
+            return state.sampledColor;
+        }
+
+        state.sampledColor = {
+            r: pixel[0],
+            g: pixel[1],
+            b: pixel[2]
+        };
+
+        return state.sampledColor;
+    };
+
+    const getLocalPointer = (pointer) => {
+        return {
+            x: pointer.x - (sw / 2),
+            y: pointer.y - (sh / 2)
+        };
+    };
+
+    const getPointerDeltaFromPicker = (pointer) => {
+        const p = getLocalPointer(pointer);
+
+        return {
+            dx: p.x - pickerX,
+            dy: p.y - pickerY
+        };
+    };
+
+    const getPointerDistanceFromPicker = (pointer) => {
+        const { dx, dy } = getPointerDeltaFromPicker(pointer);
+        return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const clampPointToHuePickerBackground = (dx, dy) => {
+        let dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 0.0001) {
+            dx = 0;
+            dy = -hueRingInnerRadius;
+            dist = hueRingInnerRadius;
+        }
+
+        const clampedDist = Phaser.Math.Clamp(
+            dist,
+            hueRingInnerRadius,
+            hueRingOuterRadius
+        );
+
+        return {
+            x: dx / dist * clampedDist,
+            y: dy / dist * clampedDist
+        };
+    };
+
+    const clampPointToColourPickerShadow = (dx, dy) => {
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist > innerRadius && dist > 0.0001) {
+            return {
+                x: dx / dist * innerRadius,
+                y: dy / dist * innerRadius
+            };
+        }
+
+        return {
+            x: dx,
+            y: dy
+        };
+    };
+
+    const isColourPickerShadowPointer = (pointer) => {
+        const dist = getPointerDistanceFromPicker(pointer);
+
+        return dist <= innerRadius;
+    };
+
+    const isHueRingPointer = (pointer) => {
+        const dist = getPointerDistanceFromPicker(pointer);
+
+        return dist >= hueRingInnerRadius && dist <= hueRingOuterRadius;
+    };
+
+    function renderInputFields() {
+        for (const key in inputState.fields) {
+            const field = inputState.fields[key];
+            const isFocused = inputState.focused === key;
+            const raw = inputState.values[key] ?? "";
+            const displayValue = raw;
+
+            field.bg.setFillStyle(isFocused ? 0x000000 : 0x000000, isFocused ? 0.56 : 0.38);
+            field.valueText.setText(`${displayValue}${isFocused ? "|" : ""}`);
+        }
+    }
+
+    const setInputValuesFromColor = (color) => {
+        const normalized = normalizeColor(color);
+
+        inputState.values.r = String(normalized.r);
+        inputState.values.g = String(normalized.g);
+        inputState.values.b = String(normalized.b);
+        inputState.values.hex = toHexString(normalized);
+
+        renderInputFields();
+    };
+
+    const updateColorUi = (color, commitDraft = true, syncInputs = true) => {
+        const normalized = normalizeColor(color);
+        const hex = toHexNumber(normalized);
+
+        state.sampledColor = normalized;
+        currentPreview.setFillStyle(hex, 1);
+
+        hueHandle.setPosition(
+            pickerX + state.hueX,
+            pickerY + state.hueY
+        );
+
+        svHandle.setPosition(
+            pickerX + state.innerX,
+            pickerY + state.innerY
+        );
+
+        if (syncInputs) {
+            setInputValuesFromColor(normalized);
+        }
+
+        if (commitDraft) {
+            this._setEditorColorChannelDraft(channelId, normalized);
+        }
+
+        if (onColorChanged) {
+            onColorChanged(normalized);
+        }
+    };
+
+    const setPickerPositionForColor = (color) => {
+        const normalized = normalizeColor(color);
+        const loadedHuePos = findHuePositionForLoadedColor(normalized);
+
+        state.hueX = loadedHuePos.x;
+        state.hueY = loadedHuePos.y;
+
+        sampleHuePixel();
+
+        const loadedInnerPos = findInnerPositionForLoadedColor(normalized);
+
+        state.innerX = loadedInnerPos.x;
+        state.innerY = loadedInnerPos.y;
+    };
+
+    const applyTypedColor = (color) => {
+        const normalized = normalizeColor(color);
+
+        inputState.focused = inputState.focused;
+        setPickerPositionForColor(normalized);
+        updateColorUi(normalized, true, true);
+    };
+
+    const tryApplyRgbInputs = () => {
+        if (
+            inputState.values.r === "" ||
+            inputState.values.g === "" ||
+            inputState.values.b === ""
+        ) {
+            renderInputFields();
+            return;
+        }
+
+        applyTypedColor({
+            r: inputState.values.r,
+            g: inputState.values.g,
+            b: inputState.values.b
+        });
+    };
+
+    const tryApplyHexInput = () => {
+        const parsed = parseHexColor(inputState.values.hex);
+
+        if (!parsed) {
+            renderInputFields();
+            return;
+        }
+
+        applyTypedColor(parsed);
+    };
+
+    const applyColor = (commitDraft = true) => {
+        const color = sampleInnerPixel();
+        updateColorUi(color, commitDraft, true);
+    };
+
+    const moveHuePickerToPointer = (pointer) => {
+        inputState.focused = null;
+        this._editorTextInputFocused = false;
+        renderInputFields();
+
+        let { dx, dy } = getPointerDeltaFromPicker(pointer);
+        const clamped = clampPointToHuePickerBackground(dx, dy);
+
+        state.hueX = clamped.x;
+        state.hueY = clamped.y;
+
+        sampleHuePixel();
+
+        applyColor(true);
+    };
+
+    const moveInnerPickerToPointer = (pointer) => {
+        inputState.focused = null;
+        this._editorTextInputFocused = false;
+        renderInputFields();
+
+        let { dx, dy } = getPointerDeltaFromPicker(pointer);
+        const clamped = clampPointToColourPickerShadow(dx, dy);
+
+        state.innerX = clamped.x;
+        state.innerY = clamped.y;
+
+        applyColor(true);
+    };
+
+    const beginPickerDrag = (pointer) => {
+        if (isColourPickerShadowPointer(pointer)) {
+            activePickerTarget = "inner";
+            moveInnerPickerToPointer(pointer);
+            return;
+        }
+
+        if (isHueRingPointer(pointer)) {
+            activePickerTarget = "hue";
+            moveHuePickerToPointer(pointer);
+            return;
+        }
+
+        activePickerTarget = null;
+    };
+
+    const continuePickerDrag = (pointer) => {
+        if (activePickerTarget === "inner") {
+            moveInnerPickerToPointer(pointer);
+            return;
+        }
+
+        if (activePickerTarget === "hue") {
+            moveHuePickerToPointer(pointer);
+        }
+    };
+
+    const endPickerDrag = () => {
+        activePickerTarget = null;
+    };
+
+    const pickerHit = this.add.circle(
+        pickerX,
+        pickerY,
+        hueRingOuterRadius + 20,
+        0xffffff,
+        0.001
+    )
+        .setInteractive({ draggable: true });
+
+    inner.add(pickerHit);
+
+    pickerHit.on("pointerdown", beginPickerDrag);
+    pickerHit.on("drag", continuePickerDrag);
+    pickerHit.on("pointerup", endPickerDrag);
+    pickerHit.on("pointerout", endPickerDrag);
+    pickerHit.on("pointerupoutside", endPickerDrag);
+
+    this._editorColorPickerKeyHandler = (event) => {
+        if (!this._editorColorPickerPopup || !inputState.focused) return;
+
+        this._editorTextInputFocused = true;
+
+        const key = inputState.focused;
+
+        if (event.key === "Escape" || event.key === "Enter") {
+            inputState.focused = null;
+            this._editorTextInputFocused = false;
+            renderInputFields();
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation?.();
+            return;
+        }
+
+        if (event.key === "Backspace") {
+            inputState.values[key] = String(inputState.values[key] || "").slice(0, -1);
+        } else if (key === "hex") {
+            if (/^[0-9a-fA-F]$/.test(event.key) && inputState.values.hex.length < 6) {
+                inputState.values.hex += event.key.toUpperCase();
+            } else {
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation?.();
+                return;
+            }
+        } else if (/^[0-9]$/.test(event.key) && inputState.values[key].length < 3) {
+            inputState.values[key] += event.key;
+        } else {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation?.();
+            return;
+        }
+
+        if (key === "hex") {
+            tryApplyHexInput();
+        } else {
+            tryApplyRgbInputs();
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+    };
+
+    window.addEventListener("keydown", this._editorColorPickerKeyHandler);
+
+    blocker.on("pointerdown", () => {
+        inputState.focused = null;
+        this._editorTextInputFocused = false;
+        renderInputFields();
+    });
+
+    rebuildHueSampleCanvas();
+    setPickerPositionForColor(currentColor);
+    state.sampledColor = normalizeColor(currentColor);
+
+    this._makeEditorOkButton(inner, 0, (panelH / 2) - 42, "OK", () => {
+        this._closeEditorColorPickerPopup();
+    });
+
+    updateColorUi(currentColor, false, true);
+};
+
+_openEditorLevelSettingsPopup = () => {
+    if (this._editorLevelSettingsPopup) return;
+
+    const sw = screenWidth;
+    const sh = screenHeight;
+    const centerX = sw / 2;
+    const centerY = sh / 2;
+    const panelW = 1000;
+    const panelH = 600;
+
+    this._editorLevelSettingsPopup = this.add.container(0, 0).setScrollFactor(0).setDepth(2300);
+    const dim = this.add.rectangle(0, 0, sw, sh, 0x000000, 0.55).setOrigin(0).setInteractive();
+    this._editorLevelSettingsPopup.add(dim);
+    const inner = this.add.container(centerX, centerY).setScale(1);
+    this._editorLevelSettingsPopup.add(inner);
+
+    const corner = this.textures.exists("GJ_square01") ? this.textures.get("GJ_square01").source[0].width * 0.325 : 24;
+    const panel = this._drawScale9(0, 0, panelW, panelH, "GJ_square01", corner, 0xffffff, 1);
+    inner.add(panel);
+
+    const title = this.add.bitmapText(0, -(panelH / 2) + 42, "goldFont", "Select Color:", 40).setOrigin(0.5);
+    inner.add(title);
+
+    const colorToHex = (color) => {
+        return Phaser.Display.Color.GetColor(color.r, color.g, color.b);
+    };
+
+   const makeColorTarget = (label, channelId, x, y) => {
+        const container = this.add.container(x, y);
+        const buttonW = 50;
+        const buttonH = 50;
+        const radius = 8;
+
+        const labelText = this.add.bitmapText(0, -45, "bigFont", label, 24).setOrigin(0.5);
+
+        const buttonVisual = this.add.container(0, 0);
+        buttonVisual._bouncyBaseScale = 1;
+
+        const shadow = this.add.graphics();
+        const swatch = this.add.graphics();
+
+        buttonVisual.add([shadow, swatch]);
+
+        const hitZone = this.add.zone(0, 0, buttonW, buttonH)
+            .setOrigin(0.5)
+            .setInteractive();
+
+        container.add([labelText, buttonVisual, hitZone]);
+        inner.add(container);
+
+        const getBouncyBaseScale = () => (
+            buttonVisual._bouncyBaseScale !== undefined ? buttonVisual._bouncyBaseScale : 1
+        );
+
+        hitZone.on("pointerdown", () => {
+            const baseScale = getBouncyBaseScale();
+
+            buttonVisual._pressed = true;
+            this.tweens.killTweensOf(buttonVisual);
+
+            this.tweens.add({
+                targets: buttonVisual,
+                scale: baseScale * 1.26,
+                duration: 300,
+                ease: "Bounce.Out"
+            });
+        });
+
+        hitZone.on("pointerout", () => {
+            if (buttonVisual._pressed) {
+                buttonVisual._pressed = false;
+                this.tweens.killTweensOf(buttonVisual);
+
+                this.tweens.add({
+                    targets: buttonVisual,
+                    scale: getBouncyBaseScale(),
+                    duration: 400,
+                    ease: "Bounce.Out"
+                });
+            }
+        });
+
+        hitZone.on("pointerup", () => {
+            if (buttonVisual._pressed) {
+                buttonVisual._pressed = false;
+                this.tweens.killTweensOf(buttonVisual);
+                buttonVisual.setScale(getBouncyBaseScale());
+
+                this._openEditorColorPickerPopup(
+                    channelId,
+                    label,
+                    refresh
+                );
+            }
+        });
+
+        hitZone.on("pointerupoutside", () => {
+            if (buttonVisual._pressed) {
+                buttonVisual._pressed = false;
+                this.tweens.killTweensOf(buttonVisual);
+
+                this.tweens.add({
+                    targets: buttonVisual,
+                    scale: getBouncyBaseScale(),
+                    duration: 400,
+                    ease: "Bounce.Out"
+                });
+            }
+        });
+
+        const drawSwatch = (color) => {
+            const hex = colorToHex(color);
+
+            shadow.clear();
+            shadow.fillStyle(0x000000, 0.35);
+            shadow.fillRoundedRect(
+                -(buttonW / 2) + 4,
+                -(buttonH / 2) + 5,
+                buttonW,
+                buttonH,
+                radius
+            );
+
+            swatch.clear();
+            swatch.fillStyle(hex, 1);
+            swatch.fillRoundedRect(
+                -(buttonW / 2),
+                -(buttonH / 2),
+                buttonW,
+                buttonH,
+                radius
+            );
+
+            swatch.lineStyle(2, 0x000000, 1);
+            swatch.strokeRoundedRect(
+                -(buttonW / 2),
+                -(buttonH / 2),
+                buttonW,
+                buttonH,
+                radius
+            );
+        };
+
+        const refresh = () => {
+            const color = this._getEditorColorChannel(channelId);
+            drawSwatch(color);
+        };
+
+        refresh();
+    };
+
+    makeColorTarget("BG:", 1000, -240, -170);
+    makeColorTarget("G:", 1001, -160, -170);
+    makeColorTarget("G2:", 1009, -80, -170);
+    makeColorTarget("Line:", 1002, 0, -170);
+    makeColorTarget("Obj:", 1004, 80, -170);
+    makeColorTarget("MG:", 1013, 160, -170);
+    makeColorTarget("MG2:", 1014, 240, -170);
+
+    const speedDefs = [
+        { key: 1, label: "0.5x", objectId: 200 },
+        { key: 0, label: "1x", objectId: 201 },
+        { key: 2, label: "2x", objectId: 202 },
+        { key: 3, label: "3x", objectId: 203 },
+        { key: 4, label: "4x", objectId: 1334 }
+    ];
+
+    const modeDefs = [
+        { key: 0, label: "Cube", frame: "gj_iconBtn_off_001.png", rotateFlip: true },
+        { key: 1, label: "Ship", frame: "gj_shipBtn_off_001.png", rotateFlip: false },
+        { key: 2, label: "Ball", frame: "gj_ballBtn_off_001.png", rotateFlip: true },
+        { key: 3, label: "UFO", frame: "gj_birdBtn_off_001.png", rotateFlip: true },
+        { key: 4, label: "Wave", frame: "gj_dartBtn_off_001.png", rotateFlip: true },
+        { key: 5, label: "Robot", frame: "gj_robotBtn_off_001.png", rotateFlip: false },
+        { key: 6, label: "Spider", frame: "gj_spiderBtn_off_001.png", rotateFlip: false },
+        { key: 7, label: "Swing", frame: "gj_swingBtn_off_001.png", rotateFlip: false }
+    ];
+
+    const makeArtDefs = (prefix, count) => {
+        const defs = [];
+
+        for (let i = 1; i <= count; i++) {
+            defs.push({
+                key: i - 1,
+                label: String(i),
+                frame: `${prefix}Icon_${String(i).padStart(2, "0")}_001.png`
+            });
+        }
+
+        return defs;
+    };
+
+    const bgArtDefs = makeArtDefs("bg", 59);
+    const groundArtDefs = makeArtDefs("g", 22);
+
+    const leftX = -(panelW / 2) + 90;
+
+    const startSpeedLabel = this.add.bitmapText(leftX, -262, "goldFont", "Speed:", 30).setOrigin(0.5);
+    inner.add(startSpeedLabel);
+
+    let speedButtonObj = null;
+
+    const refreshSpeedButton = () => {
+        if (speedButtonObj) {
+            speedButtonObj.root?.destroy();
+            speedButtonObj = null;
+        }
+
+        const speedKey = this._getEditorStartValue("kA4", 0);
+        const speedDef = speedDefs.find(s => s.key === speedKey) || speedDefs[0];
+        const speedIndex = Math.max(0, speedDefs.findIndex(s => s.key === speedDef.key));
+
+        speedButtonObj = this._makeCurrentSpeedPreview(
+            inner,
+            leftX + 5,
+            -190,
+            speedDef.objectId,
+            () => {
+                this._openEditorHorizontalOptionPopup(
+                    "Select Speed",
+                    speedDefs,
+                    this._getEditorStartValue("kA4", 0),
+                    (opt) => {
+                        this._setEditorStartValueDraft("kA4", opt.key);
+                        refreshSpeedButton();
+                    },
+                    (parent, opt, ox, oy, choose, optionIndex = 0) => {
+                        return this._makeCurrentSpeedPreview(
+                            parent,
+                            ox,
+                            oy,
+                            opt.objectId,
+                            choose,
+                            89.6,
+                            optionIndex === 0 ? 1.05 : 1.2
+                        );
+                    }
+                );
+            },
+            60.8,
+            speedIndex === 0 ? 1.05 : 1.2
+        );
+    };
+
+    refreshSpeedButton();
+
+    const modeLabel = this.add.bitmapText(leftX, -105, "goldFont", "Mode:", 30).setOrigin(0.5);
+    inner.add(modeLabel);
+
+    let modeButtonObj = null;
+
+    const refreshModeButton = () => {
+        if (modeButtonObj) {
+            modeButtonObj.root?.destroy();
+            modeButtonObj = null;
+        }
+
+        const modeKey = this._getEditorStartValue("kA2", 0);
+        const modeDef = modeDefs.find(m => m.key === modeKey) || modeDefs[0];
+
+        modeButtonObj = this._makeGamemodeIconButton(inner, leftX, -40, modeDef, () => {
+            this._openEditorHorizontalOptionPopup(
+                "Select Mode",
+                modeDefs,
+                this._getEditorStartValue("kA2", 0),
+                (opt) => {
+                    this._setEditorStartValueDraft("kA2", opt.key);
+                    refreshModeButton();
+                },
+                (parent, opt, ox, oy, choose) => {
+                    return this._makeGamemodeIconButton(parent, ox, oy, opt, choose);
+                }
+            );
+        });
+    };
+
+    refreshModeButton();
+
+    const editorOptionsLabel = this.add.bitmapText(leftX, 45, "goldFont", "Options:", 30).setOrigin(0.5);
+    inner.add(editorOptionsLabel);
+
+    const editorOptionsBtn = this.add.image(leftX, 112, "GJ_GameSheet03", "GJ_optionsBtn_001.png").setScale(0.7).setAngle(-90).setFlipX(true).setInteractive();
+
+    inner.add(editorOptionsBtn);
+
+    this._makeBouncyButton(editorOptionsBtn, 0.7, () => {
+        this._openEditorStartOptionsPopup();
+    });
+
+    const rightX = (panelW / 2) - 90;
+
+    const bgArtLabel = this.add.bitmapText(rightX, -262, "goldFont", "BG:", 30).setOrigin(0.5);
+    inner.add(bgArtLabel);
+
+    let bgArtButtonObj = null;
+
+    const refreshBgArtButton = () => {
+        if (bgArtButtonObj) {
+            bgArtButtonObj.root?.destroy();
+            bgArtButtonObj = null;
+        }
+
+        const bgKey = Phaser.Math.Clamp(this._getEditorStartValue("kA6", 0), 0, bgArtDefs.length - 1);
+        const bgDef = bgArtDefs.find(bg => bg.key === bgKey) || bgArtDefs[0];
+
+        bgArtButtonObj = this._makeEditorAtlasIconButton(inner, rightX, -190, bgDef, () => {
+            this._openEditorHorizontalOptionPopup(
+                "Select Background",
+                bgArtDefs,
+                this._getEditorStartValue("kA6", 0),
+                (opt) => {
+                    this._setEditorArtValueDraft("kA6", opt.key);
+                    refreshBgArtButton();
+                },
+                (parent, opt, ox, oy, choose) => {
+                    return this._makeEditorAtlasIconButton(parent, ox, oy, opt, choose, 48);
+                }
+            );
+        }, 90);
+    };
+
+    refreshBgArtButton();
+
+    const groundArtLabel = this.add.bitmapText(rightX, -112, "goldFont", "G:", 30).setOrigin(0.5);
+    inner.add(groundArtLabel);
+
+    let groundArtButtonObj = null;
+
+    const refreshGroundArtButton = () => {
+        if (groundArtButtonObj) {
+            groundArtButtonObj.root?.destroy();
+            groundArtButtonObj = null;
+        }
+
+        const groundKey = Phaser.Math.Clamp(this._getEditorStartValue("kA7", 0), 0, groundArtDefs.length - 1);
+        const groundDef = groundArtDefs.find(g => g.key === groundKey) || groundArtDefs[0];
+
+        groundArtButtonObj = this._makeEditorAtlasIconButton(inner, rightX, -40, groundDef, () => {
+            this._openEditorHorizontalOptionPopup(
+                "Select Ground",
+                groundArtDefs,
+                this._getEditorStartValue("kA7", 0),
+                (opt) => {
+                    this._setEditorArtValueDraft("kA7", opt.key);
+                    refreshGroundArtButton();
+                },
+                (parent, opt, ox, oy, choose) => {
+                    return this._makeEditorAtlasIconButton(parent, ox, oy, opt, choose, 48);
+                }
+            );
+        }, 90);
+    };
+
+    refreshGroundArtButton();
+
+    const songBgX = -315;
+    const songBgY = 40;
+    const songBgW = 630;
+    const songBgH = 175;
+
+    const songTabY = songBgY - 25;
+    const songTabW = 110;
+    const songTextY = songBgY + (songBgH / 2);
+
+    const songTitle = this.add.bitmapText(0, songTabY - 2, "goldFont", "Select Song:", 40).setOrigin(1, 0.5);
+    inner.add(songTitle);
+
+    const songGroupW = songTitle.width + 42 + songTabW + 13 + songTabW;
+    const songGroupLeft = -(songGroupW / 2);
+
+    const songTitleX = songGroupLeft + songTitle.width;
+    const normalTabX = songTitleX + 42 + (songTabW / 2);
+    const customTabX = normalTabX + songTabW + 13;
+
+    songTitle.setPosition(songTitleX, songTabY - 2);
+
+    let songCategory = "normal";
+
+    const {
+        level: currentLevel
+    } = this._getCurrentEditorLevelRecord();
+
+    if ((this._editorPendingSongId ?? currentLevel?.songId ?? -1) > 0) {
+        songCategory = "custom";
+    }
+
+    let normalIndex = 0;
+    const activeSongId = this._editorPendingSongId ?? currentLevel?.songId ?? -1;
+
+    if (activeSongId < 0) {
+        normalIndex = Math.max(0, Math.abs(activeSongId) - 1);
+    }
+
+    let customInput = activeSongId > 0 ? String(activeSongId) : "";
+    let customFocused = false;
+
+    const makeSongTabButton = (x, label, callback) => {
+        const tabRoot = this.add.container(x, songTabY);
+        const tabBg = this.add.nineslice(0, 0, "GJ_button01", null, songTabW, 40, 18, 18, 18, 18).setInteractive();
+        const tabText = this.add.bitmapText(-3, -3, "bigFont", label, 22).setOrigin(0.5);
+
+        tabRoot.add([tabBg, tabText]);
+        inner.add(tabRoot);
+
+        this._makeCompositeBouncyButton(tabBg, tabRoot, 1, callback);
+
+        return {
+            root: tabRoot,
+            bg: tabBg,
+            text: tabText
+        };
+    };
+
+    const normalTab = makeSongTabButton(normalTabX, "Normal", () => {
+        const wasCustomSongTab = songCategory === "custom";
+
+        songCategory = "normal";
+        customFocused = false;
+        this._editorTextInputFocused = false;
+
+        if (wasCustomSongTab) {
+            normalIndex = 0;
+            commitNormalSongDraft();
+        }
+
+        updateSongUi();
+    });
+
+    const customTab = makeSongTabButton(customTabX, "Custom", () => {
+        songCategory = "custom";
+        customFocused = false;
+        this._editorTextInputFocused = false;
+        updateSongUi();
+    });
+
+    const songAreaBg = this.add.graphics();
+    songAreaBg.fillStyle(0x000000, 0.28);
+    songAreaBg.fillRoundedRect(songBgX, songBgY, songBgW, songBgH, 25);
+    inner.add(songAreaBg);
+
+    const customSongInputW = 335;
+    const customSongInputH = 62;
+    const customSongInputRadius = 12;
+    const customSongInputBg = this.add.graphics();
+    inner.add(customSongInputBg);
+
+    const songText = this.add.bitmapText(0, songTextY, "bigFont", "", 50).setOrigin(0.5);
+    inner.add(songText);
+
+    const customSongInputHit = this.add.zone(0, songTextY, customSongInputW, customSongInputH)
+        .setOrigin(0.5)
+        .setInteractive();
+    inner.add(customSongInputHit);
+
+    const prevSong = this.add.image(-250, songTextY + 2, "GJ_GameSheet03", "edit_leftBtn_001.png").setScale(1.2).setFlipX(false).setInteractive();
+    const nextSong = this.add.image(250, songTextY + 2, "GJ_GameSheet03", "edit_leftBtn_001.png").setScale(1.2).setFlipX(true).setInteractive();
+
+    inner.add([prevSong, nextSong]);
+
+    let customInputBeforeFocus = customInput;
+
+    const stopInputEvent = (event) => {
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
+        event?.stopImmediatePropagation?.();
+    };
+
+    const blurCustomSongInput = (commit = false) => {
+        if (!customFocused) return;
+
+        customFocused = false;
+        this._editorTextInputFocused = false;
+
+        if (commit) {
+            commitCustomSongDraft();
+        }
+
+        updateSongUi();
+    };
+
+    const cancelCustomSongInput = () => {
+        if (!customFocused) return;
+
+        customInput = customInputBeforeFocus;
+        customFocused = false;
+        this._editorTextInputFocused = false;
+        updateSongUi();
+    };
+
+    const focusCustomSongInput = (pointer = null) => {
+        if (songCategory !== "custom") return;
+
+        customInputBeforeFocus = customInput;
+        customFocused = true;
+        this._editorTextInputFocused = true;
+        updateSongUi();
+        stopInputEvent(pointer?.event);
+    };
+
+    const fitSongTextToArrows = () => {
+        const maxFontSize = songCategory === "custom"
+            ? ((!customFocused && !customInput) ? 30 : 42)
+            : 50;
+        const minFontSize = 8;
+        const padding = 18;
+        let maxTextW = customSongInputW - 34;
+
+        if (songCategory !== "custom") {
+            const prevW = prevSong.displayWidth || prevSong.width || 0;
+            const nextW = nextSong.displayWidth || nextSong.width || 0;
+
+            const leftLimit = prevSong.x + (prevW / 2) + padding;
+            const rightLimit = nextSong.x - (nextW / 2) - padding;
+            maxTextW = Math.max(40, rightLimit - leftLimit);
+        }
+
+        songText.setScale(1);
+
+        for (let size = maxFontSize; size >= minFontSize; size -= 2) {
+            songText.setFontSize(size);
+
+            if (songText.width <= maxTextW) {
+                return;
+            }
+        }
+
+        if (songText.width > maxTextW && songText.width > 0) {
+            songText.setScale(maxTextW / songText.width);
+        }
+    };
+
+    const setSongText = (value) => {
+        songText.setText(value);
+        fitSongTextToArrows();
+    };
+
+    const drawCustomSongInput = () => {
+        customSongInputBg.clear();
+
+        if (songCategory !== "custom") {
+            customSongInputHit.setVisible(false);
+            customSongInputHit.disableInteractive();
+            return;
+        }
+
+        customSongInputHit.setVisible(true);
+        customSongInputHit.setInteractive();
+
+        customSongInputBg.fillStyle(0x000000, 0.42);
+        customSongInputBg.fillRoundedRect(
+            -(customSongInputW / 2),
+            songTextY - (customSongInputH / 2),
+            customSongInputW,
+            customSongInputH,
+            customSongInputRadius
+        );
+    };
+
+    const updateSongUi = () => {
+        const setTabVisual = (tab, selected) => {
+            const selectedTexture = this.textures.exists("GJ_button01") ? "GJ_button01" : tab.bg.texture.key;
+            const deselectedTexture = this.textures.exists("GJ_button04") ? "GJ_button04" : selectedTexture;
+
+            tab.bg.setTexture(selected ? selectedTexture : deselectedTexture);
+            tab.bg.clearTint();
+            tab.text.clearTint();
+        };
+
+        setTabVisual(normalTab, songCategory === "normal");
+        setTabVisual(customTab, songCategory === "custom");
+
+        prevSong.setVisible(songCategory === "normal");
+        nextSong.setVisible(songCategory === "normal");
+        drawCustomSongInput();
+
+        if (songCategory === "normal") {
+            songText.setAlpha(1);
+            songText.clearTint();
+
+            const songs = window.allLevels || [];
+
+            if (!songs.length) {
+                setSongText("No normal songs loaded");
+                return;
+            }
+
+            normalIndex = Phaser.Math.Wrap(normalIndex, 0, songs.length);
+
+            const song = songs[normalIndex];
+            const title = song?.[1] || `Song ${normalIndex + 1}`;
+
+            setSongText(`${String(normalIndex + 1).padStart(2, "0")}: ${title}`);
+        } else {
+            const customPlaceholderVisible = !customFocused && !customInput;
+
+            songText.setAlpha(1);
+            if (customPlaceholderVisible) {
+                songText.setTint(0x75aaf0);
+            } else {
+                songText.clearTint();
+            }
+            setSongText(
+                customFocused
+                    ? `${customInput}|`
+                    : customInput
+                        ? customInput
+                        : "Newgrounds Song ID"
+            );
+        }
+    };
+
+    const commitNormalSongDraft = () => {
+        const songs = window.allLevels || [];
+        if (!songs.length) return;
+
+        normalIndex = Phaser.Math.Wrap(normalIndex, 0, songs.length);
+
+        const song = songs[normalIndex];
+        const title = song?.[1] || `Song ${normalIndex + 1}`;
+
+        this._setEditorSongDraft(-(normalIndex + 1), title);
+    };
+
+    const commitCustomSongDraft = () => {
+        const id = parseInt(customInput || "0", 10);
+
+        if (!id || id <= 0) return;
+
+        this._setEditorSongDraft(id, `NG#${id}`);
+    };
+
+    this._makeBouncyButton(prevSong, 1.2, () => {
+        const songs = window.allLevels || [];
+        if (!songs.length) return;
+
+        normalIndex = Phaser.Math.Wrap(normalIndex - 1, 0, songs.length);
+        commitNormalSongDraft();
+        updateSongUi();
+    });
+
+    this._makeBouncyButton(nextSong, 1.2, () => {
+        const songs = window.allLevels || [];
+        if (!songs.length) return;
+
+        normalIndex = Phaser.Math.Wrap(normalIndex + 1, 0, songs.length);
+        commitNormalSongDraft();
+        updateSongUi();
+    });
+
+    customSongInputHit.on("pointerdown", (pointer) => {
+        focusCustomSongInput(pointer);
+    });
+
+    dim.on("pointerdown", () => {
+        blurCustomSongInput(false);
+    });
+
+    this._editorLevelSettingsKeyHandler = (event) => {
+        if (!this._editorLevelSettingsPopup) return;
+        if (songCategory !== "custom" || !customFocused) return;
+
+        if (event.key === "Escape") {
+            cancelCustomSongInput();
+            stopInputEvent(event);
+            return;
+        }
+
+        if (event.key === "Enter") {
+            blurCustomSongInput(true);
+            stopInputEvent(event);
+            return;
+        }
+
+        if (event.key === "Backspace") {
+            customInput = customInput.slice(0, -1);
+            updateSongUi();
+            stopInputEvent(event);
+            return;
+        }
+
+        if (/^[0-9]$/.test(event.key) && customInput.length < 12) {
+            customInput += event.key;
+            updateSongUi();
+            stopInputEvent(event);
+            return;
+        }
+
+        if (event.key.length === 1 || ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " "].includes(event.key)) {
+            stopInputEvent(event);
+        }
+    };
+
+    window.addEventListener("keydown", this._editorLevelSettingsKeyHandler);
+
+    updateSongUi();
+
+    this._makeEditorOkButton(inner, 0, (panelH / 2) - 45, "OK", () => {
+        if (songCategory === "custom") {
+            commitCustomSongDraft();
+        }
+
+        this._closeEditorLevelSettingsPopup();
+    });
 };
 
 _initEditorPauseMenu = () => {
@@ -7889,6 +11679,8 @@ _initEditorPauseMenu = () => {
         { 
             text: "Save and Play", 
             cb: async () => { 
+                this._showEditorPauseMenu(false);
+                this._stopEditorPlaytest?.();
                 this._saveEditorLevel(); 
                 await this._showLoadingBuffer("Loading...");
                 window.isEditor = false; 
@@ -7899,6 +11691,8 @@ _initEditorPauseMenu = () => {
         { 
             text: "Save and Exit", 
             cb: async () => { 
+                this._showEditorPauseMenu(false);
+                this._stopEditorPlaytest?.();
                 this._saveEditorLevel(); 
                 await this._showLoadingBuffer("Loading...");
                 window.isEditor = false; 
@@ -7906,7 +11700,7 @@ _initEditorPauseMenu = () => {
             } 
         },
         { text: "Save", cb: () => this._saveEditorLevel() },
-        { text: "Exit", cb: () => { window.isEditor = false; this.scene.restart(); } }
+        { text: "Exit", cb: () => { this._showEditorPauseMenu(false); this._stopEditorPlaytest?.(); window.isEditor = false; this.scene.restart(); } }
     ];
 
     buttonData.forEach((data, i) => {
@@ -7918,7 +11712,7 @@ _initEditorPauseMenu = () => {
 
         this._editorMenuContainer.add([btnImg, label]);
 
-        this._makeBouncyButton(btnImg, 0.75, () => {
+        this._makeCompositeBouncyButton(btnImg, [btnImg, label], 0.75, () => {
             data.cb();
         }, () => true);
     });
@@ -7939,6 +11733,7 @@ _initEditorPauseMenu = () => {
 
     createToggle(this._editorMenuContainer, 200, screenHeight - 60, "Show Glow", () => window.showEditorGlow, v => window.showEditorGlow = v,() => {
         this._level._updateGlowVisibility();
+        this._buildObjectGrid?.();
     }
 );
 };
@@ -7966,6 +11761,12 @@ _showLoadingBuffer = (statusText) => {
 _showEditorPauseMenu = (show) => {
     this._editorMenuContainer.setVisible(show);
     window.isEditorPaused = show;
+    window.isEditorPause = show;
+
+    if (this._editorPlaytestControls && !this._editorPlaytestActive) {
+        this._editorPlaytestControls.setVisible(true);
+        this._editorPlaytestControls.setDepth(show ? 900 : 1500);
+    }
 };
 
 _serializeLevel(levelData) {
@@ -8029,23 +11830,32 @@ _serializeObject(object) {
 
 _saveEditorLevel = () => {
     const levelData = {
-      objects: window.levelObjects,
-      settings: window.settingslist
-    }
+        objects: window.levelObjects,
+        settings: window.settingslist
+    };
+
     const newLevelString = this._serializeLevel(levelData);
-    console.log(newLevelString);
-    
+
     let createdLevels = JSON.parse(localStorage.getItem("created_levels") || "[]");
     let levelIndex = createdLevels.findIndex(l => l.createdId === window.currentlevel[2]);
 
     if (levelIndex !== -1) {
         createdLevels[levelIndex].levelString = newLevelString;
         createdLevels[levelIndex].lastModified = Date.now();
-        
+
+        if (this._editorPendingSongId !== undefined) {
+            createdLevels[levelIndex].songId = this._editorPendingSongId;
+            createdLevels[levelIndex].song = this._editorPendingSongName || createdLevels[levelIndex].song;
+        }
+
         localStorage.setItem("created_levels", JSON.stringify(createdLevels));
+
         window._onlineLevelString = createdLevels[levelIndex].levelString;
         window._onlineLevelName = createdLevels[levelIndex].levelName;
         window._onlineLevelId = createdLevels[levelIndex].createdId;
+
+        this._editorPendingSongId = undefined;
+        this._editorPendingSongName = undefined;
     }
 };
 
@@ -8633,6 +12443,16 @@ _applyMirrorEffect() {
     _0x2de55e.width;
     this._endStarX = containerX + _0x45540f;
     this._endStarY = _0x241209 - 77.5;
+    if (window.macroBot){
+      const botMenuBtn = this.add.image(containerX - 225, 255, "macroBot").setScale(0.4).setInteractive();
+      this._endLayerInternal.add(botMenuBtn);
+      this._makeBouncyButton(botMenuBtn, 0.4, () => {
+          this._buildMacroPopup();
+          if (this._macroPopup) {
+              this._macroPopup.setDepth(300); 
+          }
+      });
+    }
     const _0x45fc2b = [{
       frame: "GJ_replayBtn_001.png",
       dx: -200,

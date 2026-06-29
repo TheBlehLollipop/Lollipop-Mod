@@ -1859,7 +1859,7 @@ window.allobjects = function() {
     "default_z_layer": 5,
     "default_z_order": 2
   },
-"144": {
+  "144": {
     "type": "hazard",
     "frame": "invis_spike_01_glow_001.png",
     "gridW": 1,
@@ -23676,7 +23676,7 @@ window.allobjects = function() {
     "gridH": 1.8666666746139526,
     "gridW": 2.299999952316284,
     "spritesheet": "GJ_GameSheet02-uhd",
-    "type": "deco",
+    "type": "speed",
     "z": -6,
     "default_detail_color_channel": -1,
     "default_z_layer": 4,
