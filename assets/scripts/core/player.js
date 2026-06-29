@@ -332,6 +332,7 @@ class PlayerObject {
     this._dashAnimationFrame = 0;
     this._dashAnimationTimer = 0;
     this._dashAnimationSprite = null;
+    this._hitboxTrail = [];
     this._createSprites();
     this._hitboxGraphics = scene.add.graphics().setScrollFactor(0).setDepth(20);
     this._initParticles(scene);
@@ -1098,6 +1099,7 @@ if (this.p.isFlying || this.p.isUfo) {
     this._streak.reset();
     this._waveTrail.stop();
     this._waveTrail.reset();
+    this._hitboxTrail = [];
     this.setWaveVisible(false);
     this.setCubeVisible(!this.p.isBall && !this.p.isFlying);
     this.setBallVisible(this.p.isBall);
@@ -1249,6 +1251,7 @@ if (this.p.isFlying || this.p.isUfo) {
     this._streak.reset();
     this._waveTrail.stop();
     this._waveTrail.reset();
+    this._hitboxTrail = [];
 
     if (this._scene?._editorPlaytestActive) {
       this.setCubeVisible(false);
@@ -2700,7 +2703,9 @@ _updateWaveJump() {
     }
 
     if (window.showHitboxTrail) {
-      this._hitboxTrail.forEach((pos, index) => {
+      const hitboxTrail = Array.isArray(this._hitboxTrail) ? this._hitboxTrail : [];
+      this._hitboxTrail = hitboxTrail;
+      hitboxTrail.forEach((pos, index) => {
           const trailXRaw = pos.x - camX;
           const trailX = isFlipped ? screenWidth - trailXRaw : trailXRaw;
           const trailY = b(pos.y) + camY;
@@ -2916,5 +2921,6 @@ _updateWaveJump() {
     this._streak.reset();
     this._waveTrail.stop();
     this._waveTrail.reset();
+    this._hitboxTrail = [];
   }
 }

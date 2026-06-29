@@ -3,12 +3,14 @@
 // 2: P Color 2
 // 1000: Background Color
 // 1001: Ground Color
-// 1004: Default Color (white)
+// 1002: Line Color
+// 1003: 3DL Color
+// 1004: Object Color
 // 1006: Glow
 // 1011: Detail Color FOr animated blocks (ill add some later)
 
 window.allobjects = function() {
-    return {
+  return {
   "0": {
     "can_color": true,
     "default_base_color_channel": 1004,
@@ -273,98 +275,152 @@ window.allobjects = function() {
   },
   "22": {
     "type": "trigger",
-    "frame": null,
-    "gridW": 0,
-    "gridH": 0,
+    "frame": "edit_eeNoneBtn_001.png",
+    "gridW": 1,
+    "gridH": 1,
     "enterEffect": 0,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eeNoneBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2
   },
   "23": {
     "type": "trigger",
-    "frame": null,
-    "gridW": 0,
-    "gridH": 0,
+    "frame": "edit_eeFBBtn_001.png",
+    "gridW": 1,
+    "gridH": 1,
     "enterEffect": 1,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eeFBBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2
   },
   "24": {
     "type": "trigger",
-    "frame": null,
-    "gridW": 0,
-    "gridH": 0,
+    "frame": "edit_eeFTBtn_001.png",
+    "gridW": 1,
+    "gridH": 1,
     "enterEffect": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eeFTBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2
   },
   "25": {
     "type": "trigger",
-    "frame": null,
-    "gridW": 0,
-    "gridH": 0,
+    "frame": "edit_eeFLBtn_001.png",
+    "gridW": 1,
+    "gridH": 1,
     "enterEffect": 3,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eeFLBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2
   },
   "26": {
     "type": "trigger",
-    "frame": null,
-    "gridW": 0,
-    "gridH": 0,
+    "frame": "edit_eeFRBtn_001.png",
+    "gridW": 1,
+    "gridH": 1,
     "enterEffect": 4,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eeFRBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2
   },
   "27": {
     "type": "trigger",
-    "frame": null,
-    "gridW": 0,
-    "gridH": 0,
+    "frame": "edit_eeSUBtn_001.png",
+    "gridW": 1,
+    "gridH": 1,
     "enterEffect": 5,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eeSUBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2
   },
   "28": {
     "type": "trigger",
-    "frame": null,
-    "gridW": 0,
-    "gridH": 0,
+    "frame": "edit_eeSDBtn_001.png",
+    "gridW": 1,
+    "gridH": 1,
     "enterEffect": 6,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eeSDBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2
   },
   "29": {
     "type": "trigger",
-    "frame": null,
-    "gridW": 0,
-    "gridH": 0,
+    "frame": "edit_eTintCol01Btn_001.png",
+    "gridW": 1,
+    "gridH": 1,
     "colorIdx": 1000,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eTintCol01Btn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2
   },
   "30": {
     "type": "trigger",
-    "frame": null,
-    "gridW": 0,
-    "gridH": 0,
+    "frame": "edit_eTintCol01Btn_001.png",
+    "gridW": 1,
+    "gridH": 1,
     "colorIdx": 1001,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eTintCol01Btn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2
   },
   "31": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eStartPosBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -373,30 +429,43 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eStartPosBtn_001.png"
   },
   "32": {
     "type": "trigger",
-    "frame": null,
+    "frame": "edit_eGhostEBtn_001.png",
     "gridW": 1,
     "gridH": 1,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eGhostEBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2
   },
   "33": {
     "type": "trigger",
-    "frame": null,
+    "frame": "edit_eGhostDBtn_001.png",
     "gridW": 1,
     "gridH": 1,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eGhostDBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2
   },
   "34": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eStartPosBtn_001.png",
     "glow_frame": "none",
     "gridH": 0.7666666507720947,
     "gridW": 1.2333333492279053,
@@ -405,7 +474,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eStartPosBtn_001.png"
   },
   "35": {
     "type": "pad",
@@ -578,50 +648,85 @@ window.allobjects = function() {
     "default_z_order": 9
   },
   "55": {
-    "type": "deco",
-    "frame": "d_ball_06_001.png",
-    "gridW": 0,
-    "gridH": 0,
+    "type": "trigger",
+    "frame": "edit_eeFABtn_001.png",
+    "gridW": 1,
+    "gridH": 1,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eeFABtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2,
+    "enterEffect": 7
   },
   "56": {
-    "type": "deco",
-    "frame": "d_ball_07_001.png",
-    "gridW": 0,
-    "gridH": 0,
+    "type": "trigger",
+    "frame": "edit_eeFALBtn_001.png",
+    "gridW": 1,
+    "gridH": 1,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eeFALBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2,
+    "enterEffect": 8
   },
   "57": {
-    "type": "deco",
-    "frame": "d_ball_08_001.png",
-    "gridW": 0,
-    "gridH": 0,
+    "type": "trigger",
+    "frame": "edit_eeFARBtn_001.png",
+    "gridW": 1,
+    "gridH": 1,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eeFARBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2,
+    "enterEffect": 9
   },
   "58": {
-    "type": "deco",
-    "frame": "d_ball_09_001.png",
-    "gridW": 0,
-    "gridH": 0,
+    "type": "trigger",
+    "frame": "edit_eeFRHBtn_001.png",
+    "gridW": 1,
+    "gridH": 1,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eeFRHBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2,
+    "enterEffect": 10
   },
   "59": {
     "type": "trigger",
-    "frame": null,
+    "frame": "edit_eeFRHInvBtn_001.png",
     "gridW": 1,
     "gridH": 1,
     "glow": true,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eeFRHInvBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2,
+    "enterEffect": 11
   },
   "60": {
     "type": "deco",
@@ -1352,18 +1457,32 @@ window.allobjects = function() {
   },
   "104": {
     "type": "trigger",
-    "frame": null,
-    "gridW": 0,
-    "gridH": 0
-  },
-  "105": {
-    "type": "trigger",
-    "frame": null,
-    "gridW": 0,
-    "gridH": 0,
+    "frame": "edit_eOptionsBtn_001.png",
+    "gridW": 1,
+    "gridH": 1,
+    "editorFrame": "edit_eOptionsBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
     "default_z_order": 2
+  },
+  "105": {
+    "type": "trigger",
+    "frame": "edit_eTintCol01Btn_001.png",
+    "gridW": 1,
+    "gridH": 1,
+    "colorIdx": 1,
+    "default_detail_color_channel": -1,
+    "default_z_layer": 5,
+    "default_z_order": 2,
+    "editorFrame": "edit_eTintCol01Btn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2
   },
   "106": {
     "can_color": true,
@@ -3085,9 +3204,16 @@ window.allobjects = function() {
   },
   "221": {
     "type": "trigger",
-    "frame": null,
-    "gridW": 0,
-    "gridH": 0
+    "frame": "edit_eOptionsBtn_001.png",
+    "gridW": 1,
+    "gridH": 1,
+    "editorFrame": "edit_eOptionsBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "default_detail_color_channel": -1,
+    "default_z_layer": 5,
+    "default_z_order": 2
   },
   "222": {
     "can_color": true,
@@ -12299,16 +12425,18 @@ window.allobjects = function() {
   "744": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eTintCol01Btn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
     "spritesheet": "GJ_GameSheet02-uhd",
     "type": "trigger",
     "z": 2,
+    "colorIdx": 1,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eTintCol01Btn_001.png"
   },
   "745": {
     "can_color": false,
@@ -14638,35 +14766,50 @@ window.allobjects = function() {
   },
   "899": {
     "type": "trigger",
-    "frame": null,
-    "gridW": 0,
-    "gridH": 0,
+    "frame": "edit_eTintCol01Btn_001.png",
+    "gridW": 1,
+    "gridH": 1,
+    "colorIdx": 1,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eTintCol01Btn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2
   },
   "900": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eTintCol01Btn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
     "spritesheet": "GJ_GameSheet02-uhd",
     "type": "trigger",
     "z": 2,
+    "colorIdx": 1,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eTintCol01Btn_001.png"
   },
   "901": {
     "type": "trigger",
-    "frame": null,
-    "gridW": 0,
-    "gridH": 0,
+    "frame": "edit_eMoveComBtn_001.png",
+    "gridW": 1,
+    "gridH": 1,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eMoveComBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2
   },
   "902": {
     "can_color": true,
@@ -14851,19 +14994,36 @@ window.allobjects = function() {
     "default_z_layer": 1,
     "default_z_order": -7
   },
+  "914": {
+    "type": "trigger",
+    "frame": "edit_eStartPosBtn_001.png",
+    "editorFrame": "edit_eStartPosBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "default_detail_color_channel": -1,
+    "default_z_layer": 5,
+    "default_z_order": 2,
+    "z": 2,
+    "gridW": 1,
+    "gridH": 1
+  },
   "915": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eTintCol01Btn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
     "spritesheet": "GJ_GameSheet02-uhd",
     "type": "trigger",
     "z": 2,
+    "colorIdx": 1,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eTintCol01Btn_001.png"
   },
   "916": {
     "can_color": true,
@@ -16750,21 +16910,33 @@ window.allobjects = function() {
   },
   "1006": {
     "type": "trigger",
-    "frame": null,
-    "gridW": 0,
-    "gridH": 0,
+    "frame": "edit_ePulseBtn_001.png",
+    "gridW": 1,
+    "gridH": 1,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_ePulseBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2
   },
   "1007": {
     "type": "trigger",
-    "frame": null,
-    "gridW": 0,
-    "gridH": 0,
+    "frame": "edit_eAlphaBtn_001.png",
+    "gridW": 1,
+    "gridH": 1,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eAlphaBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2
   },
   "1009": {
     "can_color": true,
@@ -17675,7 +17847,7 @@ window.allobjects = function() {
       }
     ],
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eToggleBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -17684,7 +17856,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eToggleBtn_001.png"
   },
   "1050": {
     "can_color": true,
@@ -22142,7 +22315,7 @@ window.allobjects = function() {
   "1268": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eSpawnBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -22151,7 +22324,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSpawnBtn_001.png"
   },
   "1269": {
     "can_color": true,
@@ -23517,7 +23691,7 @@ window.allobjects = function() {
     "default_z_layer": 5,
     "default_z_order": 10,
     "portalParticle": true,
-    "portalParticleColor": 0x00ffff
+    "portalParticleColor": 65535
   },
   "1332": {
     "type": "pad",
@@ -23713,17 +23887,23 @@ window.allobjects = function() {
   },
   "1346": {
     "type": "trigger",
-    "frame": null,
-    "gridW": 0,
-    "gridH": 0,
+    "frame": "edit_eRotateComBtn_001.png",
+    "gridW": 1,
+    "gridH": 1,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eRotateComBtn_001.png",
+    "spritesheet": "GJ_GameSheet02-uhd",
+    "can_color": false,
+    "default_base_color_channel": 0,
+    "glow_frame": "none",
+    "z": 2
   },
   "1347": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eFollowComBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -23732,7 +23912,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eFollowComBtn_001.png"
   },
   "1348": {
     "can_color": true,
@@ -25597,7 +25778,7 @@ window.allobjects = function() {
   "1520": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eShakeBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -25606,7 +25787,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eShakeBtn_001.png"
   },
   "1521": {
     "can_color": true,
@@ -26590,7 +26772,7 @@ window.allobjects = function() {
   "1585": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eAnimateBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -26599,10 +26781,11 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eAnimateBtn_001.png"
   },
   "1586": {
-    "can_color": true,
+    "can_color": false,
     "children": [
       {
         "frame": null,
@@ -26612,15 +26795,17 @@ window.allobjects = function() {
       }
     ],
     "default_base_color_channel": 1011,
-    "default_detail_color_channel": 1011,
-    "frame": null,
+    "default_detail_color_channel": -1,
+    "frame": "edit_eParticleBtn_001.png",
     "glow_frame": "none",
     "gridH": 1.2000000476837158,
     "gridW": 0.8333333134651184,
-    "spritesheet": "GJ_GameSheet-uhd",
+    "spritesheet": "GJ_GameSheet02-uhd",
     "type": "trigger",
-    "default_z_layer": 1,
-    "default_z_order": 0
+    "default_z_layer": 5,
+    "default_z_order": 2,
+    "editorFrame": "edit_eParticleBtn_001.png",
+    "z": 2
   },
   "1587": {
     "can_color": true,
@@ -26772,7 +26957,7 @@ window.allobjects = function() {
   "1595": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eTouchBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -26781,7 +26966,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eTouchBtn_001.png"
   },
   "1596": {
     "can_color": true,
@@ -27020,7 +27206,7 @@ window.allobjects = function() {
   "1611": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eCountBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -27029,12 +27215,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eCountBtn_001.png"
   },
   "1612": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_ePHideBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -27043,12 +27230,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_ePHideBtn_001.png"
   },
   "1613": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_ePShowBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -27057,7 +27245,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_ePShowBtn_001.png"
   },
   "1614": {
     "can_color": true,
@@ -27088,9 +27277,9 @@ window.allobjects = function() {
     "default_z_order": 9
   },
   "1615": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1,
-    "frame": null,
+    "frame": "edit_eCounterBtn_001.png",
     "glow_frame": "none",
     "gridH": 1.0499999523162842,
     "gridW": 1.4500000476837158,
@@ -27100,12 +27289,13 @@ window.allobjects = function() {
     "z": 1,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 1
+    "default_z_order": 2,
+    "editorFrame": "edit_eCounterBtn_001.png"
   },
   "1616": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eStopMoverBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -27114,7 +27304,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eStopMoverBtn_001.png"
   },
   "1617": {
     "can_color": true,
@@ -28835,7 +29026,7 @@ window.allobjects = function() {
     "default_z_order": 9
   },
   "1700": {
-    "can_color": true,
+    "can_color": false,
     "children": [
       {
         "frame": null,
@@ -28845,15 +29036,17 @@ window.allobjects = function() {
       }
     ],
     "default_base_color_channel": 1011,
-    "default_detail_color_channel": 1011,
-    "frame": null,
+    "default_detail_color_channel": -1,
+    "frame": "edit_eParticleBtn_001.png",
     "glow_frame": "none",
     "gridH": 1.2000000476837158,
     "gridW": 0.8333333134651184,
-    "spritesheet": "GJ_GameSheet-uhd",
+    "spritesheet": "GJ_GameSheet02-uhd",
     "type": "trigger",
-    "default_z_layer": 3,
-    "default_z_order": 0
+    "default_z_layer": 5,
+    "default_z_order": 2,
+    "editorFrame": "edit_eParticleBtn_001.png",
+    "z": 2
   },
   "1701": {
     "can_color": true,
@@ -31187,7 +31380,7 @@ window.allobjects = function() {
   "1811": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eInstantCountBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -31196,12 +31389,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eInstantCountBtn_001.png"
   },
   "1812": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eOnDeathBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -31210,7 +31404,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eOnDeathBtn_001.png"
   },
   "1813": {
     "can_color": true,
@@ -31229,7 +31424,7 @@ window.allobjects = function() {
   "1814": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eFollowPComBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -31238,12 +31433,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eFollowPComBtn_001.png"
   },
   "1815": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eCollisionBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -31252,12 +31448,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eCollisionBtn_001.png"
   },
   "1816": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eCollisionBlock01_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -31266,12 +31463,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eCollisionBlock01_001.png"
   },
   "1817": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_ePickupBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -31280,12 +31478,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_ePickupBtn_001.png"
   },
   "1818": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eBGEOn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -31294,12 +31493,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eBGEOn_001.png"
   },
   "1819": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eBGEOff_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -31308,7 +31508,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eBGEOff_001.png"
   },
   "1820": {
     "can_color": true,
@@ -33193,7 +33394,7 @@ window.allobjects = function() {
   "1912": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eRandomBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -33202,12 +33403,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eRandomBtn_001.png"
   },
   "1913": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eZoomBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -33216,12 +33418,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eZoomBtn_001.png"
   },
   "1914": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eStaticBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -33230,12 +33433,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eStaticBtn_001.png"
   },
   "1915": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eeNone2Btn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -33244,12 +33448,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eeNone2Btn_001.png"
   },
   "1916": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eOffsetBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -33258,12 +33463,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eOffsetBtn_001.png"
   },
   "1917": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eReverseBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -33272,7 +33478,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eReverseBtn_001.png"
   },
   "1919": {
     "can_color": true,
@@ -33489,7 +33696,7 @@ window.allobjects = function() {
   "1931": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eEndBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -33498,12 +33705,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eEndBtn_001.png"
   },
   "1932": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_ePlayerControlBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -33512,7 +33720,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_ePlayerControlBtn_001.png"
   },
   "1933": {
     "can_color": false,
@@ -33531,7 +33740,7 @@ window.allobjects = function() {
   "1934": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eSongBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -33540,12 +33749,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSongBtn_001.png"
   },
   "1935": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eTimeWarpBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -33554,7 +33764,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eTimeWarpBtn_001.png"
   },
   "1936": {
     "can_color": true,
@@ -33677,7 +33888,7 @@ window.allobjects = function() {
   "2015": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eCamRotBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -33686,12 +33897,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eCamRotBtn_001.png"
   },
   "2016": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eCamGuideBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -33700,7 +33912,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eCamGuideBtn_001.png"
   },
   "2020": {
     "can_color": true,
@@ -34480,7 +34693,7 @@ window.allobjects = function() {
   "2062": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eEdgeBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -34489,7 +34702,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eEdgeBtn_001.png"
   },
   "2063": {
     "can_color": true,
@@ -34552,7 +34766,7 @@ window.allobjects = function() {
     "default_z_order": 10
   },
   "2065": {
-    "can_color": true,
+    "can_color": false,
     "children": [
       {
         "frame": null,
@@ -34568,8 +34782,8 @@ window.allobjects = function() {
       }
     ],
     "default_base_color_channel": 1004,
-    "default_detail_color_channel": 1011,
-    "frame": null,
+    "default_detail_color_channel": -1,
+    "frame": "edit_eCParticleBtn_001.png",
     "glow_frame": "none",
     "gridH": 1.1833332777023315,
     "gridW": 0.8333333134651184,
@@ -34577,12 +34791,13 @@ window.allobjects = function() {
     "type": "trigger",
     "z": 2,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eCParticleBtn_001.png"
   },
   "2066": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eGravity_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -34591,12 +34806,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eGravity_001.png"
   },
   "2067": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eScaleComBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -34605,12 +34821,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eScaleComBtn_001.png"
   },
   "2068": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eAdvRandomBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -34619,12 +34836,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eAdvRandomBtn_001.png"
   },
   "2069": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eForceBlock01_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -34633,7 +34851,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eForceBlock01_001.png"
   },
   "2070": {
     "can_color": true,
@@ -51604,7 +51823,7 @@ window.allobjects = function() {
   "2899": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eOptionsBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51613,12 +51832,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eOptionsBtn_001.png"
   },
   "2900": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eGameRotBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51627,12 +51847,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eGameRotBtn_001.png"
   },
   "2901": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eGPOffsetBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51641,7 +51862,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eGPOffsetBtn_001.png"
   },
   "2902": {
     "can_color": false,
@@ -51658,7 +51880,7 @@ window.allobjects = function() {
     "default_z_order": 10
   },
   "2903": {
-    "can_color": true,
+    "can_color": false,
     "children": [
       {
         "frame": null,
@@ -51668,20 +51890,22 @@ window.allobjects = function() {
       }
     ],
     "default_base_color_channel": 1004,
-    "default_detail_color_channel": 1,
-    "frame": null,
+    "default_detail_color_channel": -1,
+    "frame": "edit_eGradientBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
     "spritesheet": "GJ_GameSheet02-uhd",
     "type": "trigger",
     "default_z_layer": 5,
-    "default_z_order": 0
+    "default_z_order": 2,
+    "editorFrame": "edit_eGradientBtn_001.png",
+    "z": 2
   },
   "2904": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eShaderBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51690,12 +51914,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eShaderBtn_001.png"
   },
   "2905": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eSh_ShockWaveBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51704,12 +51929,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSh_ShockWaveBtn_001.png"
   },
   "2907": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eSh_ShockLineBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51718,12 +51944,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSh_ShockLineBtn_001.png"
   },
   "2909": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eSh_GlitchBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51732,12 +51959,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSh_GlitchBtn_001.png"
   },
   "2910": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eSh_ChromaticBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51746,12 +51974,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSh_ChromaticBtn_001.png"
   },
   "2911": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eSh_ChromaticGlitchBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51760,12 +51989,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSh_ChromaticGlitchBtn_001.png"
   },
   "2912": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eSh_PixelateBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51774,12 +52004,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSh_PixelateBtn_001.png"
   },
   "2913": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eSh_LensCircleBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51788,12 +52019,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSh_LensCircleBtn_001.png"
   },
   "2914": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eSh_RadialBlurBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51802,12 +52034,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSh_RadialBlurBtn_001.png"
   },
   "2915": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eSh_MotionBlurBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51816,12 +52049,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSh_MotionBlurBtn_001.png"
   },
   "2916": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eSh_BulgeBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51830,12 +52064,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSh_BulgeBtn_001.png"
   },
   "2917": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eSh_PinchBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51844,12 +52079,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSh_PinchBtn_001.png"
   },
   "2919": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eSh_GrayscaleBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51858,12 +52094,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSh_GrayscaleBtn_001.png"
   },
   "2920": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eSh_SepiaBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51872,12 +52109,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSh_SepiaBtn_001.png"
   },
   "2921": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eSh_InvertColorBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51886,12 +52124,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSh_InvertColorBtn_001.png"
   },
   "2922": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eSh_HueBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51900,12 +52139,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSh_HueBtn_001.png"
   },
   "2923": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eSh_EditColorBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51914,12 +52154,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSh_EditColorBtn_001.png"
   },
   "2924": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eSh_SplitScreenBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51928,12 +52169,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSh_SplitScreenBtn_001.png"
   },
   "2925": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eCamModeBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -51942,7 +52184,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eCamModeBtn_001.png"
   },
   "2926": {
     "can_color": false,
@@ -53232,7 +53475,7 @@ window.allobjects = function() {
   "2999": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eSetupMGBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53241,7 +53484,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSetupMGBtn_001.png"
   },
   "3000": {
     "can_color": true,
@@ -53358,7 +53602,7 @@ window.allobjects = function() {
   "3006": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eAreaMoveBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53367,12 +53611,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eAreaMoveBtn_001.png"
   },
   "3007": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eAreaRotateBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53381,12 +53626,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eAreaRotateBtn_001.png"
   },
   "3008": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eAreaScaleBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53395,12 +53641,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eAreaScaleBtn_001.png"
   },
   "3009": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eAreaFadeBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53409,12 +53656,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eAreaFadeBtn_001.png"
   },
   "3010": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eAreaTintBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53423,12 +53671,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eAreaTintBtn_001.png"
   },
   "3011": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eEAreaMoveBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53437,12 +53686,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eEAreaMoveBtn_001.png"
   },
   "3012": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eEAreaRotateBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53451,12 +53701,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eEAreaRotateBtn_001.png"
   },
   "3013": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eEAreaScaleBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53465,12 +53716,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eEAreaScaleBtn_001.png"
   },
   "3014": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eEAreaFadeBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53479,12 +53731,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eEAreaFadeBtn_001.png"
   },
   "3015": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eEAreaTintBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53493,12 +53746,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eEAreaTintBtn_001.png"
   },
   "3016": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eAdvFollowBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53507,12 +53761,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eAdvFollowBtn_001.png"
   },
   "3017": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eEnterMoveBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53521,12 +53776,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eEnterMoveBtn_001.png"
   },
   "3018": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eEnterRotateBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53535,12 +53791,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eEnterRotateBtn_001.png"
   },
   "3019": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eEnterScaleBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53549,12 +53806,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eEnterScaleBtn_001.png"
   },
   "3020": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eEnterFadeBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53563,12 +53821,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eEnterFadeBtn_001.png"
   },
   "3021": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eEnterTintBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53577,12 +53836,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eEnterTintBtn_001.png"
   },
   "3022": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eTeleportBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53591,12 +53851,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eTeleportBtn_001.png"
   },
   "3023": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eEnterStopBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53605,12 +53866,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eEnterStopBtn_001.png"
   },
   "3024": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eAreaStopBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53619,7 +53881,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eAreaStopBtn_001.png"
   },
   "3027": {
     "can_color": false,
@@ -53646,7 +53909,7 @@ window.allobjects = function() {
   "3029": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eChangeBG_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53655,12 +53918,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eChangeBG_001.png"
   },
   "3030": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eChangeG_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53669,12 +53933,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eChangeG_001.png"
   },
   "3031": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eChangeMG_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53683,7 +53948,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eChangeMG_001.png"
   },
   "3032": {
     "can_color": false,
@@ -53702,7 +53968,7 @@ window.allobjects = function() {
   "3033": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eKeyframeBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -53711,7 +53977,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eKeyframeBtn_001.png"
   },
   "3034": {
     "can_color": true,
@@ -65294,7 +65561,7 @@ window.allobjects = function() {
   "3600": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eEndBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65303,7 +65570,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eEndBtn_001.png"
   },
   "3601": {
     "can_color": true,
@@ -65330,7 +65598,7 @@ window.allobjects = function() {
   "3602": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eSFXBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65339,12 +65607,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSFXBtn_001.png"
   },
   "3603": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eEditSFXBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65353,12 +65622,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eEditSFXBtn_001.png"
   },
   "3604": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eEventLinkBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65367,12 +65637,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eEventLinkBtn_001.png"
   },
   "3605": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eEditSongBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65381,12 +65652,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eEditSongBtn_001.png"
   },
   "3606": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eBGSpeedBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65395,12 +65667,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eBGSpeedBtn_001.png"
   },
   "3607": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eSequenceBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65409,12 +65682,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSequenceBtn_001.png"
   },
   "3608": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eSpawnParticleBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65423,12 +65697,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eSpawnParticleBtn_001.png"
   },
   "3609": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eInstantCollisionBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65437,12 +65712,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eInstantCollisionBtn_001.png"
   },
   "3610": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1011,
-    "frame": null,
+    "frame": "edit_eDamageSquare_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65451,12 +65727,13 @@ window.allobjects = function() {
     "z": 10,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 10
+    "default_z_order": 2,
+    "editorFrame": "edit_eDamageSquare_001.png"
   },
   "3611": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1011,
-    "frame": null,
+    "frame": "edit_eDamageCircle_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65466,12 +65743,13 @@ window.allobjects = function() {
     "hitbox_radius": 15,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 10
+    "default_z_order": 2,
+    "editorFrame": "edit_eDamageCircle_001.png"
   },
   "3612": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eMGSpeedBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65480,12 +65758,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eMGSpeedBtn_001.png"
   },
   "3613": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eUISettingsBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65494,12 +65773,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eUISettingsBtn_001.png"
   },
   "3614": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eTimeBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65508,12 +65788,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eTimeBtn_001.png"
   },
   "3615": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eTimeEventBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65522,12 +65803,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eTimeEventBtn_001.png"
   },
   "3617": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eTimeControlBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65536,12 +65818,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eTimeControlBtn_001.png"
   },
   "3618": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eResetBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65550,12 +65833,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eResetBtn_001.png"
   },
   "3619": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eItemEditBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65564,12 +65848,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eItemEditBtn_001.png"
   },
   "3620": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eItemCompBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65578,7 +65863,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eItemCompBtn_001.png"
   },
   "3621": {
     "can_color": true,
@@ -65849,7 +66135,7 @@ window.allobjects = function() {
   "3640": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eCollisionStateBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65858,12 +66144,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eCollisionStateBtn_001.png"
   },
   "3641": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eItemPersBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65872,12 +66159,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eItemPersBtn_001.png"
   },
   "3642": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eBPMBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65886,12 +66174,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eBPMBtn_001.png"
   },
   "3643": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_ePlayerTouchBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65900,12 +66189,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_ePlayerTouchBtn_001.png"
   },
   "3645": {
-    "can_color": true,
+    "can_color": false,
     "default_base_color_channel": 1004,
-    "frame": null,
+    "frame": "edit_eForceBlock02_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -65915,7 +66205,8 @@ window.allobjects = function() {
     "hitbox_radius": 15,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eForceBlock02_001.png"
   },
   "3646": {
     "can_color": true,
@@ -66046,7 +66337,7 @@ window.allobjects = function() {
   "3655": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eCollisionStateBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -66055,7 +66346,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eCollisionStateBtn_001.png"
   },
   "3656": {
     "can_color": true,
@@ -66116,7 +66408,7 @@ window.allobjects = function() {
   "3660": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eEditAdvFollowBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -66125,12 +66417,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eEditAdvFollowBtn_001.png"
   },
   "3661": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eReAdvFollowBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -66139,12 +66432,13 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eReAdvFollowBtn_001.png"
   },
   "3662": {
     "can_color": false,
     "default_base_color_channel": 0,
-    "frame": null,
+    "frame": "edit_eLinkVisibleBtn_001.png",
     "glow_frame": "none",
     "gridH": 1,
     "gridW": 1,
@@ -66153,7 +66447,8 @@ window.allobjects = function() {
     "z": 2,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 2
+    "default_z_order": 2,
+    "editorFrame": "edit_eLinkVisibleBtn_001.png"
   },
   "3700": {
     "can_color": true,
@@ -82218,4 +82513,4 @@ window.allobjects = function() {
     "default_z_order": 9
   }
 };
-}
+};
