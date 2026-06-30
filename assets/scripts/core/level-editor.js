@@ -1,3 +1,30 @@
+
+function _editorDecodeTextObjectString(value) {
+  if (typeof _decodeTextObjectString === "function") return _decodeTextObjectString(value);
+  if (value === undefined || value === null) return "";
+  const raw = String(value);
+  if (raw === "") return "";
+  try {
+    if (!/^[A-Za-z0-9_-]+={0,2}$/.test(raw)) return raw;
+    let base64 = raw.replace(/-/g, "+").replace(/_/g, "/");
+    while (base64.length % 4 !== 0) base64 += "=";
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch (err) {
+    return raw;
+  }
+}
+
+function _editorEncodeTextObjectString(value) {
+  if (typeof _encodeTextObjectString === "function") return _encodeTextObjectString(value);
+  const bytes = new TextEncoder().encode(String(value ?? ""));
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
 class LevelEditor {
   constructor(gameScene) {
     this.gameScene = gameScene;
@@ -1206,6 +1233,14 @@ class LevelEditor {
         frameName = objectDef.randomFrames[0];
     }
 
+    if (!frameName && objectDef.textObject) {
+        const preview = this.add.container(x, y);
+        let label = this.add.bitmapText(-3, -3, "bigFont", "A", 60).setOrigin(0.5);
+        preview.add(label);
+        preview.setScale(0.85);
+        return preview;
+    }
+
     if (!frameName) return null;
 
     const previewObj = {
@@ -2093,6 +2128,13 @@ class LevelEditor {
         saveData._raw["23"] = "1";
     }
 
+    if (objectDef.textObject) {
+        const defaultText = String(objectDef.defaultText || "A");
+        saveData.text = defaultText;
+        saveData._raw[31] = defaultText;
+        saveData._raw["31"] = defaultText;
+    }
+
     window.levelObjects.push(saveData);
     this._level._spawnObject(saveData);
 
@@ -2553,15 +2595,21 @@ class LevelEditor {
   }
 
 
+  _getEditorArtValue(key, fallback = 1) {
+    const rawValue = this._getEditorStartValue(key, fallback);
+    return rawValue > 0 ? rawValue : fallback;
+  }
+
+
   _setEditorArtValueDraft(key, value) {
-    const numericValue = Math.max(0, parseInt(value ?? 0, 10) || 0);
+    const numericValue = Math.max(1, parseInt(value ?? 1, 10) || 1);
 
     this._setEditorStartValueDraft(key, numericValue);
 
     if (key === "kA6") {
-        window._backgroundId = String(numericValue + 1).padStart(2, "0");
+        window._backgroundId = String(numericValue).padStart(2, "0");
 
-        const bgKey = "game_bg_" + numericValue;
+        const bgKey = "game_bg_" + getBackgroundTextureIndex(numericValue);
 
         if (this._bg && this.textures.exists(bgKey)) {
             this._bg.setTexture(bgKey);
@@ -2572,7 +2620,7 @@ class LevelEditor {
             }
         }
     } else if (key === "kA7") {
-        window._groundId = String(numericValue).padStart(2, "0");
+        window._groundId = getGroundTextureId(numericValue);
 
         if (this._level && typeof this._level.applyGroundTexture === "function") {
             this._level.applyGroundTexture();
@@ -4251,7 +4299,43 @@ class LevelEditor {
 
 
   _isEditorStartPositionId(id) {
-    return [31, 34, 914].includes(parseInt(id ?? 0, 10));
+    return [31, 34].includes(parseInt(id ?? 0, 10));
+  }
+
+
+  _isEditorTextObjectId(id) {
+    const objectDef = getObjectFromId(parseInt(id ?? 0, 10));
+    return !!(objectDef && objectDef.textObject);
+  }
+
+
+  _getEditorTextObjectText(saveObj) {
+    const raw = saveObj?._raw || {};
+    const objectDef = getObjectFromId(saveObj?.id);
+    const textValue = saveObj?.text ?? _editorDecodeTextObjectString(raw[31] ?? raw["31"] ?? objectDef?.defaultText ?? "A");
+    return String(textValue ?? "");
+  }
+
+
+  _setEditorTextObjectText(saveObj, value) {
+    if (!saveObj) return;
+    const textValue = String(value ?? "");
+    saveObj.text = textValue;
+    const encodedTextValue = _editorEncodeTextObjectString(textValue);
+    saveObj._raw = saveObj._raw || {};
+    saveObj._raw[31] = encodedTextValue;
+    saveObj._raw["31"] = encodedTextValue;
+    this._refreshSelectedTextObjectVisual(saveObj);
+  }
+
+
+  _refreshSelectedTextObjectVisual(saveObj) {
+    const linkedId = Number.isInteger(saveObj?._eeObjectId) ? saveObj._eeObjectId : window.editorSelectedObject;
+    const linkedSprites = this._level?.objectSprites?.[linkedId] || [];
+    const newText = this._getEditorTextObjectText(saveObj);
+    for (const spr of linkedSprites) {
+        if (spr?._eeTextObject && spr.setText) spr.setText(newText);
+    }
   }
 
 
@@ -4377,6 +4461,8 @@ class LevelEditor {
         this._openEditorColorTriggerOptionsPopup(saveObj);
     } else if (this._isEditorStartPositionId(saveObj.id)) {
         this._openEditorStartPositionOptionsPopup(saveObj);
+    } else if (this._isEditorTextObjectId(saveObj.id)) {
+        this._openEditorTextObjectOptionsPopup(saveObj);
     } else {
         this._openEditorComingSoonTriggerPopup(saveObj);
     }
@@ -4989,6 +5075,102 @@ class LevelEditor {
     optionDefs.forEach((opt, i) => makeToggle(opt.label, opt.key, -130 + i * 80));
   }
 
+  _openEditorTextObjectOptionsPopup(saveObj) {
+    this._closeEditorObjectOptionsPopup();
+
+    const sw = screenWidth;
+    const sh = screenHeight;
+    const panelW = 720;
+    const panelH = 330;
+    const root = this.add.container(0, 0).setScrollFactor(0).setDepth(2550);
+    this._editorObjectOptionsPopup = root;
+
+    const blocker = this.add.rectangle(0, 0, sw, sh, 0x000000, 0.45).setOrigin(0).setInteractive();
+    root.add(blocker);
+
+    const inner = this.add.container(sw / 2, sh / 2 + 10);
+    root.add(inner);
+
+    const corner = this.textures.exists("GJ_square01") ? this.textures.get("GJ_square01").source[0].width * 0.325 : 24;
+    inner.add(this._drawScale9(0, 0, panelW, panelH, "GJ_square01", corner, 0xffffff, 1));
+    inner.add(this.add.bitmapText(0, -(panelH / 2) + 46, "goldFont", "Edit Text", 42).setOrigin(0.5));
+
+    const inputBg = this.add.graphics();
+    inputBg.fillStyle(0x000000, 0.38);
+    inputBg.fillRoundedRect(-270, -47, 540, 70, 15);
+    inner.add(inputBg);
+
+    const inputHit = this.add.zone(0, -12, 540, 70).setInteractive();
+    inner.add(inputHit);
+
+    let textValue = this._getEditorTextObjectText(saveObj);
+    let focused = true;
+    const textLabel = this.add.bitmapText(0, -12, "bigFont", "", 45).setOrigin(0.5).setCenterAlign();
+    inner.add(textLabel);
+
+    const render = () => {
+        const shownText = (textValue || "") + (focused ? "|" : "");
+        textLabel.setText(shownText || (focused ? "|" : ""));
+    };
+
+    const commit = () => {
+        this._setEditorTextObjectText(saveObj, textValue);
+    };
+
+    const focusInput = (pointer, localX, localY, event) => {
+        if (event?.stopPropagation) event.stopPropagation();
+        focused = true;
+        this._editorTextInputFocused = true;
+        render();
+    };
+
+    inputHit.on("pointerdown", focusInput);
+    textLabel.setInteractive(new Phaser.Geom.Rectangle(-270, -35, 540, 70), Phaser.Geom.Rectangle.Contains);
+    textLabel.on("pointerdown", focusInput);
+
+    this._editorTextInputFocused = true;
+    this._editorObjectOptionsKeyHandler = (event) => {
+        if (!this._editorObjectOptionsPopup || !focused) return;
+        if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+        if (event.key === "Escape") {
+            event.preventDefault();
+            this._closeEditorObjectOptionsPopup();
+            return;
+        }
+
+        if (event.key === "Enter") {
+            event.preventDefault();
+            commit();
+            this._closeEditorObjectOptionsPopup();
+            return;
+        }
+
+        if (event.key === "Backspace") {
+            event.preventDefault();
+            textValue = textValue.slice(0, -1);
+            commit();
+            render();
+            return;
+        }
+
+        if (event.key && event.key.length === 1 && textValue.length < 80) {
+            event.preventDefault();
+            textValue += event.key;
+            commit();
+            render();
+        }
+    };
+    window.addEventListener("keydown", this._editorObjectOptionsKeyHandler);
+
+    render();
+    this._makeEditorOkButton(inner, 0, (panelH / 2) - 48, "OK", () => {
+        commit();
+        this._closeEditorObjectOptionsPopup();
+    });
+  }
+
+
   _openEditorComingSoonTriggerPopup(saveObj) {
     this._closeEditorObjectOptionsPopup();
 
@@ -5193,7 +5375,7 @@ class LevelEditor {
 
         for (let i = 1; i <= count; i++) {
             defs.push({
-                key: i - 1,
+                key: i,
                 label: String(i),
                 frame: `${prefix}Icon_${String(i).padStart(2, "0")}_001.png`
             });
@@ -5312,14 +5494,14 @@ class LevelEditor {
             bgArtButtonObj = null;
         }
 
-        const bgKey = Phaser.Math.Clamp(this._getEditorStartValue("kA6", 0), 0, bgArtDefs.length - 1);
+        const bgKey = Phaser.Math.Clamp(this._getEditorArtValue("kA6", 1), 1, bgArtDefs.length);
         const bgDef = bgArtDefs.find(bg => bg.key === bgKey) || bgArtDefs[0];
 
         bgArtButtonObj = this._makeEditorAtlasIconButton(inner, rightX, -190, bgDef, () => {
             this._openEditorHorizontalOptionPopup(
                 "Select Background",
                 bgArtDefs,
-                this._getEditorStartValue("kA6", 0),
+                this._getEditorArtValue("kA6", 1),
                 (opt) => {
                     this._setEditorArtValueDraft("kA6", opt.key);
                     refreshBgArtButton();
@@ -5344,14 +5526,14 @@ class LevelEditor {
             groundArtButtonObj = null;
         }
 
-        const groundKey = Phaser.Math.Clamp(this._getEditorStartValue("kA7", 0), 0, groundArtDefs.length - 1);
+        const groundKey = Phaser.Math.Clamp(this._getEditorArtValue("kA7", 1), 1, groundArtDefs.length);
         const groundDef = groundArtDefs.find(g => g.key === groundKey) || groundArtDefs[0];
 
         groundArtButtonObj = this._makeEditorAtlasIconButton(inner, rightX, -40, groundDef, () => {
             this._openEditorHorizontalOptionPopup(
                 "Select Ground",
                 groundArtDefs,
-                this._getEditorStartValue("kA7", 0),
+                this._getEditorArtValue("kA7", 1),
                 (opt) => {
                     this._setEditorArtValueDraft("kA7", opt.key);
                     refreshGroundArtButton();
@@ -5864,6 +6046,14 @@ _serializeObject(object) {
   objectData[21] = String(object.color1 ?? 0);
   objectData[22] = String(object.color2 ?? 0);
 
+  if (object.text !== undefined || objectData[31] !== undefined || objectData["31"] !== undefined) {
+    const objectDef = typeof getObjectFromId === "function" ? getObjectFromId(parseInt(object.id ?? objectData[1] ?? 0, 10)) : null;
+    const plainText = object.text !== undefined
+      ? String(object.text ?? "")
+      : _editorDecodeTextObjectString(objectData[31] ?? objectData["31"] ?? "");
+    objectData[31] = objectDef?.textObject ? _editorEncodeTextObjectString(plainText) : plainText;
+  }
+
   objectData["kA2"] = String(object.gameMode ?? 0);
   objectData["kA3"] = String(object.miniMode ?? 0);
   objectData["kA4"] = String(object.speed ?? 0);
@@ -6054,6 +6244,7 @@ LevelEditor.methodNames = [
   "_setEditorColorChannelDraft",
   "_setEditorStartValueDraft",
   "_getEditorStartValue",
+  "_getEditorArtValue",
   "_setEditorArtValueDraft",
   "_getCurrentEditorLevelRecord",
   "_setEditorSongDraft",
@@ -6077,6 +6268,10 @@ LevelEditor.methodNames = [
   "_getEditorColorChannelLabel",
   "_isEditorColorTriggerId",
   "_isEditorStartPositionId",
+  "_isEditorTextObjectId",
+  "_getEditorTextObjectText",
+  "_setEditorTextObjectText",
+  "_refreshSelectedTextObjectVisual",
   "_getSelectedEditorSaveObject",
   "_isSelectedEditorObjectTrigger",
   "_getEditorObjectColor",
@@ -6094,6 +6289,7 @@ LevelEditor.methodNames = [
   "_openEditorColorTriggerChannelPopup",
   "_openEditorStartPositionOptionsPopup",
   "_openEditorStartPositionSettingsPopup",
+  "_openEditorTextObjectOptionsPopup",
   "_openEditorComingSoonTriggerPopup",
   "_openEditorLevelSettingsPopup",
   "_initEditorPauseMenu",

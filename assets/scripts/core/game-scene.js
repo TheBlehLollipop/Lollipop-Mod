@@ -291,8 +291,7 @@ class GameScene extends Phaser.Scene {
     this._menuCameraX = -centerX;
     this._prevCameraX = -centerX;
     this._bg = this.add.tileSprite(0, 0, screenWidth, screenHeight, "game_bg_01").setOrigin(0, 0).setScrollFactor(0).setDepth(-10);
-    const _0x15d27a = this.textures.get("game_bg_01").source[0].height;
-    this._bgInitY = _0x15d27a - screenHeight - o;
+    this._applyMirroredBackgroundTexture("game_bg_01");
     this._cameraX = -centerX;
     this._cameraY = 0;
     this._cameraXRef = {
@@ -332,22 +331,21 @@ class GameScene extends Phaser.Scene {
     if (_0x591888) {
       this._level.loadLevel(_0x591888);
     }
-    const _resolveEditorArtId = (key, fallback, displayOffset = 0) => {
+    const _resolveGdArtId = (key, fallback = 1) => {
       const raw = window.settingsMap?.[key];
       const parsed = parseInt(raw ?? fallback, 10);
-      const value = Number.isFinite(parsed) ? parsed : fallback;
-      return String(value + displayOffset).padStart(2, "0");
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
     };
 
-    window._backgroundId = _resolveEditorArtId("kA6", parseInt(window._backgroundId || "01", 10) - 1, 1);
-    window._groundId = _resolveEditorArtId("kA7", parseInt(window._groundId || "00", 10), 0);
+    const _bgGdId = _resolveGdArtId("kA6", parseInt(window._backgroundId || "01", 10) || 1);
+    window._backgroundId = String(_bgGdId).padStart(2, "0");
 
-    const _bgId = window._backgroundId || "01";
-    const _bgKey = "game_bg_" + (parseInt(_bgId, 10) - 1);
+    const _groundRaw = window.settingsMap?.["kA7"] ?? ((parseInt(window._groundId || "00", 10) || 0) + 1);
+    window._groundId = getGroundTextureId(_groundRaw);
+
+    const _bgKey = "game_bg_" + getBackgroundTextureIndex(_bgGdId);
     if (this.textures.exists(_bgKey)) {
-      this._bg.setTexture(_bgKey);
-      const _newBgH = this.textures.get(_bgKey).source[0].height;
-      this._bgInitY = _newBgH - screenHeight - o;
+      this._applyMirroredBackgroundTexture(_bgKey);
     }
     this._level.applyGroundTexture();
     if (this._level._initialColors) {
@@ -5258,6 +5256,8 @@ _buildSettingsPopup() {
       this._player.enterUfoMode();
     } else if (gamemode == 4) {
       this._player.enterWaveMode();
+    } else if (gamemode == 6) {
+      this._player.enterSpiderMode();
     }
 
     this._applyLevelStartOptions();
@@ -5807,10 +5807,57 @@ _buildSettingsPopup() {
       this._applyMirrorEffect();
     }
   }
+  _createMirroredBackgroundTexture(textureKey) {
+    const mirroredKey = textureKey + "__mirror_y_loop";
+    if (this.textures.exists(mirroredKey)) return mirroredKey;
+
+    const texture = this.textures.get(textureKey);
+    const source = texture?.source?.[0];
+    const image = source?.image || source?.canvas;
+    const width = source?.width || image?.width || image?.naturalWidth || 0;
+    const height = source?.height || image?.height || image?.naturalHeight || 0;
+
+    if (!image || width <= 0 || height <= 0 || !this.textures.createCanvas) {
+      return textureKey;
+    }
+
+    try {
+      const mirroredTexture = this.textures.createCanvas(mirroredKey, width, height * 2);
+      const ctx = mirroredTexture.getContext();
+      ctx.clearRect(0, 0, width, height * 2);
+      ctx.drawImage(image, 0, 0, width, height, 0, 0, width, height);
+      ctx.save();
+      ctx.translate(0, height * 2);
+      ctx.scale(1, -1);
+      ctx.drawImage(image, 0, 0, width, height, 0, 0, width, height);
+      ctx.restore();
+      mirroredTexture.refresh();
+      return mirroredKey;
+    } catch (err) {
+      console.warn("Failed to create mirrored background texture", textureKey, err);
+      if (this.textures.exists(mirroredKey)) this.textures.remove(mirroredKey);
+      return textureKey;
+    }
+  }
+
+  _applyMirroredBackgroundTexture(textureKey) {
+    const texture = this.textures.get(textureKey);
+    const source = texture?.source?.[0];
+    const sourceHeight = source?.height || source?.image?.height || source?.image?.naturalHeight || 0;
+    const mirroredKey = this._createMirroredBackgroundTexture(textureKey);
+    this._bg.setTexture(mirroredKey);
+    this._bgInitY = sourceHeight > 0 ? sourceHeight - screenHeight - o : 0;
+    this._bgMirrorTileHeight = sourceHeight > 0 ? sourceHeight * 2 : 0;
+  }
+
   _updateBackground() {
     this._bg.tilePositionX += (this._cameraX - this._prevCameraX) * this._bgSpeedX;
     this._prevCameraX = this._cameraX;
-    this._bg.tilePositionY = this._bgInitY - this._cameraY * this._bgSpeedY;
+    let tileY = this._bgInitY - this._cameraY * this._bgSpeedY;
+    if (this._bgMirrorTileHeight > 0) {
+      tileY = ((tileY % this._bgMirrorTileHeight) + this._bgMirrorTileHeight) % this._bgMirrorTileHeight;
+    }
+    this._bg.tilePositionY = tileY;
   }
   _updateCameraY(_0xc7c517) {
     let explosionPiece = this._cameraY;
@@ -6086,7 +6133,7 @@ _buildSettingsPopup() {
       this._state.upKeyPressed = false;
       this._state.queuedHold = false;
     }
-    this._level.updateEndPortalY(this._cameraY, this._state.isFlying || this._state.isWave || this._state.isUfo);
+    this._level.updateEndPortalY(this._cameraY, this._state.isFlying || this._state.isWave || this._state.isUfo || this._state.isSpider);
     if (!this._levelWon && !this._state.isDead && this._level.endXPos > 0) {
       const _0x448396 = 600;
       if (this._playerWorldX >= this._level.endXPos - _0x448396) {
