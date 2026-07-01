@@ -1632,6 +1632,8 @@ if (this.p.isFlying || this.p.isUfo) {
     this.p.yVelocity *= 0.5;
     this.p.onGround = false;
     this.p.canJump = false;
+    this._streak.stop();
+    this._streak.reset();
     this.p.isJumping = false;
     this.stopRotation();
     this._rotation = 0;
@@ -1671,8 +1673,7 @@ if (this.p.isFlying || this.p.isUfo) {
       this._rotation = 0;
     
     } else if (this.p.isRobot) {
-      // if gravity flipped be upside down
-      this._rotation = this.p.gravityFlipped ? Math.PI : 0;
+      this._rotation = 0;
       this.stopRotation();
       this.p._robotHold = false;
       this.p._robotHoldTimer = 0;
@@ -2147,6 +2148,14 @@ if (this.p.isFlying || this.p.isUfo) {
       }
   }
   runRotateAction() {
+    // Robot has its own per-part flip (position/scale) driven by gravityFlipped in
+    // applyRobotAnimationFrame, and its slope lean comes from _visualTilt/_slopeGroundAngle.
+    // The cube-style 180deg spin this function performs isn't used by the robot rig and
+    // was causing double-flips (spin + mirror) on gravity toggles, orbs and pads.
+    if (this.p.isRobot) {
+      this.rotateActionActive = false;
+      return;
+    }
     this.rotateActionActive = true;
     this.rotateActionTime = 0;
     const _miniDurScale = this.p.isMini ? (1 / 1.4) : 1;
