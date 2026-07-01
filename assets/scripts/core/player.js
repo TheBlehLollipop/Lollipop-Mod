@@ -1201,11 +1201,24 @@ if (this.p.isFlying || this.p.isUfo) {
           // for ufo: center the cube inside the ufo shell (same y as bird layers)
           const _cubeX = this.p.isUfo ? _0x1b1d28 : _0x562424;
           const _cubeY = this.p.isUfo
-  ? (_0x185f91 + (this.p.gravityFlipped ? 15 : -15))
+            ? _0x185f91  // Back to the original flat center point
             : (_0x3011c9 + (this.p.isMini ? (8 * _miniS) : 0) + (this.p.gravityFlipped ? (-20 * _miniS) : 0));
           playerLayerItem.sprite.x = _0x7f0705 + _cubeX;
           playerLayerItem.sprite.y = _0x1a433c + _cubeY;
           playerLayerItem.sprite.rotation = this.p.mirrored ? -tiltedRotation : tiltedRotation;
+
+          // --- FIXED UFO SLOPE OFFSET ---
+          if (this.p.isUfo) {
+            const ufoDistance = 15 * _miniS; // Your 15 offset value goes here!
+            const direction = this.p.gravityFlipped ? 1 : -1;
+            const angleRad = tiltedRotation; // Uses the slope angle
+
+            // This pushes the cube straight up relative to the tilted UFO angle
+            playerLayerItem.sprite.x += Math.sin(angleRad) * ufoDistance * direction;
+            playerLayerItem.sprite.y += Math.cos(angleRad) * ufoDistance * direction;
+          }
+          // ------------------------------
+
           const _shipCubeS = _miniS * 0.55;
           playerLayerItem.sprite.scaleY = this.p.gravityFlipped ? -_shipCubeS : _shipCubeS;
           playerLayerItem.sprite.scaleX = this.p.mirrored ? -_shipCubeS : _shipCubeS;
