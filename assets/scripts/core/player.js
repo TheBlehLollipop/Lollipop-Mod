@@ -1209,7 +1209,7 @@ if (this.p.isFlying || this.p.isUfo) {
 
           // --- INVERTED UFO SLOPE OFFSET FIX ---
           if (this.p.isUfo) {
-            const ufoDistance = 28 * _miniS; // Your 15 offset value
+            const ufoDistance = 22 * _miniS; // Your 15 offset value
             const direction = this.p.gravityFlipped ? 1 : -1;
             const angleRad = tiltedRotation; 
 
