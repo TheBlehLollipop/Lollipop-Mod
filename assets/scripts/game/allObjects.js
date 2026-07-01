@@ -549,7 +549,9 @@ window.allobjects = function() {
     "sub": "mirrora",
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 10
+    "default_z_order": 10,
+    "portalParticle": true,
+    "portalParticleColor": 16753920,
   },
   "46": {
     "type": "portal",
@@ -559,7 +561,9 @@ window.allobjects = function() {
     "sub": "mirrorb",
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 10
+    "default_z_order": 10,
+    "portalParticle": true,
+    "portalParticleColor": 65535,
   },
   "47": {
     "type": "portal",
@@ -1440,7 +1444,9 @@ window.allobjects = function() {
     "z": 10,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 10
+    "default_z_order": 10,
+    "portalParticle": true,
+    "portalParticleColor": 16711935,
   },
   "103": {
     "type": "hazard",
@@ -4376,7 +4382,9 @@ window.allobjects = function() {
     "z": 10,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 10
+    "default_z_order": 10,
+    "portalParticle": true,
+    "portalParticleColor": 16753920,
   },
   "287": {
     "can_color": false,
@@ -4390,7 +4398,9 @@ window.allobjects = function() {
     "z": 10,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 10
+    "default_z_order": 10,
+    "portalParticle": true,
+    "portalParticleColor": 65535,
   },
   "289": {
     "can_color": true,
@@ -11091,7 +11101,9 @@ window.allobjects = function() {
     "z": 10,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 10
+    "default_z_order": 10,
+    "portalParticle": true,
+    "portalParticleColor": 65535,
   },
   "661": {
     "can_color": true,
@@ -12450,7 +12462,9 @@ window.allobjects = function() {
     "z": 10,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 10
+    "default_z_order": 10,
+    "portalParticle": true,
+    "portalParticleColor": 16777215,
   },
   "747": {
     "can_color": false,
@@ -12464,7 +12478,9 @@ window.allobjects = function() {
     "z": 10,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 10
+    "default_z_order": 10,
+    "portalParticle": true,
+    "portalParticleColor": 65535,
   },
   "749": {
     "can_color": false,
@@ -12478,7 +12494,9 @@ window.allobjects = function() {
     "z": 10,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 10
+    "default_z_order": 10,
+    "portalParticle": true,
+    "portalParticleColor": 16753920,
   },
   "752": {
     "can_color": true,
@@ -23695,7 +23713,7 @@ window.allobjects = function() {
     "default_z_layer": 5,
     "default_z_order": 10,
     "portalParticle": true,
-    "portalParticleColor": 65535
+    "portalParticleColor": 9699539
   },
   "1332": {
     "type": "pad",
@@ -33739,7 +33757,9 @@ window.allobjects = function() {
     "z": 10,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,
-    "default_z_order": 10
+    "default_z_order": 10,
+    "portalParticle": true,
+    "portalParticleColor": 16776960,
   },
   "1934": {
     "can_color": false,
@@ -52202,7 +52222,7 @@ window.allobjects = function() {
     "type": "portal",
     "sub": "gravity_toggle",
     "portalParticle": true,
-    "portalParticleColor": 9699539,
+    "portalParticleColor": 65280,
     "z": 10,
     "default_detail_color_channel": -1,
     "default_z_layer": 5,

@@ -602,6 +602,7 @@ class LevelEditor {
             player._ballGlowLayer,
             player._waveGlowLayer,
             player._spiderGlowLayer,
+            player._robotGlowLayer,
             player._birdGlowLayer
         ];
 
@@ -630,6 +631,7 @@ class LevelEditor {
         player.setWaveVisible(false);
         player.setBirdVisible(false);
         player.setSpiderVisible(false);
+        player.setRobotVisible(false);
     };
 
     hidePlayer(this._player);
@@ -764,6 +766,8 @@ class LevelEditor {
         this._player.enterUfoMode();
     } else if (gamemode == 4) {
         this._player.enterWaveMode();
+    } else if (gamemode == 5) {
+        this._player.enterRobotMode();
     } else if (gamemode == 6) {
         this._player.enterSpiderMode();
     }
@@ -811,6 +815,8 @@ class LevelEditor {
       this._player.enterUfoMode();
     } else if (gamemode == 4) {
       this._player.enterWaveMode();
+    } else if (gamemode == 5) {
+      this._player.enterRobotMode();
     } else if (gamemode == 6) {
       this._player.enterSpiderMode();
     }
@@ -872,6 +878,7 @@ class LevelEditor {
     this._player2.setWaveVisible(false);
     this._player2.setBirdVisible(false);
     this._player2.setSpiderVisible(false);
+    this._player2.setRobotVisible(false);
 
     this._state.y = 30;
     this._state.onGround = true;
