@@ -542,11 +542,6 @@ class PlayerObject {
     const miniScale = this.p.isMini ? 0.6 : 1;
     const mirrorSign = this.p.mirrored ? -1 : 1;
     const gravitySign = this.p.gravityFlipped ? -1 : 1;
-    // Spider_AnimDesc.plist stores part positions in the same Cocos-style
-    // local coordinate space Geometry Dash uses: +Y points upward and rotation
-    // values are already clockwise degrees. Phaser screen Y points downward, so
-    // only the local Y positions need to be inverted for normal gravity. Do not
-    // negate the source rotation here, or limbs rotate the opposite way from the plist.
     const positionYSign = this.p.gravityFlipped ? 1 : -1;
     const seenTags = new Set();
 
@@ -558,11 +553,6 @@ class PlayerObject {
       if (!part) continue;
       seenTags.add(tag);
       const pos = _parseAnimPair(spriteData.position, 0, 0);
-      // GD's spider rig has the head/body and leg sprites authored with a small
-      // visual separation that is not represented well by the raw converted
-      // plist coordinates in Phaser. Keep the plist's rotation/timing intact,
-      // but bias the static local Y placement and stretch the leg X movement so
-      // the leg group reaches farther out like the reference sprite.
       const spiderLegTags = [0, 1, 4, 5];
       const isSpiderLegTag = spiderLegTags.includes(tag);
       const spiderLocalYOffset = tag === 3 ? 5 : (isSpiderLegTag ? -9 : 0);
@@ -641,17 +631,33 @@ class PlayerObject {
   _spawnSpiderTeleportEffects(oldGameY, newGameY) {
     if (this._scene?._editorPlaytestActive || !this.p.isSpider) return;
     const duration = 0.5;
-    const circleDuration = 0.22;
+    const circleDuration = 0.4;
     const teleportTint = _mixColors(0xffffff, window.mainColor, 0.42);
     const worldX = Number.isFinite(Number(this._scene?._playerWorldX)) ? Number(this._scene._playerWorldX) : 0;
     const oldWorldY = b(oldGameY);
     const newWorldY = b(newGameY);
     const midWorldY = (oldWorldY + newWorldY) * 0.5;
     const goingUpOnScreen = newWorldY < oldWorldY;
+    const oldCircle = this._scene.add.circle(worldX, oldWorldY, 30, teleportTint, 0.45);
+    oldCircle.setDepth(7.5);
+    oldCircle.setBlendMode(S);
+    oldCircle.setScale(0.85);
+    this._gameLayer?.container?.add?.(oldCircle);
+    this._spiderTeleportCircles.push(oldCircle);
+    this._scene.tweens.add({
+      targets: oldCircle,
+      scaleX: 0.03,
+      scaleY: 0.03,
+      alpha: 0,
+      duration: circleDuration * 750,
+      ease: "Cubic.easeOut",
+      onComplete: () => {
+        const idx = this._spiderTeleportCircles.indexOf(oldCircle);
+        if (idx >= 0) this._spiderTeleportCircles.splice(idx, 1);
+        if (oldCircle?.destroy) oldCircle.destroy();
+      }
+    });
 
-    // Keep the teleport burst in level/world space instead of screen space.
-    // That lets it naturally fall behind the spider as the camera continues
-    // scrolling, rather than staying glued to the player at center screen.
     const circle = this._scene.add.circle(worldX, newWorldY, 44, teleportTint, 1);
     circle.setDepth(7.55);
     circle.setBlendMode(S);
@@ -1705,7 +1711,6 @@ if (this.p.isFlying || this.p.isUfo) {
     this._streak.reset();
     this._waveTrail.stop();
     this._waveTrail.reset();
-    this._hitboxTrail = [];
     this.setSpiderVisible(false);
     if (this._spiderTeleportCircles?.length) {
       for (const circle of this._spiderTeleportCircles) if (circle?.destroy) circle.destroy();
@@ -2637,8 +2642,6 @@ _updateWaveJump() {
         this.p.isJumping = false;
       }
 
-      // Do not hold on Spider_jump_001 after teleporting; immediately resume
-      // the walk/run cycle and advance it enough to avoid a visible first-frame stall.
       this.p._spiderTeleportAnimTimer = 0;
       this._spiderAnimTimer = (this._spiderAnimTimer || 0) + 0.12;
       if (!this._scene?._editorPlaytestActive) {
