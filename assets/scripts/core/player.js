@@ -1185,7 +1185,7 @@ if (this.p.isFlying || this.p.isUfo) {
           if (layer) {
             layer.sprite.setVisible(true);
             layer.sprite.x = _0x7f0705 + _0x1b1d28;
-            layer.sprite.y = _0x1a433c + _0x185f91 + (this.p.gravityFlipped ? -15 : 0);
+            layer.sprite.y = _0x1a433c + _0x185f91 + (this.p.gravityFlipped ? -15 : 5);
             layer.sprite.rotation = this.p.mirrored ? -tiltedRotation : tiltedRotation;
             const _miniS = this.p.isMini ? 0.6 : 1;
             layer.sprite.scaleY = this.p.gravityFlipped ? -_miniS : _miniS;
@@ -1201,7 +1201,7 @@ if (this.p.isFlying || this.p.isUfo) {
           // for ufo: center the cube inside the ufo shell (same y as bird layers)
           const _cubeX = this.p.isUfo ? _0x1b1d28 : _0x562424;
           const _cubeY = this.p.isUfo
-            ? _0x185f91  // same center as the UFO shell
+  ? (_0x185f91 + (this.p.gravityFlipped ? 15 : -15))
             : (_0x3011c9 + (this.p.isMini ? (8 * _miniS) : 0) + (this.p.gravityFlipped ? (-20 * _miniS) : 0));
           playerLayerItem.sprite.x = _0x7f0705 + _cubeX;
           playerLayerItem.sprite.y = _0x1a433c + _cubeY;
