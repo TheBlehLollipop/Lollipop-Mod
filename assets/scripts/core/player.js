@@ -1185,7 +1185,7 @@ if (this.p.isFlying || this.p.isUfo) {
           if (layer) {
             layer.sprite.setVisible(true);
             layer.sprite.x = _0x7f0705 + _0x1b1d28;
-            layer.sprite.y = _0x1a433c + _0x185f91 + (this.p.gravityFlipped ? -15 : 5);
+            layer.sprite.y = _0x1a433c + _0x185f91 + (this.p.gravityFlipped ? -15 : 0);
             layer.sprite.rotation = this.p.mirrored ? -tiltedRotation : tiltedRotation;
             const _miniS = this.p.isMini ? 0.6 : 1;
             layer.sprite.scaleY = this.p.gravityFlipped ? -_miniS : _miniS;
