@@ -41,6 +41,8 @@ class PracticeMode {
       mirrored: playerState.mirrored,
       isDashing: playerState.isDashing,
       dashYVelocity: playerState.dashYVelocity,
+      robotHold: !!playerState._robotHold,
+      robotHoldTimer: playerState._robotHoldTimer || 0,
       cameraX: cameraX,
       flyCeilingY: scene._level._flyCeilingY,
       flyGroundActive: scene._level._flyGroundActive,
@@ -313,6 +315,7 @@ class GameScene extends Phaser.Scene {
     this._player2.setShipVisible(false);
     this._player2.setBallVisible(false);
     this._player2.setWaveVisible(false);
+    this._player2.setRobotVisible(false);
     this._colorManager = new ColorManager();
     this._practicedMode = new PracticeMode();
     if (this._audio == null) {
@@ -1931,12 +1934,125 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     };
 
 
+    const _selectorParseAnimPair = (value, fallbackX = 0, fallbackY = 0) => {
+      const match = String(value ?? "").match(/\{\s*([-+]?\d*\.?\d+)\s*,\s*([-+]?\d*\.?\d+)\s*\}/);
+      if (!match) return { x: fallbackX, y: fallbackY };
+      const x = parseFloat(match[1]);
+      const y = parseFloat(match[2]);
+      return {
+        x: Number.isFinite(x) ? x : fallbackX,
+        y: Number.isFinite(y) ? y : fallbackY
+      };
+    };
+
+    const _selectorVariantFrameName = (frameName, variant) => {
+      if (!frameName) return frameName;
+      if (variant === "glow") return frameName.replace(/_001\.png$/, "_glow_001.png");
+      if (variant === "overlay") return frameName.replace(/_001\.png$/, "_2_001.png");
+      if (variant === "extra") return frameName.replace(/_001\.png$/, "_extra_001.png");
+      return frameName;
+    };
+
+    const _segmentedIconConfig = {
+      spider: {
+        prop: "currentSpider",
+        prefix: "spider",
+        descKey: "Spider_AnimDesc",
+        fallbackBase: "spider_01",
+        idlePatterns: [/^Spider_idle01_001\.png$/, /^Spider_idle01_\d+\.png$/, /^Spider_idle02_\d+\.png$/, /^Spider_idle_\d+\.png$/, /^Spider_walk_\d+\.png$/],
+        defaultEntries: [
+          { tag: "0", texture: "spider_01_02_001.png" },
+          { tag: "1", texture: "spider_01_02_001.png" },
+          { tag: "2", texture: "spider_01_04_001.png" },
+          { tag: "3", texture: "spider_01_01_001.png" },
+          { tag: "4", texture: "spider_01_03_001.png" },
+          { tag: "5", texture: "spider_01_02_001.png" }
+        ]
+      },
+      robot: {
+        prop: "currentRobot",
+        prefix: "robot",
+        descKey: "Robot_AnimDesc",
+        fallbackBase: "robot_01",
+        idlePatterns: [/^Robot_idle_001\.png$/, /^Robot_idle_\d+\.png$/, /^Robot_idle01_\d+\.png$/, /^Robot_idle02_\d+\.png$/, /^Robot_run_001\.png$/, /^Robot_run_\d+\.png$/],
+        defaultEntries: [
+          { tag: "0", texture: "robot_01_03_001.png" },
+          { tag: "1", texture: "robot_01_02_001.png" },
+          { tag: "2", texture: "robot_01_04_001.png" },
+          { tag: "3", texture: "robot_01_01_001.png" },
+          { tag: "4", texture: "robot_01_03_001.png" },
+          { tag: "5", texture: "robot_01_02_001.png" },
+          { tag: "6", texture: "robot_01_04_001.png" }
+        ]
+      }
+    };
+
+    const _isSegmentedIconTab = (tab) => !!_segmentedIconConfig[tab];
+
+    const _getSegmentedAnimDesc = (tab) => {
+      const cfg = _segmentedIconConfig[tab];
+      if (!cfg) return null;
+      let data = null;
+      try { data = this.cache?.json?.get?.(cfg.descKey) || null; } catch (e) { data = null; }
+      if (!data && typeof window !== "undefined") data = window[cfg.descKey] || null;
+      return data && data.animationContainer ? data : null;
+    };
+
+    const _getSegmentedIdleFrame = (tab) => {
+      const cfg = _segmentedIconConfig[tab];
+      const desc = _getSegmentedAnimDesc(tab);
+      if (!cfg || !desc?.animationContainer) return null;
+      const keys = Object.keys(desc.animationContainer).sort((a, b) => {
+        const aa = parseInt((String(a).match(/_(\d+)\.png$/) || [0, 0])[1], 10) || 0;
+        const bb = parseInt((String(b).match(/_(\d+)\.png$/) || [0, 0])[1], 10) || 0;
+        return aa - bb;
+      });
+      for (const pattern of cfg.idlePatterns) {
+        const match = keys.find(key => pattern.test(key));
+        if (match) return desc.animationContainer[match];
+      }
+      return desc.animationContainer[keys[0]] || null;
+    };
+
+    const _replaceSegmentedBase = (tab, textureName, baseName) => {
+      const cfg = _segmentedIconConfig[tab];
+      if (!cfg) return textureName;
+      return String(textureName || "").replace(new RegExp("^" + cfg.prefix + "_\\d+"), baseName);
+    };
+
+    const _makeSegmentedIconFrames = (tab, max = 120) => {
+      const cfg = _segmentedIconConfig[tab];
+      if (!cfg) return [];
+      const desc = _getSegmentedAnimDesc(tab);
+      const entries = desc?.usedTextures
+        ? Object.values(desc.usedTextures).slice().sort((a, b) => (parseInt(a.tag || "0", 10) || 0) - (parseInt(b.tag || "0", 10) || 0))
+        : cfg.defaultEntries;
+      const frames = [];
+      for (let i = 1; i <= max; i++) {
+        const baseName = `${cfg.prefix}_${String(i).padStart(2, "0")}`;
+        const hasAnyPart = entries.some(entry => {
+          const frameName = _replaceSegmentedBase(tab, entry.texture, baseName);
+          return typeof getAtlasFrame === "function" && !!getAtlasFrame(this, frameName);
+        });
+        if (hasAnyPart) frames.push(`${baseName}_001.png`);
+      }
+      return frames.length ? frames : [`${cfg.fallbackBase}_001.png`];
+    };
+
+    window.currentSpider = window.currentSpider || localStorage.getItem("iconCurrentSpider") || "spider_01";
+    window.currentRobot = window.currentRobot || localStorage.getItem("iconCurrentRobot") || "robot_01";
+    _iconFrameSets.spider = _makeSegmentedIconFrames("spider");
+    _iconFrameSets.robot = _makeSegmentedIconFrames("robot");
+
+
     const _iconWindowProps = {
       icon: "currentPlayer",
       ship: "currentShip",
       ball: "currentBall",
       wave: "currentWave",
       ufo: "currentBird",
+      robot: "currentRobot",
+      spider: "currentSpider",
     };
 
     const _iconAtlas = {
@@ -1945,14 +2061,23 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       ball: "GJ_GameSheetIcons",
       wave: "GJ_GameSheetIcons",
       ufo: "GJ_GameSheetIcons",
+      robot: "GJ_GameSheetIcons",
+      spider: "GJ_GameSheetIcons",
     };
 
     const _tabBtnFrames = {
-      icon: { on: "gj_iconBtn_on_001.png",  off: "gj_iconBtn_off_001.png"  },
-      ship: { on: "gj_shipBtn_on_001.png",  off: "gj_shipBtn_off_001.png"  },
-      ball: { on: "gj_ballBtn_on_001.png",  off: "gj_ballBtn_off_001.png"  },
-      wave: { on: "gj_dartBtn_on_001.png",  off: "gj_dartBtn_off_001.png"  },
-      ufo:  { on: "gj_birdBtn_on_001.png",  off: "gj_birdBtn_off_001.png"  },
+      icon: { on: "gj_iconBtn_on_001.png",    off: "gj_iconBtn_off_001.png"    },
+      ship: { on: "gj_shipBtn_on_001.png",    off: "gj_shipBtn_off_001.png"    },
+      ball: { on: "gj_ballBtn_on_001.png",    off: "gj_ballBtn_off_001.png"    },
+      wave: { on: "gj_dartBtn_on_001.png",    off: "gj_dartBtn_off_001.png"    },
+      ufo:  { on: "gj_birdBtn_on_001.png",    off: "gj_birdBtn_off_001.png"    },
+      robot:{ on: "gj_robotBtn_on_001.png",   off: "gj_robotBtn_off_001.png"   },
+      spider:{ on: "gj_spiderBtn_on_001.png", off: "gj_spiderBtn_off_001.png" },
+    };
+
+    const _safeTabBtnFrame = (tab, state) => {
+      const frame = _tabBtnFrames[tab]?.[state] || _tabBtnFrames.icon[state];
+      return (typeof getAtlasFrame === "function" && getAtlasFrame(this, frame)) ? frame : _tabBtnFrames.icon[state];
     };
 
     this._openIconSelector = (startTab = "icon") => {
@@ -2061,24 +2186,15 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       const navDot9 = this.add.image(sw / 2 + navDotSpacing / 2, navDotY, "GJ_GameSheet03", "gj_navDotBtn_off_001.png").setScrollFactor(0).setDepth(104).setScale(0.75).setVisible(false);
       this._iconOverlayObjects.push(navDot1, navDot2, navDot3, navDot4, navDot5, navDot6, navDot7, navDot8, navDot9);
       const _updateNavDots = (page, tab) => {
-        const isShip = (tab || startTab) === "ship";
-        const isIcon = (tab || startTab) === "icon";
-        const maxPages = _getMaxPages(tab);
-        [navDot1, navDot2, navDot3, navDot4, navDot5, navDot6, navDot7, navDot8, navDot9].forEach(dot => dot.setVisible(false));
-        if (isShip || isIcon) {
-          const dots = [navDot1, navDot2, navDot3, navDot4, navDot5, navDot6, navDot7, navDot8, navDot9];
-          const totalDotsToShow = Math.min(maxPages, 9);
-          const totalWidth = (totalDotsToShow - 1) * navDotSpacing;
-          const startX = sw / 2 - totalWidth / 2;
-          for (let i = 0; i < totalDotsToShow; i++) {
-            dots[i].setPosition(startX + i * navDotSpacing, navDotY).setVisible(true);
-            dots[i].setTexture("GJ_GameSheet03", page === i ? "gj_navDotBtn_on_001.png" : "gj_navDotBtn_off_001.png");
-          }
-        } else {
-          navDot1.setPosition(sw / 2 - navDotSpacing / 2, navDotY).setVisible(true);
-          navDot2.setPosition(sw / 2 + navDotSpacing / 2, navDotY).setVisible(true);
-          navDot1.setTexture("GJ_GameSheet03", page === 0 ? "gj_navDotBtn_on_001.png" : "gj_navDotBtn_off_001.png");
-          navDot2.setTexture("GJ_GameSheet03", page === 1 ? "gj_navDotBtn_on_001.png" : "gj_navDotBtn_off_001.png");
+        const maxPages = Math.max(1, _getMaxPages(tab));
+        const dots = [navDot1, navDot2, navDot3, navDot4, navDot5, navDot6, navDot7, navDot8, navDot9];
+        dots.forEach(dot => dot.setVisible(false));
+        const totalDotsToShow = Math.min(maxPages, dots.length);
+        const totalWidth = (totalDotsToShow - 1) * navDotSpacing;
+        const dotStartX = sw / 2 - totalWidth / 2;
+        for (let i = 0; i < totalDotsToShow; i++) {
+          dots[i].setPosition(dotStartX + i * navDotSpacing, navDotY).setVisible(true);
+          dots[i].setTexture("GJ_GameSheet03", page === i ? "gj_navDotBtn_on_001.png" : "gj_navDotBtn_off_001.png");
         }
       };
 
@@ -2166,6 +2282,8 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
               safeSetTint(this._player._shipSpriteLayer?.sprite, color);
               safeSetTint(this._player._ballSpriteLayer?.sprite, color);
               safeSetTint(this._player._waveSpriteLayer?.sprite, color);
+              for (const layer of this._player._robotLayers || []) safeSetTint(layer?.sprite, color);
+              for (const layer of this._player._spiderLayers || []) safeSetTint(layer?.sprite, color);
               if (this._player._particleEmitter) {
                 try {
                   this._player._particleEmitter.tint = color;
@@ -2174,6 +2292,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
               }
             }
             selectedIcon.setTint(color);
+            _refreshPreview(_currentTab, _getPreviewFrame(_currentTab));
           });
           this._makeBouncyButton(b2, 1.0, () => {
             window.secondaryColor = color;
@@ -2197,6 +2316,8 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
               safeSetTint(this._player._ballOverlayLayer?.sprite, color);
               safeSetTint(this._player._waveGlowLayer?.sprite, color);
               safeSetTint(this._player._waveOverlayLayer?.sprite, color);
+              for (const layer of this._player._robotLayers || []) safeSetTint(layer?.sprite, color);
+              for (const layer of this._player._spiderLayers || []) safeSetTint(layer?.sprite, color);
               if (this._player._streak) {
                 try {
                   this._player._streak._color = color;
@@ -2205,7 +2326,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
               }
             }
             selectedIconExtra.setTint(window.secondaryColor);
-            _refreshPreview(currentTab, _getPreviewFrame(currentTab));
+            _refreshPreview(_currentTab, _getPreviewFrame(_currentTab));
           });
         })(rainbowColors[ci], btn1, btn2);
       }
@@ -2213,15 +2334,97 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       const previewY = lineY - 35;
       const selectedIconExtra = this.add.image(sw / 2, previewY, _iconAtlas[startTab], null).setScrollFactor(0).setDepth(102).setVisible(false);
       const selectedIcon = this.add.image(sw / 2, previewY, _iconAtlas[startTab], null).setScrollFactor(0).setDepth(103);
+      let selectedSegmentedPreview = null;
+
+      const _destroySegmentedPreview = () => {
+        if (selectedSegmentedPreview?.destroy) selectedSegmentedPreview.destroy(true);
+        selectedSegmentedPreview = null;
+      };
+
+      const _createSegmentedIconComposite = (tab, pseudoFrame, x, y, maxSize, depth, muted = false) => {
+        const cfg = _segmentedIconConfig[tab];
+        const idleFrame = _getSegmentedIdleFrame(tab);
+        if (!cfg || !idleFrame) return null;
+        const baseName = String(pseudoFrame || `${cfg.fallbackBase}_001.png`).replace(/_001\.png$/, "");
+        const container = this.add.container(x, y).setScrollFactor(0).setDepth(depth);
+        const parts = [];
+        for (const spriteKey of Object.keys(idleFrame)) {
+          if (!spriteKey.startsWith("sprite_")) continue;
+          const spriteData = idleFrame[spriteKey];
+          const tag = parseInt(spriteData.tag || "0", 10) || 0;
+          const pos = _selectorParseAnimPair(spriteData.position, 0, 0);
+          const sc = _selectorParseAnimPair(spriteData.scale, 1, 1);
+          const fl = _selectorParseAnimPair(spriteData.flipped, 0, 0);
+          const zValue = parseFloat(spriteData.zValue || tag || "0") || 0;
+          const rotDeg = parseFloat(spriteData.rotation || "0") || 0;
+          const sourceTexture = _replaceSegmentedBase(tab, spriteData.texture || `${cfg.fallbackBase}_01_001.png`, baseName);
+          const isSpiderLegTag = tab === "spider" && [0, 1, 4, 5].includes(tag);
+          const isRobotLegTag = tab === "robot" && [0, 2, 4, 6].includes(tag);
+          const isRobotArmTag = tab === "robot" && [1, 5].includes(tag);
+          const localYOffset = tab === "spider"
+            ? (tag === 3 ? 5 : (isSpiderLegTag ? -9 : 0))
+            : (tag === 3 ? 5 : (isRobotArmTag ? -1 : (isRobotLegTag ? -9 : 0)));
+          const localXScale = tab === "spider"
+            ? (isSpiderLegTag ? 1.8 : 1)
+            : ((isRobotLegTag || isRobotArmTag) ? 1.8 : 1);
+          const variants = [
+            { kind: "base", frame: sourceTexture, tint: muted ? 0xAFAFAF : window.mainColor, z: zValue * 0.1 },
+            { kind: "overlay", frame: _selectorVariantFrameName(sourceTexture, "overlay"), tint: muted ? 0xffffff : window.secondaryColor, z: zValue * 0.1 + 0.04 },
+            { kind: "extra", frame: _selectorVariantFrameName(sourceTexture, "extra"), tint: null, z: zValue * 0.1 + 0.08 }
+          ];
+          for (const variant of variants) {
+            if (typeof getAtlasFrame !== "function" || !getAtlasFrame(this, variant.frame)) continue;
+            const img = this.add.image(pos.x * localXScale, -(pos.y + localYOffset), "GJ_GameSheetIcons", variant.frame);
+            img.rotation = rotDeg * Math.PI / 180;
+            img.scaleX = sc.x * (fl.x ? -1 : 1);
+            img.scaleY = sc.y * (fl.y ? -1 : 1);
+            if (variant.tint !== null && variant.tint !== undefined) img.setTint(variant.tint);
+            img._selectorZ = variant.z;
+            parts.push(img);
+          }
+        }
+        parts.sort((a, b) => (a._selectorZ || 0) - (b._selectorZ || 0));
+        parts.forEach(part => container.add(part));
+        if (!parts.length) {
+          container.destroy(true);
+          return null;
+        }
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const img of parts) {
+          const w = Math.abs((img.width || 1) * (img.scaleX || 1));
+          const h = Math.abs((img.height || 1) * (img.scaleY || 1));
+          minX = Math.min(minX, img.x - w / 2);
+          maxX = Math.max(maxX, img.x + w / 2);
+          minY = Math.min(minY, img.y - h / 2);
+          maxY = Math.max(maxY, img.y + h / 2);
+        }
+        const width = Math.max(1, maxX - minX);
+        const height = Math.max(1, maxY - minY);
+        const fitScale = muted ? (maxSize / height) : Math.min(maxSize / width, maxSize / height);
+        container.setScale(fitScale);
+        container._selectorBaseScale = fitScale;
+        return container;
+      };
 
       const _getPreviewFrame = (tab) => {
         const prop   = _iconWindowProps[tab];
-        const frames = _iconFrameSets[tab];
-        const match  = frames.find(f => f.replace("_001.png", "") === window[prop]);
+        const frames = _iconFrameSets[tab] || [];
+        const currentValue = String(window[prop] || "");
+        const match  = frames.find(f => f.replace("_001.png", "") === currentValue);
         return match || frames[0];
       };
 
       const _refreshPreview = (tab, frame) => {
+        if (_isSegmentedIconTab(tab)) {
+          _destroySegmentedPreview();
+          selectedIcon.setVisible(false);
+          selectedIconExtra.setVisible(false);
+          selectedSegmentedPreview = _createSegmentedIconComposite(tab, frame, sw / 2, previewY, 82, 103, false);
+          if (selectedSegmentedPreview) this._iconOverlayObjects.push(selectedSegmentedPreview);
+          return;
+        }
+        _destroySegmentedPreview();
+        selectedIcon.setVisible(true);
         selectedIcon.setTexture(_iconAtlas[tab], frame);
         const s = Math.min(80 / (selectedIcon.width || 80), 80 / (selectedIcon.height || 80)) * 0.85;
         selectedIcon.setScale(s);
@@ -2239,25 +2442,27 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       this._iconOverlayObjects.push(selectedIconExtra, selectedIcon);
 
       const tabBtnY = containerY - 40;
-      const tabKeys = ["icon", "ship", "ball", "ufo", "wave"];
-      const tabSpacing = 65;
+      const tabKeys = ["icon", "ship", "ball", "ufo", "wave", "robot", "spider"];
+      const tabSpacing = 58;
       const tabOffsets = {
-        icon: -tabSpacing * 2,
-        ship: -tabSpacing,
-        ball: 0,
-        ufo: tabSpacing,
-        wave: tabSpacing * 2,
+        icon: -tabSpacing * 3,
+        ship: -tabSpacing * 2,
+        ball: -tabSpacing,
+        ufo: 0,
+        wave: tabSpacing,
+        robot: tabSpacing * 2,
+        spider: tabSpacing * 3,
       };
-      const tabRotations = { icon: -Math.PI/2, ship: 0, ball: -Math.PI/2, ufo: Math.PI/2, wave: Math.PI/2 };
-      const tabFlipXStates = { icon: true, ship: false, ball: true, ufo: false, wave: false };
-      const tabFlipYStates = { icon: false, ship: false, ball: false, ufo: true, wave: true };
+      const tabRotations = { icon: -Math.PI/2, ship: 0, ball: -Math.PI/2, ufo: Math.PI/2, wave: Math.PI/2, robot: 0, spider: 0 };
+      const tabFlipXStates = { icon: true, ship: false, ball: true, ufo: false, wave: false, robot: false, spider: false };
+      const tabFlipYStates = { icon: false, ship: false, ball: false, ufo: true, wave: true, robot: false, spider: false };
       const tabBtnSprites  = {};
 
       const _switchTab = (tab) => {
         for (const k of tabKeys) {
           if (tabBtnSprites[k]) {
             tabBtnSprites[k].setTexture("GJ_GameSheet03",
-              k === tab ? _tabBtnFrames[k].on : _tabBtnFrames[k].off);
+              _safeTabBtnFrame(k, k === tab ? "on" : "off"));
           }
         }
         _refreshPreview(tab, _getPreviewFrame(tab));
@@ -2267,7 +2472,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       tabKeys.forEach((tab, i) => {
         const isActive = tab === startTab;
         const btn = this.add.image(sw / 2 + tabOffsets[tab], tabBtnY, "GJ_GameSheet03",
-            isActive ? _tabBtnFrames[tab].on : _tabBtnFrames[tab].off)
+            _safeTabBtnFrame(tab, isActive ? "on" : "off"))
           .setScrollFactor(0).setDepth(104).setScale(0.75)
           .setRotation(tabRotations[tab]).setFlipX(tabFlipXStates[tab]).setFlipY(tabFlipYStates[tab])
           .setInteractive();
@@ -2327,17 +2532,31 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
           const ix  = startX + col * (iconSize + padding);
           const iy  = startY + row * (iconSize + padding);
           const hitRect = this.add.rectangle(ix, iy, iconSize, iconSize, 0x000000, 0).setScrollFactor(0).setDepth(104).setInteractive();
-          const iconImg = this.add.image(ix, iy, atlas, frame).setScrollFactor(0).setDepth(103).setTint(0xAFAFAF);
-          const origScale = Math.min(
-            iconSize / (iconImg.width  || iconSize),
-            iconSize / (iconImg.height || iconSize)
-          ) * 0.7;
-          iconImg.setScale(origScale);
-          const extraFrame = frame.replace("_001.png", "_2_001.png");
-          const extraInfo = getAtlasFrame(this, extraFrame);
-          const extraImg = extraInfo
-            ? this.add.image(ix, iy, extraInfo.atlas, extraInfo.frame).setScrollFactor(0).setDepth(102).setScale(origScale)
-            : null;
+          let iconImg;
+          let extraImg = null;
+          let origScale;
+          if (_isSegmentedIconTab(tab)) {
+            iconImg = _createSegmentedIconComposite(tab, frame, ix, iy, iconSize * 0.76, 103, true);
+            if (!iconImg) {
+              iconImg = this.add.image(ix, iy, "GJ_GameSheetIcons", frame).setScrollFactor(0).setDepth(103).setTint(0xAFAFAF);
+              origScale = Math.min(iconSize / (iconImg.width || iconSize), iconSize / (iconImg.height || iconSize)) * 0.7;
+              iconImg.setScale(origScale);
+            } else {
+              origScale = iconImg._selectorBaseScale || iconImg.scaleX || 1;
+            }
+          } else {
+            iconImg = this.add.image(ix, iy, atlas, frame).setScrollFactor(0).setDepth(103).setTint(0xAFAFAF);
+            origScale = Math.min(
+              iconSize / (iconImg.width  || iconSize),
+              iconSize / (iconImg.height || iconSize)
+            ) * 0.7;
+            iconImg.setScale(origScale);
+            const extraFrame = frame.replace("_001.png", "_2_001.png");
+            const extraInfo = getAtlasFrame(this, extraFrame);
+            extraImg = extraInfo
+              ? this.add.image(ix, iy, extraInfo.atlas, extraInfo.frame).setScrollFactor(0).setDepth(102).setScale(origScale)
+              : null;
+          }
           if (extraImg) this._iconGridObjects.push(extraImg);
           this._iconGridObjects.push(iconImg, hitRect);
           if (frame.replace("_001.png", "") === window[prop]) {
@@ -2469,7 +2688,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         for (const k of tabKeys) {
           if (tabBtnSprites[k]) {
             tabBtnSprites[k].setTexture("GJ_GameSheet03",
-              k === tab ? _tabBtnFrames[k].on : _tabBtnFrames[k].off);
+              _safeTabBtnFrame(k, k === tab ? "on" : "off"));
           }
         }
         _refreshPreview(tab, _getPreviewFrame(tab));
@@ -5263,6 +5482,8 @@ _buildSettingsPopup() {
       this._player.enterUfoMode();
     } else if (gamemode == 4) {
       this._player.enterWaveMode();
+    } else if (gamemode == 5) {
+      this._player.enterRobotMode();
     } else if (gamemode == 6) {
       this._player.enterSpiderMode();
     }
@@ -5501,6 +5722,7 @@ _buildSettingsPopup() {
     this._player2.setShipVisible(false);
     this._player2.setBallVisible(false);
     this._player2.setWaveVisible(false);
+    this._player2.setRobotVisible(false);
     this._glitterEmitter.stop();
     let speedKey = parseInt(window.settingsMap["kA4"] || "0");
     if (speedKey == 0) {
@@ -5548,6 +5770,8 @@ _buildSettingsPopup() {
         this._player.enterUfoMode();
       } else if (pos.gameMode == 4) {
         this._player.enterWaveMode();
+      } else if (pos.gameMode == 5) {
+        this._player.enterRobotMode();
       } else if (pos.gameMode == 6) {
         this._player.enterSpiderMode();
       }
@@ -5592,6 +5816,8 @@ _buildSettingsPopup() {
         this._player.enterUfoMode();
       } else if (gamemode == 4) {
         this._player.enterWaveMode();
+      } else if (gamemode == 5) {
+        this._player.enterRobotMode();
       } else if (gamemode == 6) {
         this._player.enterSpiderMode();
       }
@@ -5662,12 +5888,15 @@ _buildSettingsPopup() {
     this._state.mirrored = checkpoint.mirrored;
     this._state.isDashing = checkpoint.isDashing;
     this._state.dashYVelocity = checkpoint.dashYVelocity;
+    this._state._robotHold = !!checkpoint.robotHold;
+    this._state._robotHoldTimer = checkpoint.robotHoldTimer || 0;
     this._player.reset();
     this._state.isFlying = false;
     this._state.isBall = false;
     this._state.isWave = false;
     this._state.isUfo = false;
     this._state.isSpider = false;
+    this._state.isRobot = false;
     this._state.isBird = false;
     if (checkpoint.isFlying) {
       this._player.enterShipMode(null, true); // dont mess with y velocity if ur loading a checkpoint
@@ -5677,6 +5906,8 @@ _buildSettingsPopup() {
       this._player.enterUfoMode(null, true); // dont mess with y velocity if ur loading a checkpoint
     } else if (checkpoint.isWave) {
       this._player.enterWaveMode();
+    } else if (checkpoint.isRobot) {
+      this._player.enterRobotMode();
     } else if (checkpoint.isSpider) {
       this._player.enterSpiderMode();
     } else if (checkpoint.isBird) {
@@ -5695,7 +5926,10 @@ _buildSettingsPopup() {
     this._state.isWave = checkpoint.isWave;
     this._state.isUfo = checkpoint.isUfo;
     this._state.isSpider = checkpoint.isSpider;
+    this._state.isRobot = checkpoint.isRobot;
     this._state.isBird = checkpoint.isBird;
+    this._state._robotHold = !!checkpoint.robotHold;
+    this._state._robotHoldTimer = checkpoint.robotHoldTimer || 0;
     this._state.ignorePortals = true;
     this._state2.ignorePortals = true;
     this._level.resetGroundTiles(this._cameraX);
@@ -6491,6 +6725,8 @@ _applyMirrorEffect() {
       this._player2.enterWaveMode();
     } else if (this._state.isUfo) {
       this._player2.enterUfoMode();
+    } else if (this._state.isRobot) {
+      this._player2.enterRobotMode();
     } else if (this._state.isSpider) {
       this._player2.enterSpiderMode();
     } else {
@@ -6506,6 +6742,7 @@ _applyMirrorEffect() {
     this._player2.setShipVisible(false);
     this._player2.setBallVisible(false);
     this._player2.setWaveVisible(false);
+    this._player2.setRobotVisible(false);
   }
   _showNewBest() {
     let _0x9f2437 = screenWidth / 2;

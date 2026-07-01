@@ -36,6 +36,8 @@ class PlayerState {
     this.dashYVelocity = 0;
     this.isDual = false;
     this.ignorePortals = false;
+    this._robotHold = false;
+    this._robotHoldTimer = 0;
   }
 }
 
@@ -747,6 +749,259 @@ class PlayerObject {
       }
     }
   }
+  _getRobotIconBase() {
+    const rawBase = String(window.currentRobot || "robot_01");
+    const match = rawBase.match(/^robot_\d+/);
+    return match ? match[0] : "robot_01";
+  }
+  _resolveRobotIconFrame(frameName) {
+    const base = this._getRobotIconBase();
+    const resolved = String(frameName || "").replace(/^robot_\d+/, base);
+    if (_textureHasFrameSafe(this._scene, "GJ_GameSheetIcons", resolved)) return resolved;
+    if (_textureHasFrameSafe(this._scene, "GJ_GameSheetIcons", frameName)) return frameName;
+    return resolved;
+  }
+  _getRobotAnimDesc() {
+    if (this._robotAnimDesc !== undefined) return this._robotAnimDesc;
+    let data = null;
+    try {
+      data = this._scene?.cache?.json?.get?.("Robot_AnimDesc") || null;
+    } catch (err) {
+      data = null;
+    }
+    if (!data && typeof window !== "undefined") data = window.Robot_AnimDesc || null;
+    if (!data || !data.animationContainer) {
+      this._robotFrameGroups = {};
+      return null;
+    }
+    this._robotAnimDesc = data;
+    this._robotFrameGroups = {};
+    const frameKeys = Object.keys(data.animationContainer);
+    const sortBySuffix = (a, b) => {
+      const aa = parseInt((String(a).match(/_(\d+)\.png$/) || [0, 0])[1], 10) || 0;
+      const bb = parseInt((String(b).match(/_(\d+)\.png$/) || [0, 0])[1], 10) || 0;
+      return aa - bb;
+    };
+    this._robotFrameGroups.run = frameKeys.filter(k => /^Robot_run_\d+\.png$/.test(k)).sort(sortBySuffix);
+    this._robotFrameGroups.run2 = frameKeys.filter(k => /^Robot_run2_\d+\.png$/.test(k)).sort(sortBySuffix);
+    this._robotFrameGroups.run3 = frameKeys.filter(k => /^Robot_run3_\d+\.png$/.test(k)).sort(sortBySuffix);
+    this._robotFrameGroups.skip = frameKeys.filter(k => /^Robot_skip_\d+\.png$/.test(k)).sort(sortBySuffix);
+    this._robotFrameGroups.jumpStart = frameKeys.filter(k => /^Robot_jump_start_\d+\.png$/.test(k)).sort(sortBySuffix);
+    this._robotFrameGroups.jumpLoop = frameKeys.filter(k => /^Robot_jump_loop_\d+\.png$/.test(k)).sort(sortBySuffix);
+    this._robotFrameGroups.fallStart = frameKeys.filter(k => /^Robot_fall_start_\d+\.png$/.test(k)).sort(sortBySuffix);
+    this._robotFrameGroups.fallLoop = frameKeys.filter(k => /^Robot_fall_loop_\d+\.png$/.test(k)).sort(sortBySuffix);
+    this._robotFrameGroups.idle = frameKeys.filter(k => /^Robot_idle_\d+\.png$/.test(k)).sort(sortBySuffix);
+    this._robotFrameGroups.idle1 = frameKeys.filter(k => /^Robot_idle01_\d+\.png$/.test(k)).sort(sortBySuffix);
+    this._robotFrameGroups.idle2 = frameKeys.filter(k => /^Robot_idle02_\d+\.png$/.test(k)).sort(sortBySuffix);
+    return this._robotAnimDesc;
+  }
+  _createRobotLayerSet(scene, x, y, textureName, tag) {
+    const resolvedBase = this._resolveRobotIconFrame(textureName);
+    const layers = [];
+    const makeLayer = (variant, tint, depthOffset) => {
+      const frame = this._resolveRobotIconFrame(_spiderVariantFrameName(resolvedBase, variant));
+      const layer = _makeAtlasLayer(scene, x, y, "GJ_GameSheetIcons", frame, 8 + tag * 0.1 + depthOffset, false, tint, variant);
+      if (layer) layers.push(layer);
+      return layer;
+    };
+    const glow = makeLayer("glow", window.secondaryColor, -0.04);
+    const base = makeLayer("base", window.mainColor, 0);
+    const overlay = makeLayer("overlay", window.secondaryColor, 0.04);
+    const extra = makeLayer("extra", null, 0.08);
+    return { tag, textureName, layers, glow, base, overlay, extra };
+  }
+  _initRobotAnimationParts(scene, x, y) {
+    this._robotAnimTimer = 0;
+    this._robotAnimState = "run";
+    this._robotAnimDesc = undefined;
+    this._robotPartsByTag = {};
+    this._robotLayers = [];
+    const desc = this._getRobotAnimDesc();
+    const usedTextures = desc?.usedTextures || null;
+    let entries = [];
+    if (usedTextures) {
+      entries = Object.values(usedTextures).slice().sort((a, b) => (parseInt(a.tag || "0", 10) || 0) - (parseInt(b.tag || "0", 10) || 0));
+    }
+    if (!entries.length) {
+      entries = [
+        { tag: "0", texture: "robot_01_03_001.png" },
+        { tag: "1", texture: "robot_01_02_001.png" },
+        { tag: "2", texture: "robot_01_04_001.png" },
+        { tag: "3", texture: "robot_01_01_001.png" },
+        { tag: "4", texture: "robot_01_03_001.png" },
+        { tag: "5", texture: "robot_01_02_001.png" },
+        { tag: "6", texture: "robot_01_04_001.png" }
+      ];
+    }
+    for (const entry of entries) {
+      const tag = parseInt(entry.tag || "0", 10) || 0;
+      const part = this._createRobotLayerSet(scene, x, y, entry.texture, tag);
+      if (!part.layers.length) continue;
+      this._robotPartsByTag[tag] = part;
+      this._robotLayers.push(...part.layers);
+    }
+  }
+  _selectRobotFrameKey(dt) {
+    const desc = this._getRobotAnimDesc();
+    if (!desc?.animationContainer) return null;
+    const _speedPortalRef = (typeof SpeedPortal !== "undefined" && SpeedPortal) ? SpeedPortal : null;
+    const _oneSpeed = Number(_speedPortalRef?.ONE_TIMES ?? 11.540004) || 11.540004;
+    const _halfSpeed = Number(_speedPortalRef?.HALF ?? (_oneSpeed * 0.8)) || (_oneSpeed * 0.8);
+    const _fourSpeed = Number(_speedPortalRef?.FOUR_TIMES ?? (_oneSpeed * 1.85)) || (_oneSpeed * 1.85);
+    const _activeSpeed = Number.isFinite(Number(playerSpeed)) ? Number(playerSpeed) : _oneSpeed;
+    let robotAnimationSpeed = 1.75;
+    if (_activeSpeed >= _oneSpeed) {
+      const _fastT = Math.max(0, Math.min(1, (_activeSpeed - _oneSpeed) / Math.max(1e-6, _fourSpeed - _oneSpeed)));
+      robotAnimationSpeed = 1.75 + _fastT * 0.35;
+    } else {
+      const _slowT = Math.max(0, Math.min(1, (_oneSpeed - _activeSpeed) / Math.max(1e-6, _oneSpeed - _halfSpeed)));
+      robotAnimationSpeed = 1.75 - _slowT * 0.15;
+    }
+    robotAnimationSpeed *= 1.2;
+
+    const grounded = this.p.onGround || this.p.onCeiling;
+    const goingUp = this.p.gravityFlipped ? this.p.yVelocity < 0 : this.p.yVelocity > 0;
+    const nextState = grounded ? "run" : (goingUp ? "jump" : "fall");
+    if (this._robotAnimState !== nextState) {
+      this._robotAnimState = nextState;
+      this._robotAnimTimer = 0;
+    }
+    this._robotAnimTimer = (this._robotAnimTimer || 0) + Math.max(0, dt || 0) * robotAnimationSpeed;
+
+    const pickFromStartThenLoop = (startGroup, loopGroup, fps) => {
+      const start = startGroup || [];
+      const loop = loopGroup || [];
+      if (start.length) {
+        const startDuration = start.length / fps;
+        if (this._robotAnimTimer < startDuration || !loop.length) {
+          return start[Math.min(start.length - 1, Math.floor(this._robotAnimTimer * fps))];
+        }
+        const loopTime = this._robotAnimTimer - startDuration;
+        return loop[Math.floor(loopTime * fps) % loop.length];
+      }
+      if (loop.length) return loop[Math.floor(this._robotAnimTimer * fps) % loop.length];
+      return null;
+    };
+
+    if (this.p.isDashing) {
+      const group = this._robotFrameGroups.fallLoop;
+      return group[Math.floor(this._robotAnimTimer * 16) % group.length];
+    }
+    if (nextState === "run") {
+      const group = this._robotFrameGroups?.run?.length ? this._robotFrameGroups.run : (this._robotFrameGroups?.idle1 || this._robotFrameGroups?.idle || []);
+      if (group?.length) return group[Math.floor(this._robotAnimTimer * 16) % group.length];
+    } else if (nextState === "jump") {
+      const frame = pickFromStartThenLoop(this._robotFrameGroups?.jumpStart, this._robotFrameGroups?.jumpLoop, 15);
+      if (frame) return frame;
+    } else {
+      const frame = pickFromStartThenLoop(this._robotFrameGroups?.fallStart, this._robotFrameGroups?.fallLoop, 15);
+      if (frame) return frame;
+    }
+    return desc.animationContainer["Robot_idle_001.png"] ? "Robot_idle_001.png" : null;
+  }
+  _applyRobotFrame(frameKey, baseX, baseY, dt) {
+    const desc = this._getRobotAnimDesc();
+    const frame = frameKey && desc?.animationContainer ? desc.animationContainer[frameKey] : null;
+    if (!frame || !this._robotPartsByTag) return false;
+    const miniScale = this.p.isMini ? 0.6 : 1;
+    const mirrorSign = this.p.mirrored ? -1 : 1;
+    const gravitySign = this.p.gravityFlipped ? -1 : 1;
+    const positionYSign = this.p.gravityFlipped ? 1 : -1;
+    const seenTags = new Set();
+
+    for (const spriteKey of Object.keys(frame)) {
+      if (!spriteKey.startsWith("sprite_")) continue;
+      const spriteData = frame[spriteKey];
+      const tag = parseInt(spriteData.tag || "0", 10) || 0;
+      const part = this._robotPartsByTag[tag];
+      if (!part) continue;
+      seenTags.add(tag);
+      const pos = _parseAnimPair(spriteData.position, 0, 0);
+      const robotLegTags = [0, 2, 4, 6];
+      const robotArmTags = [1, 5];
+      const isRobotLegTag = robotLegTags.includes(tag);
+      const isRobotArmTag = robotArmTags.includes(tag);
+      const robotLocalYOffset = tag === 3 ? 5 : (isRobotArmTag ? -1 : (isRobotLegTag ? -9 : 0));
+      const robotLocalXScale = (isRobotLegTag || isRobotArmTag) ? 1.8 : 1;
+      const sc = _parseAnimPair(spriteData.scale, 1, 1);
+      const fl = _parseAnimPair(spriteData.flipped, 0, 0);
+      const zValue = parseFloat(spriteData.zValue || tag || "0") || 0;
+      const rotDeg = parseFloat(spriteData.rotation || "0") || 0;
+      const baseTexture = this._resolveRobotIconFrame(spriteData.texture || part.textureName);
+      const resolvedFrames = {
+        glow: this._resolveRobotIconFrame(_spiderVariantFrameName(baseTexture, "glow")),
+        base: this._resolveRobotIconFrame(baseTexture),
+        overlay: this._resolveRobotIconFrame(_spiderVariantFrameName(baseTexture, "overlay")),
+        extra: this._resolveRobotIconFrame(_spiderVariantFrameName(baseTexture, "extra"))
+      };
+      const commonX = baseX + pos.x * robotLocalXScale * mirrorSign * miniScale;
+      const commonY = baseY + (pos.y + robotLocalYOffset) * positionYSign * miniScale;
+      let commonRot = rotDeg * Math.PI / 180;
+      if (this.p.mirrored) commonRot = -commonRot;
+      if (this.p.gravityFlipped) commonRot = -commonRot;
+      const baseScaleX = sc.x * (fl.x ? -1 : 1) * mirrorSign * miniScale;
+      const baseScaleY = sc.y * (fl.y ? -1 : 1) * gravitySign * miniScale;
+
+      const applyLayer = (layer, kind, depthOffset) => {
+        if (!layer?.sprite) return;
+        const frameName = resolvedFrames[kind];
+        if (!_textureHasFrameSafe(this._scene, "GJ_GameSheetIcons", frameName)) {
+          layer.sprite.setVisible(false);
+          return;
+        }
+        layer.sprite.setTexture("GJ_GameSheetIcons", frameName);
+        layer.sprite.x = commonX;
+        layer.sprite.y = commonY;
+        layer.sprite.rotation = commonRot;
+        layer.sprite.scaleX = baseScaleX;
+        layer.sprite.scaleY = baseScaleY;
+        layer.sprite.setDepth(8 + zValue * 0.1 + depthOffset);
+
+        const normalTint = kind === "base"
+          ? window.mainColor
+          : (kind === "overlay" || kind === "glow")
+            ? window.secondaryColor
+            : null;
+        if (normalTint !== null && normalTint !== undefined) {
+          layer.sprite.setTint(normalTint);
+        } else if (typeof layer.sprite.clearTint === "function") {
+          layer.sprite.clearTint();
+        }
+        layer.sprite.setVisible(kind === "glow" ? !!layer.sprite._glowEnabled : true);
+      };
+      applyLayer(part.glow, "glow", -0.04);
+      applyLayer(part.base, "base", 0);
+      applyLayer(part.overlay, "overlay", 0.04);
+      applyLayer(part.extra, "extra", 0.08);
+    }
+
+    for (const tag of Object.keys(this._robotPartsByTag)) {
+      if (seenTags.has(parseInt(tag, 10))) continue;
+      const part = this._robotPartsByTag[tag];
+      for (const layer of part.layers) layer?.sprite?.setVisible(false);
+    }
+    return true;
+  }
+  _syncRobotAnimation(baseX, baseY, dt) {
+    if (this.p.isDead || !this.p.isRobot || !this._robotLayers?.length) {
+      this.setRobotVisible(false);
+      return;
+    }
+    const frameKey = this._selectRobotFrameKey(dt);
+    const applied = this._applyRobotFrame(frameKey, baseX, baseY, dt);
+    if (!applied) {
+      for (const layer of this._robotLayers) {
+        if (!layer?.sprite) continue;
+        layer.sprite.x = baseX;
+        layer.sprite.y = baseY;
+        layer.sprite.rotation = this.p.mirrored ? -this._rotation : this._rotation;
+        const miniScale = this.p.isMini ? 0.6 : 1;
+        layer.sprite.scaleX = (this.p.mirrored ? -miniScale : miniScale);
+        layer.sprite.scaleY = (this.p.gravityFlipped ? -miniScale : miniScale);
+        layer.sprite.setVisible(layer.kind === "glow" ? !!layer.sprite._glowEnabled : true);
+      }
+    }
+  }
 
   _createSprites() {
     const spriteY = this._scene;
@@ -842,6 +1097,11 @@ class PlayerObject {
     this._spiderGlowLayer = this._spiderLayers.find(layer => layer.kind === "glow") || null;
     this._spiderOverlayLayer = this._spiderLayers.find(layer => layer.kind === "overlay") || null;
     this._spiderExtraLayer = this._spiderLayers.find(layer => layer.kind === "extra") || null;
+    this._initRobotAnimationParts(spriteY, particleY, spriteX);
+    this._robotSpriteLayer = this._robotLayers.find(layer => layer.kind === "base") || null;
+    this._robotGlowLayer = this._robotLayers.find(layer => layer.kind === "glow") || null;
+    this._robotOverlayLayer = this._robotLayers.find(layer => layer.kind === "overlay") || null;
+    this._robotExtraLayer = this._robotLayers.find(layer => layer.kind === "extra") || null;
     this._birdSpriteLayer = ds(spriteY, particleY, spriteX, `${window.currentBird}_001.png`, 10, false);
     this._birdGlowLayer = ds(spriteY, particleY, spriteX, `${window.currentBird}_2_001.png`, 9, false);
     this._birdOverlayLayer = ds(spriteY, particleY, spriteX, `${window.currentBird}_3_001.png`, 8, false);
@@ -858,7 +1118,7 @@ class PlayerObject {
     }
     this._birdLayers = [this._birdSpriteLayer, this._birdGlowLayer, this._birdOverlayLayer, this._birdExtraLayer].filter(x => !!x);
 
-    this._allLayers = [...this._playerLayers, ...this._ballLayers, ...this._waveLayers, ...this._shipLayers, ...this._spiderLayers, ...this._birdLayers];
+    this._allLayers = [...this._playerLayers, ...this._ballLayers, ...this._waveLayers, ...this._shipLayers, ...this._spiderLayers, ...this._robotLayers, ...this._birdLayers];
     
     this._dashAnimationSprite = spriteY.add.image(particleY, spriteX, "GJ_GameSheetGlow", "playerDash2_001.png");
     this._dashAnimationSprite.setDepth(7);
@@ -1228,6 +1488,35 @@ class PlayerObject {
       }
     }
   }
+  setRobotVisible(v) {
+    for (const layer of (this._robotLayers || [])) {
+      if (!layer?.sprite) continue;
+      if (layer.kind === "glow") {
+        layer.sprite.setVisible(v && !!layer.sprite._glowEnabled);
+      } else {
+        layer.sprite.setVisible(v);
+      }
+    }
+  }
+  _primeRobotAnimationFrame(dt = 1 / 30) {
+    if (!this.p.isRobot || this.p.isDead || !this._robotLayers?.length) return;
+    const screenX = Number.isFinite(this._lastScreenX) ? this._lastScreenX : centerX;
+    const screenY = Number.isFinite(this._lastScreenY) ? this._lastScreenY : b(this.p.y) + (this._scene?._cameraY || 0);
+    const frameKey = this._selectRobotFrameKey(dt);
+    const applied = this._applyRobotFrame(frameKey, screenX, screenY, dt);
+    if (!applied) {
+      const miniScale = this.p.isMini ? 0.6 : 1;
+      for (const layer of (this._robotLayers || [])) {
+        if (!layer?.sprite) continue;
+        layer.sprite.x = screenX;
+        layer.sprite.y = screenY;
+        layer.sprite.rotation = this.p.mirrored ? -this._rotation : this._rotation;
+        layer.sprite.scaleX = this.p.mirrored ? -miniScale : miniScale;
+        layer.sprite.scaleY = this.p.gravityFlipped ? -miniScale : miniScale;
+      }
+    }
+    this.setRobotVisible(true);
+  }
   _primeSpiderAnimationFrame(dt = 1 / 30) {
     if (!this.p.isSpider || this.p.isDead || !this._spiderLayers?.length) return;
     const screenX = Number.isFinite(this._lastScreenX) ? this._lastScreenX : centerX;
@@ -1375,9 +1664,21 @@ if (this.p.isFlying || this.p.isUfo) {
       this.setShipVisible(false);
       this.setWaveVisible(false);
       this.setBirdVisible(false);
+      this.setRobotVisible(false);
       this._syncSpiderAnimation(_0x7f0705, _0x1a433c, _0x3afedf);
     } else {
       this.setSpiderVisible(false);
+    }
+    if (this.p.isRobot && !this.p.isDead) {
+      this.setCubeVisible(false);
+      this.setBallVisible(false);
+      this.setShipVisible(false);
+      this.setWaveVisible(false);
+      this.setBirdVisible(false);
+      this.setSpiderVisible(false);
+      this._syncRobotAnimation(_0x7f0705, _0x1a433c, _0x3afedf);
+    } else {
+      this.setRobotVisible(false);
     }
     this._updateSpiderTeleportEffects(_0x3afedf);
     this._updateParticles(cameraX, cameraY, _0x3afedf);
@@ -1404,6 +1705,7 @@ if (this.p.isFlying || this.p.isUfo) {
       return;
     }
     this.exitSpiderMode();
+    this.exitRobotMode();
     this.exitBallMode();
     this.exitWaveMode();
     this.p.isFlying = true;
@@ -1470,6 +1772,7 @@ if (this.p.isFlying || this.p.isUfo) {
       return;
     }
     this.exitSpiderMode();
+    this.exitRobotMode();
     this.exitWaveMode();
     this.p.isBall = true;
     this.p.onGround = false;
@@ -1506,6 +1809,7 @@ if (this.p.isFlying || this.p.isUfo) {
       return;
     }
     this.exitSpiderMode();
+    this.exitRobotMode();
     this.exitShipMode();
     this.exitBallMode();
     this.p.isWave = true;
@@ -1555,6 +1859,7 @@ if (this.p.isFlying || this.p.isUfo) {
   enterSpiderMode(portal = null) {
     if (this.p.isSpider) return;
     this.exitShipMode();
+    this.exitRobotMode();
     this.exitBallMode();
     this.exitWaveMode();
     const enteredFromPortal = !!portal;
@@ -1603,9 +1908,53 @@ if (this.p.isFlying || this.p.isUfo) {
     this.setCubeVisible(true);
     this._gameLayer.setFlyMode(false, 0);
   }
+  enterRobotMode(portal = null) {
+    if (this.p.isRobot) return;
+    this.exitShipMode();
+    this.exitBallMode();
+    this.exitWaveMode();
+    this.exitSpiderMode();
+    this.exitUfoMode();
+    const enteredFromPortal = !!portal;
+    this.p.isRobot = true;
+    this.p._robotHold = false;
+    this.p._robotHoldTimer = 0;
+    this.p.onGround = !enteredFromPortal;
+    this.p.onCeiling = !enteredFromPortal && !!this.p.gravityFlipped;
+    this.p.canJump = !enteredFromPortal;
+    this.p.isJumping = false;
+    this.stopRotation();
+    this._rotation = 0;
+    this._robotAnimState = "run";
+    this._robotAnimTimer = (this._robotAnimTimer || 0) + 0.12;
+    this.setCubeVisible(false);
+    this.setBallVisible(false);
+    this.setShipVisible(false);
+    this.setWaveVisible(false);
+    this.setSpiderVisible(false);
+    this.setBirdVisible(false);
+    this.setRobotVisible(true);
+    this._gameLayer.setFlyMode(false, 0);
+    this._primeRobotAnimationFrame(1 / 30);
+  }
+  exitRobotMode() {
+    if (!this.p.isRobot) return;
+    this.p.isRobot = false;
+    this.p._robotHold = false;
+    this.p._robotHoldTimer = 0;
+    this.p.onGround = false;
+    this.p.canJump = false;
+    this.p.isJumping = false;
+    this.stopRotation();
+    this._rotation = 0;
+    this.setRobotVisible(false);
+    this.setCubeVisible(!this.p.isBall && !this.p.isFlying && !this.p.isWave && !this.p.isUfo && !this.p.isSpider);
+    this._gameLayer.setFlyMode(false, 0);
+  }
   enterUfoMode(_portal = null, fromCheckpoint = false) {
     if (this.p.isUfo) return;
     this.exitSpiderMode();
+    this.exitRobotMode();
     this.exitBallMode();
     this.exitWaveMode();
     this.exitShipMode();
@@ -1724,6 +2073,7 @@ if (this.p.isFlying || this.p.isUfo) {
       this.setWaveVisible(false);
       this.setBirdVisible(false);
       this.setSpiderVisible(false);
+      this.setRobotVisible(false);
       if (this._dashAnimationSprite) this._dashAnimationSprite.setVisible(false);
       return;
     }
@@ -1791,6 +2141,7 @@ if (this.p.isFlying || this.p.isUfo) {
     this.setWaveVisible(false);
     this.setBirdVisible(false);
     this.setSpiderVisible(false);
+    this.setRobotVisible(false);
   }
   _createExplosionPieces(_0x49be85, _0x13b56e, _0x349a09) {
     const _0x44acaf = this._scene;
@@ -1803,7 +2154,7 @@ if (this.p.isFlying || this.p.isUfo) {
       height: sliderBar,
       add: false
     });
-    const _0x5c571a = [this._playerGlowLayer, this._playerOverlayLayer, this._ballGlowLayer, this._ballOverlayLayer, this._waveGlowLayer, this._waveOverlayLayer, this._waveExtraLayer, this._shipGlowLayer, this._shipOverlayLayer, this._spiderGlowLayer, this._spiderOverlayLayer, this._playerSpriteLayer, this._playerExtraLayer, this._ballSpriteLayer, this._waveSpriteLayer, this._shipSpriteLayer, this._shipExtraLayer, this._spiderSpriteLayer, this._spiderExtraLayer, this._birdSpriteLayer, this._birdGlowLayer, this._birdOverlayLayer, this._birdExtraLayer];
+    const _0x5c571a = [this._playerGlowLayer, this._playerOverlayLayer, this._ballGlowLayer, this._ballOverlayLayer, this._waveGlowLayer, this._waveOverlayLayer, this._waveExtraLayer, this._shipGlowLayer, this._shipOverlayLayer, this._spiderGlowLayer, this._spiderOverlayLayer, this._robotGlowLayer, this._robotOverlayLayer, this._playerSpriteLayer, this._playerExtraLayer, this._ballSpriteLayer, this._waveSpriteLayer, this._shipSpriteLayer, this._shipExtraLayer, this._spiderSpriteLayer, this._spiderExtraLayer, this._robotSpriteLayer, this._robotExtraLayer, this._birdSpriteLayer, this._birdGlowLayer, this._birdOverlayLayer, this._birdExtraLayer, ...(this._robotLayers || [])];
 	  for (const _0x1f09e3 of _0x5c571a) {
       if (!_0x1f09e3) {
         continue;
@@ -2339,7 +2690,7 @@ if (this.p.isFlying || this.p.isUfo) {
     return out + out;
   }
   updateGroundRotation(_0x5c24f7) {
-    if (this.p.isBall || this.p.isWave || this.p.isSpider) {
+    if (this.p.isBall || this.p.isWave || this.p.isSpider || this.p.isRobot) {
       return;
     }
     let _0x183c2a = this.convertToClosestRotation();
@@ -2395,6 +2746,8 @@ if (this.p.isFlying || this.p.isUfo) {
       this._updateUfoJump(_0x3d1c6f);
     } else if (this.p.isSpider) {
       this._updateSpiderJump(_0x3d1c6f);
+    } else if (this.p.isRobot) {
+      this._updateRobotJump(_0x3d1c6f);
     } else if (this.p.upKeyDown && this.p.canJump) {
       this.p.isJumping = true;
       this.p.onGround = false;
@@ -2431,6 +2784,49 @@ if (this.p.isFlying || this.p.isUfo) {
       }
     }
   }
+  _shouldPrioritizeGroundOrbInput() {
+    if (!(this.p.isBall || this.p.isSpider)) return false;
+    if (!this.p.upKeyPressed) return false;
+    if (!(this.p.canJump || this.p.onGround || this.p.onCeiling)) return false;
+
+    const playerWorldX = this._scene?._playerWorldX ?? centerX;
+    const playerSize = this.p.isMini ? 18 : 30;
+    const nearbyObjects = this._gameLayer?.getNearbySectionObjects?.(playerWorldX) || [];
+
+    for (const gameObj of nearbyObjects) {
+      if (!gameObj || gameObj.type !== jumpRingType || gameObj.activated) continue;
+
+      const hasCircleHitbox = gameObj.hitbox_radius !== undefined && gameObj.hitbox_radius !== null;
+      if (hasCircleHitbox) {
+        const dx = playerWorldX - gameObj.x;
+        const dy = this.p.y - gameObj.y;
+        const hitRadius = gameObj.hitbox_radius + playerSize;
+        if ((dx * dx + dy * dy) <= hitRadius * hitRadius) {
+          return true;
+        }
+        continue;
+      }
+
+      const rad = (gameObj.rotationDegrees || 0) * Math.PI / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+      const halfW = gameObj.w / 2;
+      const halfH = gameObj.h / 2;
+      const rotatedHalfWidth = Math.abs(halfW * cos) + Math.abs(halfH * sin);
+      const rotatedHalfHeight = Math.abs(halfW * sin) + Math.abs(halfH * cos);
+      const left = gameObj.x - rotatedHalfWidth;
+      const right = gameObj.x + rotatedHalfWidth;
+      const top = gameObj.y - rotatedHalfHeight;
+      const bottom = gameObj.y + rotatedHalfHeight;
+
+      if (!(playerWorldX + playerSize <= left) && !(playerWorldX - playerSize >= right) &&
+          !(this.p.y + playerSize <= top) && !(this.p.y - playerSize >= bottom)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
   _updateFlyJump(_0x130c46) {
     const _shipMiniScale = this.p.isMini ? 1.176470588 : 1;
     let _0x203040 = 0.8;
@@ -2460,6 +2856,9 @@ if (this.p.isFlying || this.p.isUfo) {
   }
 _updateBallJump(_0x2fe319) {
   const _0x144266 = p * 0.6;
+  if (this._shouldPrioritizeGroundOrbInput()) {
+    return;
+  }
   if (this.p.upKeyPressed && this.p.canJump) {
     const _0x47d739 = this.flipMod();
     this.p.upKeyPressed = false;
@@ -2512,6 +2911,77 @@ _updateWaveJump() {
     const _waveAngle = this.p.isMini ? Math.atan(0.5) : Math.PI / 4;
     this._rotation = _0x312a7f === 0 ? 0 : _0x312a7f > 0 ? -_waveAngle : _waveAngle;
 }
+  _updateRobotJump(dt) {
+    const dtSec = dt > 1 ? dt / 1000 : dt;
+
+    const robotMiniJumpScale = this.p.isMini ? (1 / 1.2) : 1;
+    const robotJumpInit = 10.25 * robotMiniJumpScale;
+    const robotHoldMax = 15.8;
+    const robotHoldForce = p * 0.2 * robotMiniJumpScale;
+    const robotGravityHold = p * 0.15;
+    const robotGravityFall = p * 0.81;
+    const robotReleaseCut = 0.9;
+    const robotReleaseMinTime = 0;
+    const robotMaxFall = 28;
+    const robotMaxRise = 30 * robotMiniJumpScale;
+
+    if (this.p.upKeyPressed && this.p.canJump) {
+      this.p.upKeyPressed = false;
+      this.p.isJumping = true;
+      this.p.onGround = false;
+      this.p.canJump = false;
+      this.p.queuedHold = false;
+      this.p.yVelocity = this.flipMod() * robotJumpInit;
+      this.p._robotHold = true;
+      this.p._robotHoldTimer = 0;
+      return;
+    }
+
+    if (this.p.isJumping) {
+      if (this.p._robotHold) {
+        this.p._robotHoldTimer += dtSec;
+
+        if (this.p._robotHoldTimer >= robotHoldMax || !this.p.upKeyDown) {
+          this.p._robotHold = false;
+
+          const goingUp = this.p.gravityFlipped
+            ? this.p.yVelocity < 0
+            : this.p.yVelocity > 0;
+
+          if (goingUp && this.p._robotHoldTimer > robotReleaseMinTime) {
+            this.p.yVelocity *= robotReleaseCut;
+          }
+        } else {
+          this.p.yVelocity += this.flipMod() * robotHoldForce * dtSec;
+        }
+      }
+
+      if (this.p._robotHold) {
+        this.p.yVelocity -= robotGravityHold * dtSec * this.flipMod();
+      } else {
+        this.p.yVelocity -= robotGravityFall * dtSec * this.flipMod();
+      }
+
+      if (this.playerIsFalling()) {
+        this.p.isJumping = false;
+        this.p._robotHold = false;
+      }
+    } else {
+      this.p.yVelocity -= robotGravityFall * dtSec * this.flipMod();
+    }
+
+    if (this.p.gravityFlipped) {
+      this.p.yVelocity = Math.min(this.p.yVelocity, robotMaxRise);
+      this.p.yVelocity = Math.max(this.p.yVelocity, -robotMaxFall);
+    } else {
+      this.p.yVelocity = Math.max(this.p.yVelocity, -robotMaxRise);
+      this.p.yVelocity = Math.min(this.p.yVelocity, robotMaxFall);
+    }
+
+    if (this.playerIsFalling()) {
+      this.p.canJump = false;
+    }
+  }
   _updateUfoJump(_dt) {
     const _ufoJump = this.p.isMini ? 13.296 : 13.742;
     const _ufoThreshold = 3.832796;
@@ -2609,6 +3079,10 @@ _updateWaveJump() {
     const _miniGrav = this.p.isMini ? 1.4 : 1;
     const _gravAmt = p * 0.6 * _miniGrav;
     const canSpiderTeleport = this.p.canJump || this.p.onGround || this.p.onCeiling;
+
+    if (this._shouldPrioritizeGroundOrbInput()) {
+      return;
+    }
 
     if (this.p.upKeyPressed && canSpiderTeleport) {
       this.p.upKeyPressed = false;
@@ -2722,6 +3196,7 @@ _updateWaveJump() {
           if (!gameObj.activated) {
             gameObj.activated = true;
             this._playPortalShine(gameObj);
+            this.exitRobotMode();
             this.exitBallMode();
             this.exitWaveMode();
             this.exitShipMode();
@@ -2732,6 +3207,7 @@ _updateWaveJump() {
           if (!gameObj.activated) {
             gameObj.activated = true;
             this._playPortalShine(gameObj);
+            this.exitRobotMode();
             this.exitBallMode();
             this.exitShipMode();
             this.exitWaveMode();
@@ -2742,6 +3218,7 @@ _updateWaveJump() {
           if (!gameObj.activated) {
             gameObj.activated = true;
             this._playPortalShine(gameObj);
+            this.exitRobotMode();
             this.exitBallMode();
             this.exitWaveMode();
             this.exitShipMode();
@@ -2752,6 +3229,7 @@ _updateWaveJump() {
             gameObj.activated = true;
             this._playPortalShine(gameObj);
             this.exitSpiderMode();
+            this.exitRobotMode();
             this.exitShipMode();
             this.exitBallMode();
             this.exitWaveMode();
@@ -2761,17 +3239,31 @@ _updateWaveJump() {
           if (!gameObj.activated) {
             gameObj.activated = true;
             this._playPortalShine(gameObj);
+            this.exitRobotMode();
             this.exitShipMode();
             this.exitWaveMode();
             this.exitUfoMode();
             this.exitBallMode();
             this.enterBallMode(gameObj);
           }
+        } else if (_colType === "portal_robot") {
+          if (!gameObj.activated) {
+            gameObj.activated = true;
+            this._playPortalShine(gameObj);
+            this.exitShipMode();
+            this.exitBallMode();
+            this.exitWaveMode();
+            this.exitUfoMode();
+            this.exitSpiderMode();
+            this.exitRobotMode();
+            this.enterRobotMode(gameObj);
+          }
         } else if (_colType === "portal_spider") {
           if (!gameObj.activated) {
             gameObj.activated = true;
             this._playPortalShine(gameObj);
             this.exitShipMode();
+            this.exitRobotMode();
             this.exitBallMode();
             this.exitWaveMode();
             this.exitUfoMode();
@@ -3348,7 +3840,7 @@ _updateWaveJump() {
       let hitboxColor = 65280;
       if (nearObject.type === hazardType) {
         hitboxColor = 16729156;
-      } else if (nearObject.type === "portal_fly" || nearObject.type === "portal_cube" || nearObject.type === "portal_ball" || nearObject.type === portalWaveType || nearObject.type === portalUfoType) {
+      } else if (nearObject.type === "portal_fly" || nearObject.type === "portal_cube" || nearObject.type === "portal_ball" || nearObject.type === "portal_robot" || nearObject.type === portalWaveType || nearObject.type === portalUfoType) {
         hitboxColor = 4491519;
       } else if (nearObject.type === "portal_gravity_down" || nearObject.type === "portal_gravity_up" || nearObject.type === "portal_gravity_toggle") {
         hitboxColor = 16776960;
@@ -3503,19 +3995,46 @@ _updateWaveJump() {
       this._ballSpriteLayer, this._ballGlowLayer, this._ballOverlayLayer,
       this._waveSpriteLayer, this._waveOverlayLayer, this._waveExtraLayer, this._waveGlowLayer,
       this._shipSpriteLayer, this._shipGlowLayer, this._shipOverlayLayer, this._shipExtraLayer,
-      ...(this._spiderLayers || [])
+      ...(this._spiderLayers || []),
+      ...(this._robotLayers || [])
     ].filter(_0x3e9c62 => _0x3e9c62 && _0x3e9c62.sprite && _0x3e9c62.sprite.visible).map(_0x5cedeb => _0x5cedeb.sprite);
     this._startPercent = (this._scene._playerWorldX / this._scene._level.endXPos) * 100;
     this._particleEmitter.stop();
     this._flyParticleEmitter.stop();
     this._flyParticle2Emitter.stop();
     this._shipDragEmitter.stop();
+    this.p.isDashing = false;
+    this.p.dashYVelocity = 0;
+    if (this._dashAnimationSprite) this._dashAnimationSprite.setVisible(false);
+    this._dashAnimationFrame = 0;
+    this._dashAnimationTimer = 0;
+    if (this._spiderDashEffectSprite) this._spiderDashEffectSprite.setVisible(false);
+    this._spiderDashEffectTimer = 0;
+    if (this._spiderTeleportCircles?.length) {
+      for (const circle of this._spiderTeleportCircles) if (circle?.destroy) circle.destroy();
+      this._spiderTeleportCircles = [];
+    }
     const _0x154798 = this.p.isFlying;
+    const _0x3a2c8e = this.p.isSpider;
+    const _0x37f14a = this.p.isRobot;
+    const _0x12bfe9 = _0x3a2c8e || _0x37f14a;
     const _0x3793a4 = [this._shipSpriteLayer, this._shipGlowLayer, this._shipOverlayLayer, this._shipExtraLayer];
     const _0xbd676f = [this._playerSpriteLayer, this._playerGlowLayer, this._playerOverlayLayer, this._playerExtraLayer];
+    const _0x476284 = (_0x12bfe9 && Number.isFinite(this._lastScreenX)) ? this._lastScreenX : (_0x4a45d7 - _0x3729ef._cameraX);
+    const _0x1ed1ce = (_0x12bfe9 && Number.isFinite(this._lastScreenY)) ? this._lastScreenY : (b(_0x501b73) + _0x3729ef._cameraY);
+    const _0x4d5f0d = _0x476284;
+    const _0x3e4581 = _0x1ed1ce;
+    const _0x6f5a9d = _0x1f2e19 - _0x3729ef._cameraX;
+    const _0x31cb6d = b(_0x8bc9f4) + _0x3729ef._cameraY;
+    const _0x46e2df = _0x457676 - _0x3729ef._cameraX;
+    const _0x23fbf2 = b(_0x3ade39) + _0x3729ef._cameraY;
     const _0x3fc5a5 = _0x11b580.map(_0x5c0e81 => {
       let _0x5cbb0a = 0;
-      if (_0x154798) {
+      let _0x455d13 = 0;
+      if (_0x12bfe9) {
+        _0x455d13 = _0x5c0e81.x - _0x476284;
+        _0x5cbb0a = _0x5c0e81.y - _0x1ed1ce;
+      } else if (_0x154798) {
         const _0xff16eb = _0x3793a4.some(_0x40ef1e => _0x40ef1e && _0x40ef1e.sprite === _0x5c0e81);
         const _0x4fdb53 = _0xbd676f.some(_0x4ef5b5 => _0x4ef5b5 && _0x4ef5b5.sprite === _0x5c0e81);
         if (_0xff16eb) {
@@ -3526,7 +4045,9 @@ _updateWaveJump() {
       }
       return {
         spr: _0x5c0e81,
-        localY: _0x5cbb0a
+        localX: _0x455d13,
+        localY: _0x5cbb0a,
+        startRotation: _0x5c0e81.rotation || 0
       };
     });
     const _0x3e35e7 = this._streak;
@@ -3542,18 +4063,26 @@ _updateWaveJump() {
         const spriteWidth = _0x51c4a8.val;
         const _0x2478d6 = (1 - spriteWidth) ** 3 * _0x1295ea + (1 - spriteWidth) ** 2 * 3 * spriteWidth * _0x1295ea + (1 - spriteWidth) * 3 * spriteWidth ** 2 * _0x1f2e19 + spriteWidth ** 3 * _0x457676;
         const _0x148e69 = (1 - spriteWidth) ** 3 * _0x47ae60 + (1 - spriteWidth) ** 2 * 3 * spriteWidth * _0x47ae60 + (1 - spriteWidth) * 3 * spriteWidth ** 2 * _0x8bc9f4 + spriteWidth ** 3 * _0x3ade39;
-        const _0x3d0365 = _0x2478d6 - _0x3729ef._cameraX;
-        const _0x3790a9 = b(_0x148e69) + _0x3729ef._cameraY;
+        let _0x3d0365 = _0x2478d6 - _0x3729ef._cameraX;
+        let _0x3790a9 = b(_0x148e69) + _0x3729ef._cameraY;
+        if (_0x12bfe9) {
+          _0x3d0365 = (1 - spriteWidth) ** 3 * _0x4d5f0d + (1 - spriteWidth) ** 2 * 3 * spriteWidth * _0x4d5f0d + (1 - spriteWidth) * 3 * spriteWidth ** 2 * _0x6f5a9d + spriteWidth ** 3 * _0x46e2df;
+          _0x3790a9 = (1 - spriteWidth) ** 3 * _0x3e4581 + (1 - spriteWidth) ** 2 * 3 * spriteWidth * _0x3e4581 + (1 - spriteWidth) * 3 * spriteWidth ** 2 * _0x31cb6d + spriteWidth ** 3 * _0x23fbf2;
+        }
         const _0x1cb4d3 = 1 - spriteWidth * spriteWidth;
-        const _0x1d2e2f = _0x3fc5a5.length ? _0x3fc5a5[0].spr.rotation : 0;
+        const _0x5c8b4a = _0x12bfe9 ? (Math.PI * 2 * Math.pow(spriteWidth, 1.5)) : 0;
+        const _0x1d2e2f = _0x12bfe9 ? _0x5c8b4a : (_0x3fc5a5.length ? _0x3fc5a5[0].spr.rotation : 0);
         const _0xd3cb2a = Math.cos(_0x1d2e2f);
         const _0x2f86c2 = Math.sin(_0x1d2e2f);
         this._scene._interpolatedPercent = this._startPercent + (100 - this._startPercent) * spriteWidth;
         for (const _0x2b394a of _0x3fc5a5) {
           if (!_0x2b394a?.spr) continue;
-          const _0xbd4f26 = -_0x2b394a.localY * _0x2f86c2;
-          const _0x5b67fe = _0x2b394a.localY * _0xd3cb2a;
+          const _0x4cc974 = _0x2b394a.localX || 0;
+          const _0x522a2c = _0x2b394a.localY || 0;
+          const _0xbd4f26 = _0x4cc974 * _0xd3cb2a - _0x522a2c * _0x2f86c2;
+          const _0x5b67fe = _0x4cc974 * _0x2f86c2 + _0x522a2c * _0xd3cb2a;
           _0x2b394a.spr.setPosition(_0x3d0365 + _0xbd4f26, _0x3790a9 + _0x5b67fe);
+          if (_0x12bfe9) _0x2b394a.spr.rotation = (_0x2b394a.startRotation || 0) + _0x5c8b4a;
           _0x2b394a.spr.setAlpha(_0x1cb4d3);
         }
         _0x3e35e7.setPosition(_0x2478d6, b(_0x148e69));
@@ -3569,13 +4098,15 @@ _updateWaveJump() {
         _0x281588();
       }
     });
-    for (const _0x25f8c5 of _0x11b580) {
-      _0x3729ef.tweens.add({
-        targets: _0x25f8c5,
-        angle: _0x25f8c5.angle + 360,
-        duration: 1000,
-        ease: _0x228c03 => Math.pow(_0x228c03, 1.5)
-      });
+    if (!_0x12bfe9) {
+      for (const _0x25f8c5 of _0x11b580) {
+        _0x3729ef.tweens.add({
+          targets: _0x25f8c5,
+          angle: _0x25f8c5.angle + 360,
+          duration: 1000,
+          ease: _0x228c03 => Math.pow(_0x228c03, 1.5)
+        });
+      }
     }
   }
   reset() {
@@ -3586,14 +4117,17 @@ _updateWaveJump() {
     this.stopRotation();
     this.rotateActionTime = 0;
     this._rotation = 0;
+    this.p._robotHold = false;
+    this.p._robotHoldTimer = 0;
     this._lastCameraX = 0;
     this._lastCameraY = 0;
     this.setCubeVisible(true);
     this.setShipVisible(false);
     this.setBallVisible(false);
     this.setWaveVisible(false);
-	this.setBirdVisible(false);
+	  this.setBirdVisible(false);
     this.setSpiderVisible(false);
+    this.setRobotVisible(false);
     for (const _0x5a0fa9 of this._allLayers) {
       if (_0x5a0fa9) {
         _0x5a0fa9.sprite.setAlpha(1);
@@ -3615,6 +4149,15 @@ _updateWaveJump() {
     this._flyParticle2Active = false;
     this._shipDragEmitter.stop();
     this._shipDragActive = false;
+    if (this._dashAnimationSprite) this._dashAnimationSprite.setVisible(false);
+    this._dashAnimationFrame = 0;
+    this._dashAnimationTimer = 0;
+    if (this._spiderDashEffectSprite) this._spiderDashEffectSprite.setVisible(false);
+    this._spiderDashEffectTimer = 0;
+    if (this._spiderTeleportCircles?.length) {
+      for (const circle of this._spiderTeleportCircles) if (circle?.destroy) circle.destroy();
+      this._spiderTeleportCircles = [];
+    }
     this._streak.stop();
     this._streak.reset();
     this._waveTrail.stop();
