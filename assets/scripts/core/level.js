@@ -1623,7 +1623,9 @@ window.LevelObject = class LevelObject {
         }
       }
     }
-  } else if (objectDef && objectDef.portalParticle && frameName) {
+  }
+
+  if (objectDef && objectDef.portalParticle && frameName && !window.isEditor && !scene?._editorPlaytestActive) {
     const particleWorldX = worldX;
     const particleWorldY = b(worldY);
     const radiusFactor = 2;

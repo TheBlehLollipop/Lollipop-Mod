@@ -1484,7 +1484,7 @@ if (this.p.isFlying || this.p.isUfo) {
     if (_0x36bb3d) {
       _0x18df19 = _0x36bb3d.portalY !== undefined ? _0x36bb3d.portalY : _0x36bb3d.y;
     }
-    this._gameLayer.setFlyMode(true, _0x18df19 + a, f - a * 2, false);
+    this._gameLayer.setFlyMode(true, _0x18df19, f - a * 2, false);
   }
   exitBallMode() {
     if (!this.p.isBall) {
