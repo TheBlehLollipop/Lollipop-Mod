@@ -291,8 +291,7 @@ class GameScene extends Phaser.Scene {
     this._menuCameraX = -centerX;
     this._prevCameraX = -centerX;
     this._bg = this.add.tileSprite(0, 0, screenWidth, screenHeight, "game_bg_01").setOrigin(0, 0).setScrollFactor(0).setDepth(-10);
-    const _0x15d27a = this.textures.get("game_bg_01").source[0].height;
-    this._bgInitY = _0x15d27a - screenHeight - o;
+    this._applyMirroredBackgroundTexture("game_bg_01");
     this._cameraX = -centerX;
     this._cameraY = 0;
     this._cameraXRef = {
@@ -333,23 +332,20 @@ class GameScene extends Phaser.Scene {
       this._level.loadLevel(_0x591888);
     }
     const _resolveGdArtId = (key, fallback = 1) => {
-  const raw = window.settingsMap?.[key];
-  const parsed = parseInt(raw ?? fallback, 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-};
+      const raw = window.settingsMap?.[key];
+      const parsed = parseInt(raw ?? fallback, 10);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+    };
 
-const _bgGdId = _resolveGdArtId("kA6", parseInt(window._backgroundId || "01", 10) || 1);
-window._backgroundId = String(_bgGdId).padStart(2, "0");
+    const _bgGdId = _resolveGdArtId("kA6", parseInt(window._backgroundId || "01", 10) || 1);
+    window._backgroundId = String(_bgGdId).padStart(2, "0");
 
-const _groundRaw = window.settingsMap?.["kA7"] ?? ((parseInt(window._groundId || "00", 10) || 0) + 1);
-window._groundId = getGroundTextureId(_groundRaw);
+    const _groundRaw = window.settingsMap?.["kA7"] ?? ((parseInt(window._groundId || "00", 10) || 0) + 1);
+    window._groundId = getGroundTextureId(_groundRaw);
 
-    const _bgId = window._backgroundId || "01";
-    const _bgKey = "game_bg_" + (parseInt(_bgId, 10) - 1);
+    const _bgKey = "game_bg_" + getBackgroundTextureIndex(_bgGdId);
     if (this.textures.exists(_bgKey)) {
-      this._bg.setTexture(_bgKey);
-      const _newBgH = this.textures.get(_bgKey).source[0].height;
-      this._bgInitY = _newBgH - screenHeight - o;
+      this._applyMirroredBackgroundTexture(_bgKey);
     }
     this._level.applyGroundTexture();
     if (this._level._initialColors) {
@@ -420,8 +416,8 @@ window._groundId = getGroundTextureId(_groundRaw);
       {frame:  "",                       url: "",                                                     angle: 0,                row: 0, col: 3 },
 
       { frame: "gj_twIcon_001.png",      url: "https://x.com/rohanis0000gd",                          angle: -90, flipX: true, row: 1, col: 0 },
-      { frame: "gj_ytIcon_001.png",      url: "https://www.youtube.com/@Popsicledev",               angle: 0,                row: 1, col: 1 },
-      { frame: "gj_tiktokIcon_001.png",  url: "https://www.tiktok.com/@popsicledev?lang=en",                 angle: -90, flipX: true, row: 1, col: 2 },
+      { frame: "gj_ytIcon_001.png",      url: "https://www.youtube.com/@rohanis0000gd",               angle: 0,                row: 1, col: 1 },
+      { frame: "gj_tiktokIcon_001.png",  url: "https://www.tiktok.com/@rohanis00000",                 angle: -90, flipX: true, row: 1, col: 2 },
       { frame: "gj_githubIcon_001.png",  url: "https://github.com/web-dashers/web-dashers.github.io", angle: 0,                row: 1, col: 3 },
 
       {frame:  "",                       url: "",                                                     angle: 0,                row: 2, col: 0 },
@@ -4070,7 +4066,7 @@ _buildSettingsPopup() {
     window.showCPS = data.showCPS;
     window.speedHack = data.speedHack;
     window.macroBot = data.macroBot;
-    window.showGlow = data.showGlow !== false;
+    window.showGlow = data.showGlow;
     window.showEditorGlow = data.showEditorGlow;
     window.createObjectIds = data.createObjectIds;
     window.showObjectIds = data.showObjectIds;
@@ -4280,9 +4276,7 @@ _buildSettingsPopup() {
       { text: "Contributors:", scale: 0.9, font: "bigFont" },
       { text: "t0nchi7 and Itzar.", scale: 0.7, font: "goldFont" },
       { text: "© 2026 RobTop Games. All rights reserved.", scale: 0.4, font: "Arial", color: 0x000000 },
-
-];
-
+    ]; 
     let yPos = 0;
     const lineItems = [];
     creditsEntries.forEach(entry => {
@@ -4577,9 +4571,10 @@ _buildSettingsPopup() {
     */
     const updateEntries = [
       { text: "Update Log", scale: 0.85, font: "goldFont" },
-      { text: "Fixed Glow", scale: 0.7 },
-      { text: "Added a toggle glow option", scale: 0.7 },
-      { text: "- pinkdih", scale: 0.7, color: 0xfa1496 },
+      { text: "Fixed Spider and text", scale: 0.7 },
+      { text: "why did you break it pinkdih", scale: 0.7 },
+      { text: "fixing conflicts SUCKED screw u", scale: 0.7 },
+      { text: "- Lasokar", scale: 0.7, color: 0xaaddff },
     ]; 
     let yPos = 0;
     const lineItems = [];
@@ -5259,18 +5254,18 @@ _buildSettingsPopup() {
     this._attemptsLabel.setVisible(true);
     this._positionAttemptsLabel();
     let gamemode = parseInt(window.settingsMap["kA2"] || "0");
-if (gamemode == 1) {
-  this._player.enterShipMode();
-} else if (gamemode == 2) {
-  this._state.y = 30;
-  this._player.enterBallMode({ y: 30 });
-} else if (gamemode == 3) {
-  this._player.enterUfoMode();
-} else if (gamemode == 4) {
-  this._player.enterWaveMode();
-} else if (gamemode == 6) {
-  this._player.enterSpiderMode(); 
-}
+    if (gamemode == 1) {
+      this._player.enterShipMode();
+    } else if (gamemode == 2) {
+      this._state.y = 30;
+      this._player.enterBallMode({ y: 30 });
+    } else if (gamemode == 3) {
+      this._player.enterUfoMode();
+    } else if (gamemode == 4) {
+      this._player.enterWaveMode();
+    } else if (gamemode == 6) {
+      this._player.enterSpiderMode();
+    }
 
     this._applyLevelStartOptions();
   }
@@ -5821,10 +5816,57 @@ if (gamemode == 1) {
       this._applyMirrorEffect();
     }
   }
+  _createMirroredBackgroundTexture(textureKey) {
+    const mirroredKey = textureKey + "__mirror_y_loop";
+    if (this.textures.exists(mirroredKey)) return mirroredKey;
+
+    const texture = this.textures.get(textureKey);
+    const source = texture?.source?.[0];
+    const image = source?.image || source?.canvas;
+    const width = source?.width || image?.width || image?.naturalWidth || 0;
+    const height = source?.height || image?.height || image?.naturalHeight || 0;
+
+    if (!image || width <= 0 || height <= 0 || !this.textures.createCanvas) {
+      return textureKey;
+    }
+
+    try {
+      const mirroredTexture = this.textures.createCanvas(mirroredKey, width, height * 2);
+      const ctx = mirroredTexture.getContext();
+      ctx.clearRect(0, 0, width, height * 2);
+      ctx.drawImage(image, 0, 0, width, height, 0, 0, width, height);
+      ctx.save();
+      ctx.translate(0, height * 2);
+      ctx.scale(1, -1);
+      ctx.drawImage(image, 0, 0, width, height, 0, 0, width, height);
+      ctx.restore();
+      mirroredTexture.refresh();
+      return mirroredKey;
+    } catch (err) {
+      console.warn("Failed to create mirrored background texture", textureKey, err);
+      if (this.textures.exists(mirroredKey)) this.textures.remove(mirroredKey);
+      return textureKey;
+    }
+  }
+
+  _applyMirroredBackgroundTexture(textureKey) {
+    const texture = this.textures.get(textureKey);
+    const source = texture?.source?.[0];
+    const sourceHeight = source?.height || source?.image?.height || source?.image?.naturalHeight || 0;
+    const mirroredKey = this._createMirroredBackgroundTexture(textureKey);
+    this._bg.setTexture(mirroredKey);
+    this._bgInitY = sourceHeight > 0 ? sourceHeight - screenHeight - o : 0;
+    this._bgMirrorTileHeight = sourceHeight > 0 ? sourceHeight * 2 : 0;
+  }
+
   _updateBackground() {
     this._bg.tilePositionX += (this._cameraX - this._prevCameraX) * this._bgSpeedX;
     this._prevCameraX = this._cameraX;
-    this._bg.tilePositionY = this._bgInitY - this._cameraY * this._bgSpeedY;
+    let tileY = this._bgInitY - this._cameraY * this._bgSpeedY;
+    if (this._bgMirrorTileHeight > 0) {
+      tileY = ((tileY % this._bgMirrorTileHeight) + this._bgMirrorTileHeight) % this._bgMirrorTileHeight;
+    }
+    this._bg.tilePositionY = tileY;
   }
   _updateCameraY(_0xc7c517) {
     let explosionPiece = this._cameraY;
@@ -6100,7 +6142,7 @@ if (gamemode == 1) {
       this._state.upKeyPressed = false;
       this._state.queuedHold = false;
     }
-    this._level.updateEndPortalY(this._cameraY, this._state.isFlying || this._state.isWave || this._state.isUfo);
+    this._level.updateEndPortalY(this._cameraY, this._state.isFlying || this._state.isWave || this._state.isUfo || this._state.isSpider);
     if (!this._levelWon && !this._state.isDead && this._level.endXPos > 0) {
       const _0x448396 = 600;
       if (this._playerWorldX >= this._level.endXPos - _0x448396) {
