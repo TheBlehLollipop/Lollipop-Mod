@@ -402,6 +402,12 @@ class PlayerObject {
     this._spiderDashEffectTimer = 0;
     this._spiderDashEffectDuration = 0.5;
     this._spiderTeleportCircles = [];
+    this._robotJumpFlameSprite = null;
+    this._robotJumpFlamePulse = 0;
+    this._robotJumpFlameFadeInTimer = 0;
+    this._robotJumpFlameActive = false;
+    this._robotJumpFlameAnchorX = centerX;
+    this._robotJumpFlameAnchorY = b(this.p.y);
     this._lastScreenX = centerX;
     this._lastScreenY = b(this.p.y);
     this._hitboxTrail = [];
@@ -546,6 +552,9 @@ class PlayerObject {
     const gravitySign = this.p.gravityFlipped ? -1 : 1;
     const positionYSign = this.p.gravityFlipped ? 1 : -1;
     const seenTags = new Set();
+    const robotFootTags = [2, 6];
+    const robotFootPoints = [];
+    const robotLegPoints = [];
 
     for (const spriteKey of Object.keys(frame)) {
       if (!spriteKey.startsWith("sprite_")) continue;
@@ -908,6 +917,9 @@ class PlayerObject {
     const gravitySign = this.p.gravityFlipped ? -1 : 1;
     const positionYSign = this.p.gravityFlipped ? 1 : -1;
     const seenTags = new Set();
+    const robotFootTags = [2, 6];
+    const robotFootPoints = [];
+    const robotLegPoints = [];
 
     for (const spriteKey of Object.keys(frame)) {
       if (!spriteKey.startsWith("sprite_")) continue;
@@ -973,14 +985,74 @@ class PlayerObject {
       applyLayer(part.base, "base", 0);
       applyLayer(part.overlay, "overlay", 0.04);
       applyLayer(part.extra, "extra", 0.08);
+
+      const footSprite = part.base?.sprite || part.overlay?.sprite || part.extra?.sprite || part.glow?.sprite;
+      if (footSprite && (robotFootTags.includes(tag) || isRobotLegTag)) {
+        const footHalfHeight = Math.max(6 * miniScale, Math.abs(footSprite.displayHeight || (footSprite.height || 0) * baseScaleY) * 0.5);
+        const footEdgeY = commonY + (this.p.gravityFlipped ? -footHalfHeight : footHalfHeight);
+        const point = { x: commonX, y: footEdgeY };
+        if (robotFootTags.includes(tag)) {
+          robotFootPoints.push(point);
+        } else if (isRobotLegTag) {
+          robotLegPoints.push(point);
+        }
+      }
     }
 
+    const flameAnchorPoints = robotFootPoints.length ? robotFootPoints : robotLegPoints;
+    if (flameAnchorPoints.length) {
+      let attachedFoot = flameAnchorPoints[0];
+      for (const pt of flameAnchorPoints) {
+        if (this.p.gravityFlipped ? pt.y < attachedFoot.y : pt.y > attachedFoot.y) {
+          attachedFoot = pt;
+        }
+      }
+      this._robotJumpFlameAnchorX = attachedFoot.x;
+      this._robotJumpFlameAnchorY = attachedFoot.y;
+    }
     for (const tag of Object.keys(this._robotPartsByTag)) {
       if (seenTags.has(parseInt(tag, 10))) continue;
       const part = this._robotPartsByTag[tag];
       for (const layer of part.layers) layer?.sprite?.setVisible(false);
     }
     return true;
+  }
+  _hideRobotJumpFlame() {
+    if (!this._robotJumpFlameSprite) return;
+    this._robotJumpFlameSprite.setVisible(false);
+    this._robotJumpFlameSprite.setAlpha(0);
+  }
+  _updateRobotJumpFlame(dt) {
+    if (!this._robotJumpFlameSprite) return;
+    const goingUp = this.p.gravityFlipped ? this.p.yVelocity < -0.01 : this.p.yVelocity > 0.01;
+    if (!this._robotJumpFlameActive || this.p.isDead || !this.p.isRobot || !goingUp || this.p.onGround || this._endAnimating) {
+      this._robotJumpFlameActive = false;
+      this._hideRobotJumpFlame();
+      return;
+    }
+    const upwardVelocity = Math.max(0, this.p.gravityFlipped ? -this.p.yVelocity : this.p.yVelocity);
+    const fadeThreshold = this.p.isMini ? 7 : 10;
+    const fade = Math.max(0, Math.min(1, upwardVelocity / Math.max(0.001, fadeThreshold)));
+    if (fade <= 0.02) {
+      this._robotJumpFlameActive = false;
+      this._hideRobotJumpFlame();
+      return;
+    }
+    const miniScale = this.p.isMini ? 0.8 : 1.2;
+    this._robotJumpFlameFadeInTimer = (this._robotJumpFlameFadeInTimer || 0) + Math.max(0, dt || 0);
+    const fadeIn = Math.max(0, Math.min(1, this._robotJumpFlameFadeInTimer / 0.24));
+    const visibleFade = Math.min(fade, fadeIn);
+    this._robotJumpFlamePulse = (this._robotJumpFlamePulse || 0) + Math.max(0, dt || 0) * (Math.PI * 4);
+    const pulse = (Math.sin(this._robotJumpFlamePulse) + 1) * 0.5;
+    const stretchY = 0.8 + 0.4 * pulse;
+    const overallScale = 0.82 * miniScale * visibleFade;
+    this._robotJumpFlameSprite.setPosition(
+      this._robotJumpFlameAnchorX,
+      this._robotJumpFlameAnchorY
+    );
+    this._robotJumpFlameSprite.setScale(overallScale, overallScale * stretchY * (this.p.gravityFlipped ? -1 : 1));
+    this._robotJumpFlameSprite.setAlpha(Math.max(0, Math.min(1, visibleFade)));
+    this._robotJumpFlameSprite.setVisible(true);
   }
   _syncRobotAnimation(baseX, baseY, dt) {
     if (this.p.isDead || !this.p.isRobot || !this._robotLayers?.length) {
@@ -1000,6 +1072,8 @@ class PlayerObject {
         layer.sprite.scaleY = (this.p.gravityFlipped ? -miniScale : miniScale);
         layer.sprite.setVisible(layer.kind === "glow" ? !!layer.sprite._glowEnabled : true);
       }
+      this._robotJumpFlameAnchorX = baseX;
+      this._robotJumpFlameAnchorY = baseY + (this.p.gravityFlipped ? (-8 * (this.p.isMini ? 0.6 : 1)) : (8 * (this.p.isMini ? 0.6 : 1)));
     }
   }
 
@@ -1133,6 +1207,14 @@ class PlayerObject {
       this._spiderDashEffectSprite.setAlpha(0);
       this._gameLayer?.container?.add?.(this._spiderDashEffectSprite);
       this._spiderDashEffectSprite.setBlendMode('ADD');
+    }
+    if (_textureHasFrameSafe(spriteY, "GJ_GameSheetIcons", "fireBoost_001.png")) {
+      this._robotJumpFlameSprite = spriteY.add.image(particleY, spriteX, "GJ_GameSheetIcons", "fireBoost_001.png");
+      this._robotJumpFlameSprite.setDepth(7.75);
+      this._robotJumpFlameSprite.setVisible(false);
+      this._robotJumpFlameSprite.setAlpha(0);
+      this._robotJumpFlameSprite.setOrigin(0.5, 0);
+      this._robotJumpFlameSprite.setBlendMode('ADD');
     }
   }
   _updateDashAnimation(deltaTime) {
@@ -1497,6 +1579,9 @@ class PlayerObject {
         layer.sprite.setVisible(v);
       }
     }
+    if (!v) {
+      this._hideRobotJumpFlame();
+    }
   }
   _primeRobotAnimationFrame(dt = 1 / 30) {
     if (!this.p.isRobot || this.p.isDead || !this._robotLayers?.length) return;
@@ -1677,8 +1762,10 @@ if (this.p.isFlying || this.p.isUfo) {
       this.setBirdVisible(false);
       this.setSpiderVisible(false);
       this._syncRobotAnimation(_0x7f0705, _0x1a433c, _0x3afedf);
+      this._updateRobotJumpFlame(_0x3afedf);
     } else {
       this.setRobotVisible(false);
+      this._hideRobotJumpFlame();
     }
     this._updateSpiderTeleportEffects(_0x3afedf);
     this._updateParticles(cameraX, cameraY, _0x3afedf);
@@ -1905,6 +1992,10 @@ if (this.p.isFlying || this.p.isUfo) {
     this.setSpiderVisible(false);
     if (this._spiderDashEffectSprite) this._spiderDashEffectSprite.setVisible(false);
     this._spiderDashEffectTimer = 0;
+    this._hideRobotJumpFlame();
+    this._robotJumpFlameActive = false;
+    this._robotJumpFlamePulse = 0;
+    this._robotJumpFlameFadeInTimer = 0;
     this.setCubeVisible(true);
     this._gameLayer.setFlyMode(false, 0);
   }
@@ -1942,6 +2033,8 @@ if (this.p.isFlying || this.p.isUfo) {
     this.p.isRobot = false;
     this.p._robotHold = false;
     this.p._robotHoldTimer = 0;
+    this._robotJumpFlameActive = false;
+    this._hideRobotJumpFlame();
     this.p.onGround = false;
     this.p.canJump = false;
     this.p.isJumping = false;
@@ -2934,6 +3027,9 @@ _updateWaveJump() {
       this.p.yVelocity = this.flipMod() * robotJumpInit;
       this.p._robotHold = true;
       this.p._robotHoldTimer = 0;
+      this._robotJumpFlameActive = true;
+      this._robotJumpFlamePulse = 0;
+      this._robotJumpFlameFadeInTimer = 0;
       return;
     }
 
@@ -2965,6 +3061,7 @@ _updateWaveJump() {
       if (this.playerIsFalling()) {
         this.p.isJumping = false;
         this.p._robotHold = false;
+        this._robotJumpFlameActive = false;
       }
     } else {
       this.p.yVelocity -= robotGravityFall * dtSec * this.flipMod();
@@ -2980,6 +3077,7 @@ _updateWaveJump() {
 
     if (this.playerIsFalling()) {
       this.p.canJump = false;
+      this._robotJumpFlameActive = false;
     }
   }
   _updateUfoJump(_dt) {
@@ -4010,6 +4108,10 @@ _updateWaveJump() {
     this._dashAnimationTimer = 0;
     if (this._spiderDashEffectSprite) this._spiderDashEffectSprite.setVisible(false);
     this._spiderDashEffectTimer = 0;
+    this._hideRobotJumpFlame();
+    this._robotJumpFlameActive = false;
+    this._robotJumpFlamePulse = 0;
+    this._robotJumpFlameFadeInTimer = 0;
     if (this._spiderTeleportCircles?.length) {
       for (const circle of this._spiderTeleportCircles) if (circle?.destroy) circle.destroy();
       this._spiderTeleportCircles = [];
@@ -4154,6 +4256,10 @@ _updateWaveJump() {
     this._dashAnimationTimer = 0;
     if (this._spiderDashEffectSprite) this._spiderDashEffectSprite.setVisible(false);
     this._spiderDashEffectTimer = 0;
+    this._hideRobotJumpFlame();
+    this._robotJumpFlameActive = false;
+    this._robotJumpFlamePulse = 0;
+    this._robotJumpFlameFadeInTimer = 0;
     if (this._spiderTeleportCircles?.length) {
       for (const circle of this._spiderTeleportCircles) if (circle?.destroy) circle.destroy();
       this._spiderTeleportCircles = [];
