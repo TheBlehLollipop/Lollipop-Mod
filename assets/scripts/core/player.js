@@ -3009,7 +3009,7 @@ _updateWaveJump() {
 
     const robotMiniJumpScale = this.p.isMini ? (1 / 1.2) : 1;
     const robotJumpInit = 10.25 * robotMiniJumpScale;
-    const robotHoldMax = 15.8;
+    const robotHoldMax = 15.5;
     const robotHoldForce = p * 0.2 * robotMiniJumpScale;
     const robotGravityHold = p * 0.15;
     const robotGravityFall = p * 0.81;
