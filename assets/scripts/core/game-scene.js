@@ -7434,19 +7434,19 @@ _handleEditorCamera = (delta) => {
         return;
     }
 
+    // Camera pans with arrow keys only — WASD is reserved for moving the selected object
     const camSpeed = 15;
     const cursors = this.input.keyboard.createCursorKeys();
-    const wasd = this.input.keyboard.addKeys('W,A,S,D');
 
-    if (cursors.left.isDown || wasd.A.isDown) {
+    if (cursors.left.isDown) {
         this._cameraX -= camSpeed;
-    } else if (cursors.right.isDown || wasd.D.isDown) {
+    } else if (cursors.right.isDown) {
         this._cameraX += camSpeed;
     }
 
-    if (cursors.up.isDown || wasd.W.isDown) {
+    if (cursors.up.isDown) {
         this._cameraY -= camSpeed;
-    } else if (cursors.down.isDown || wasd.S.isDown) {
+    } else if (cursors.down.isDown) {
         this._cameraY += camSpeed;
     }
 
@@ -7645,7 +7645,7 @@ _createEditorGui = () => {
     this._buildObjectGrid();
 
     // Editor keybinds: Enter = playtest toggle, 1/2/3 = build/edit/delete tab,
-    // WASD = move selected object (fine), Shift+WASD = one grid block,
+    // WASD = move selected object one grid block, Shift+WASD = fine step,
     // Backspace/Delete = delete selected object.
     this.input.keyboard.on('keydown', (event) => {
         if (!window.isEditor) return;
@@ -7674,7 +7674,7 @@ _createEditorGui = () => {
             }
             return;
         }
-        const _mv = event.shiftKey ? 60 : 3; // shift = one grid block
+        const _mv = event.shiftKey ? 3 : 60; // plain = one grid block, shift = fine step
         if (code === 'KeyW') { this._moveObject(0, -_mv); return; }
         if (code === 'KeyS') { this._moveObject(0, _mv); return; }
         if (code === 'KeyA') { this._moveObject(-_mv, 0); return; }
