@@ -2365,9 +2365,15 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_GameSheet
   "robot_21_01_001.png", "robot_22_01_001.png", "robot_23_01_001.png", "robot_24_01_001.png", "robot_25_01_001.png",
   "robot_26_01_001.png",
 ],
+	  spider: [
+  "spider_01_01_001.png", "spider_02_01_001.png", "spider_03_01_001.png", "spider_04_01_001.png", "spider_05_01_001.png",
+  "spider_06_01_001.png", "spider_07_01_001.png", "spider_08_01_001.png", "spider_09_01_001.png", "spider_10_01_001.png",
+  "spider_11_01_001.png", "spider_12_01_001.png", "spider_13_01_001.png", "spider_14_01_001.png", "spider_15_01_001.png",
+  "spider_16_01_001.png", "spider_17_01_001.png",
+],
 	  swing: [
         "swing_01_001.png",
-      ],  
+      ],
     };
 
 
@@ -2378,6 +2384,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_GameSheet
       wave: "currentWave",
       ufo: "currentBird",
 	  robot: "currentRobot",
+	  spider: "currentSpider",
 	  swing: "currentSwing",
     };
 
@@ -2388,6 +2395,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_GameSheet
       wave: "GJ_GameSheetIcons",
       ufo: "GJ_GameSheetIcons",
 	  robot: "GJ_GameSheetIcons",
+	  spider: "GJ_GameSheetIcons",
 	  swing: "GJ_GameSheetIcons",
     };
 
@@ -2398,10 +2406,11 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_GameSheet
       wave: { on: "gj_dartBtn_on_001.png",  off: "gj_dartBtn_off_001.png"  },
       ufo:  { on: "gj_birdBtn_on_001.png",  off: "gj_birdBtn_off_001.png"  },
       robot: { on: "gj_robotBtn_on_001.png",  off: "gj_robotBtn_off_001.png"  },
+      spider: { on: "gj_spiderBtn_on_001.png",  off: "gj_spiderBtn_off_001.png"  },
       swing:  { on: "gj_swingBtn_on_001.png",  off: "gj_swingBtn_off_001.png"  },
     };
 	const convertIconFrameToGameFrame = (frame, tab) => {
-      if (tab === "robot") {
+      if (tab === "robot" || tab === "spider") {
         return frame.replace(/_01_001\.png$/, "_001.png");
       }
       return frame;
@@ -2701,20 +2710,21 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_GameSheet
       this._iconOverlayObjects.push(selectedIconExtra, selectedIcon);
 
       const tabBtnY = containerY - 40;
-      const tabKeys = ["icon", "ship", "ball", "ufo", "wave", "robot", "swing"];
+      const tabKeys = ["icon", "ship", "ball", "ufo", "wave", "robot", "spider", "swing"];
       const tabSpacing = 65;
       const tabOffsets = {
-        icon: -tabSpacing * 3,
-        ship: -tabSpacing * 2,
-        ball: -tabSpacing,
-        ufo: 0,
-        wave: tabSpacing,
-        robot: tabSpacing * 2,
-        swing: tabSpacing * 3,
+        icon: -tabSpacing * 3.5,
+        ship: -tabSpacing * 2.5,
+        ball: -tabSpacing * 1.5,
+        ufo: -tabSpacing * 0.5,
+        wave: tabSpacing * 0.5,
+        robot: tabSpacing * 1.5,
+        spider: tabSpacing * 2.5,
+        swing: tabSpacing * 3.5,
       };
       const tabRotations = { icon: -Math.PI/2, ship: 0, ball: -Math.PI/2, ufo: Math.PI/2, wave: Math.PI/2, robot: 0, spider: 0 };
-      const tabFlipXStates = { icon: true, ship: false, ball: true, ufo: false, wave: false, robot: false, swing: false };
-      const tabFlipYStates = { icon: false, ship: false, ball: false, ufo: true, wave: true, robot: false, swing: false };
+      const tabFlipXStates = { icon: true, ship: false, ball: true, ufo: false, wave: false, robot: false, spider: false, swing: false };
+      const tabFlipYStates = { icon: false, ship: false, ball: false, ufo: true, wave: true, robot: false, spider: false, swing: false };
       const tabBtnSprites  = {};
 
       const _switchTab = (tab) => {
