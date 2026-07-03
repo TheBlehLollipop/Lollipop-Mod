@@ -38,6 +38,7 @@ class PlayerState {
     this.ignorePortals = false;
     this._robotHold = false;
     this._robotHoldTimer = 0;
+    this._spiderTeleportNoclipDeathPending = false;
   }
 }
 
@@ -3117,6 +3118,16 @@ _updateWaveJump() {
     }
   }
   _getSpiderSearchBounds(obj) {
+    const radius = Number(obj?.hitbox_radius);
+    if (Number.isFinite(radius) && radius > 0) {
+      return {
+        left: obj.x - radius,
+        right: obj.x + radius,
+        lower: obj.y - radius,
+        upper: obj.y + radius
+      };
+    }
+
     const rad = (obj.rotationDegrees || 0) * Math.PI / 180;
     const cos = Math.cos(rad);
     const sin = Math.sin(rad);
@@ -3130,6 +3141,37 @@ _updateWaveJump() {
       lower: obj.y - rotatedHalfHeight,
       upper: obj.y + rotatedHalfHeight
     };
+  }
+
+  _findSpiderTeleportHazard(goingUp, playerWorldX, playerSize, targetCenterY) {
+    if (!Number.isFinite(targetCenterY)) return null;
+
+    const xPad = Math.max(9, playerSize - 5);
+    const yPad = xPad;
+    const startY = this.p.y;
+    const fromY = Math.min(startY, targetCenterY);
+    const toY = Math.max(startY, targetCenterY);
+    const nearbyObjects = this._gameLayer.getNearbySectionObjects(playerWorldX);
+    let nearestHazard = null;
+    let nearestDistance = Infinity;
+
+    for (const obj of nearbyObjects) {
+      if (!obj || (obj.type !== hazardType && obj.type !== "hazard")) continue;
+      const bounds = this._getSpiderSearchBounds(obj);
+      if (playerWorldX + xPad <= bounds.left || playerWorldX - xPad >= bounds.right) continue;
+      if (bounds.upper < fromY - yPad || bounds.lower > toY + yPad) continue;
+
+      const entryY = goingUp
+        ? Math.max(startY, bounds.lower)
+        : Math.min(startY, bounds.upper);
+      const distance = Math.abs(entryY - startY);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestHazard = { obj, bounds };
+      }
+    }
+
+    return nearestHazard;
   }
 
   _findSpiderTeleportSurface(goingUp, playerWorldX, playerSize) {
@@ -3192,14 +3234,32 @@ _updateWaveJump() {
 
       if (nearestSurfaceY !== null && Number.isFinite(nearestSurfaceY)) {
         const oldSpiderTeleportY = this.p.y;
+        const normalLandingY = goingUp ? nearestSurfaceY - playerSize : nearestSurfaceY + playerSize;
+        const blockingHazard = this._findSpiderTeleportHazard(goingUp, playerWorldX, playerSize, normalLandingY);
+
+        if (blockingHazard && !window.noClip) {
+          const hazardCenterY = (blockingHazard.bounds.lower + blockingHazard.bounds.upper) / 2;
+          this.p.y = Number.isFinite(hazardCenterY) ? hazardCenterY : normalLandingY;
+          this._spawnSpiderTeleportEffects(oldSpiderTeleportY, this.p.y);
+          this.p.yVelocity = 0;
+          this.p.onGround = false;
+          this.p.canJump = false;
+          this.p.isJumping = false;
+          this.killPlayer();
+          return;
+        }
+
+        this.p.y = normalLandingY;
         if (goingUp) {
-          this.p.y = nearestSurfaceY - playerSize;
           this.flipGravity(true, 1.0);
           this.p.onCeiling = true;
         } else {
-          this.p.y = nearestSurfaceY + playerSize;
           this.flipGravity(false, 1.0);
           this.p.onCeiling = false;
+        }
+        if (blockingHazard && window.noClip) {
+          this.p._spiderTeleportNoclipDeathPending = true;
+          this.p.diedThisFrame = true;
         }
         this._spawnSpiderTeleportEffects(oldSpiderTeleportY, this.p.y);
         this.p.yVelocity = 0;
@@ -3245,6 +3305,10 @@ _updateWaveJump() {
   checkCollisions(_0x2f5078) {
     this.noclipStats.totalFrames++;
     this.p.diedThisFrame = false;
+    if (this.p._spiderTeleportNoclipDeathPending) {
+      this.p.diedThisFrame = true;
+      this.p._spiderTeleportNoclipDeathPending = false;
+    }
     const playerSize = this.p.isMini ? 18 : 30;
     const waveHitSize = this.p.isMini ? 6 : 9;
     const pieceWidth = _0x2f5078 + centerX;
@@ -4093,6 +4157,7 @@ _updateWaveJump() {
       this._ballSpriteLayer, this._ballGlowLayer, this._ballOverlayLayer,
       this._waveSpriteLayer, this._waveOverlayLayer, this._waveExtraLayer, this._waveGlowLayer,
       this._shipSpriteLayer, this._shipGlowLayer, this._shipOverlayLayer, this._shipExtraLayer,
+      ...(this._birdLayers || []),
       ...(this._spiderLayers || []),
       ...(this._robotLayers || [])
     ].filter(_0x3e9c62 => _0x3e9c62 && _0x3e9c62.sprite && _0x3e9c62.sprite.visible).map(_0x5cedeb => _0x5cedeb.sprite);
