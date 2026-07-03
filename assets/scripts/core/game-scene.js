@@ -44,9 +44,12 @@ class PracticeMode {
       robotHold: !!playerState._robotHold,
       robotHoldTimer: playerState._robotHoldTimer || 0,
       cameraX: cameraX,
+      flyFloorY: scene._level._flyFloorY,
       flyCeilingY: scene._level._flyCeilingY,
       flyGroundActive: scene._level._flyGroundActive,
       flyVisualOnly: scene._level._flyVisualOnly,
+      flyVisualFloorInset: scene._level._flyVisualFloorInset,
+      flyVisualCeilingInset: scene._level._flyVisualCeilingInset,
       groundTargetValue: scene._level._groundTargetValue,
       flyCameraTarget: scene._level.flyCameraTarget,
       groundAnimating: scene._level._groundAnimating,
@@ -4790,10 +4793,17 @@ _buildSettingsPopup() {
     */
     const updateEntries = [
       { text: "Update Log", scale: 0.85, font: "goldFont" },
-      { text: "Fixed Spider and text", scale: 0.7 },
-      { text: "why did you break it pinkdih", scale: 0.7 },
-      { text: "fixing conflicts SUCKED screw u", scale: 0.7 },
-      { text: "- Lasokar", scale: 0.7, color: 0xaaddff },
+      { text: "- Added Spawn Triggers", scale: 0.7 },
+      { text: "- Added Groups", scale: 0.7 },
+      { text: "- Added Editor Layers", scale: 0.7 },
+      { text: "- Improved Move Triggers", scale: 0.7 },
+      { text: "- Lock player/camera x/y", scale: 0.7 },
+      { text: "- Added multi-object select", scale: 0.7 },
+      { text: "- Fixed copy+paste bug", scale: 0.7 },
+      { text: "- Fixed spider teleport not", scale: 0.7 },
+      { text: "checking for hazards lmao", scale: 0.7 },
+      { text: "There's probably more but I forgot", color: 0x808080, scale: 0.5 },
+      { text: "- Lasokar", scale: 0.7, color: 0x00e676 },
     ]; 
     let yPos = 0;
     const lineItems = [];
@@ -5744,6 +5754,7 @@ _buildSettingsPopup() {
     this._level.resetRotateTriggers();
     this._level.resetPulseTriggers();
     this._level.resetEnterEffectTriggers();
+    this._level.resetSpawnTriggers();
     this._level.resetMoveTriggers();
     this._level.resetVisibility();
     if (this._orbGfx) { this._orbGfx.clear(); }
@@ -5934,9 +5945,18 @@ _buildSettingsPopup() {
     this._state2.ignorePortals = true;
     this._level.resetGroundTiles(this._cameraX);
     this._level.resetObjects();
+    this._level._flyFloorY = checkpoint.flyFloorY !== undefined
+      ? checkpoint.flyFloorY
+      : (this._level._flyFloorY ?? 0);
     this._level._flyCeilingY = checkpoint.flyCeilingY;
     this._level._flyGroundActive = checkpoint.flyGroundActive;
     this._level._flyVisualOnly = checkpoint.flyVisualOnly;
+    this._level._flyVisualFloorInset = checkpoint.flyVisualFloorInset !== undefined
+      ? checkpoint.flyVisualFloorInset
+      : (this._level._flyVisualFloorInset ?? 0);
+    this._level._flyVisualCeilingInset = checkpoint.flyVisualCeilingInset !== undefined
+      ? checkpoint.flyVisualCeilingInset
+      : (this._level._flyVisualCeilingInset ?? 0);
     this._level._groundTargetValue = checkpoint.groundTargetValue;
     this._level.flyCameraTarget = checkpoint.flyCameraTarget;
     this._level._groundAnimating = checkpoint.groundAnimating;
@@ -5972,6 +5992,7 @@ _buildSettingsPopup() {
     this._level.resetRotateTriggers();
     this._level.resetPulseTriggers();
     this._level.resetEnterEffectTriggers();
+    this._level.resetSpawnTriggers();
     this._level.resetMoveTriggers();
     this._level.resetVisibility();
     this._level.additiveContainer.x = -this._cameraX;
@@ -6167,7 +6188,8 @@ _buildSettingsPopup() {
         this._levelEditor._updateEditorGrid(); 
         if (pointer.isDown && !this._isDraggingSlider) {
             if (this._isSwipeEnabled) {
-              if (this._hitObjects.length !== 0) return;
+              if (this._editorTab !== "edit") {
+                if (this._hitObjects.length !== 0) return;
                 const currentGridX = Math.floor((pointer.x + this._cameraX) / 60) * 60;
                 const currentGridY = Math.floor((pointer.y + this._cameraY + 20) / 60) * 60;
 
@@ -6176,6 +6198,7 @@ _buildSettingsPopup() {
                     this._lastSwipeGridX = currentGridX;
                     this._lastSwipeGridY = currentGridY;
                 }
+              }
             } else {
                 if (!this._isDragging && this._hitObjects.length !== 0) return;
                 const dragX = pointer.x - this._clickStartPos.x;
@@ -6439,6 +6462,13 @@ _buildSettingsPopup() {
         }
       }
       this._player.updateExplosionPieces(deltaTime);
+      if (this._player?._hitboxGraphics) {
+        if (window.showHitboxes || window.hitboxesOnDeath) {
+          this._player.drawHitboxes(this._player._hitboxGraphics, this._cameraX, this._cameraY);
+        } else {
+          this._player._hitboxGraphics.clear();
+        }
+      }
       this._deathTimer += deltaTime;
       let _0x237728 = this._hadNewBest ? 1400 : 1000;
       if (this._deathTimer > _0x237728) {
@@ -6642,7 +6672,21 @@ _buildSettingsPopup() {
       }
     }
     this._level.checkMoveTriggers(playerX);
+    this._level.checkSpawnTriggers(playerX);
+    if (this._level.checkTouchSpawnTriggers) {
+        this._level.checkTouchSpawnTriggers(playerX, this._state.y);
+        if (this._isDual && !this._state2.isDead) {
+            this._level.checkTouchSpawnTriggers(playerX, this._state2.y);
+        }
+    }
+    if (this._level.checkTouchMoveTriggers) {
+        this._level.checkTouchMoveTriggers(playerX, this._state.y);
+        if (this._isDual && !this._state2.isDead) {
+            this._level.checkTouchMoveTriggers(playerX, this._state2.y);
+        }
+    }
     this._level.stepMoveTriggers(deltaTime / 1000);
+    this._level.stepSpawnTriggers(deltaTime / 1000, this._colorManager);
     this._level.checkAlphaTriggers(playerX);
     this._level.stepAlphaTriggers(deltaTime / 1000);
     this._level.checkRotateTriggers(playerX);

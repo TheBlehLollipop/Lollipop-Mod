@@ -64,6 +64,17 @@ function parseObject(objectString) {
     objectData[key] = value;
   }
   let objectId = parseInt(objectData[1] || "0", 10);
+  const rawGroupValues = [];
+  const addRawGroups = (rawValue) => {
+    String(rawValue ?? "")
+      .split(".")
+      .map(value => parseInt(value, 10))
+      .filter(value => Number.isFinite(value) && value > 0)
+      .forEach(value => rawGroupValues.push(value));
+  };
+  addRawGroups(objectData[33]);
+  addRawGroups(objectData[57]);
+  const groupString = [...new Set(rawGroupValues)].join(".");
   if (objectId === 0) {
     return null;
   } else {
@@ -75,9 +86,11 @@ function parseObject(objectString) {
       flipY: objectData[5] === "1",
       rot: parseFloat(objectData[6] || "0"),
       scale: parseFloat(objectData[32] || "1"),
+      editorLayer: parseInt(objectData[20] || "0", 10),
       zLayer: parseInt(objectData[24] || "0", 10),
       zOrder: parseInt(objectData[25] || "0", 10),
-      groups: objectData[57] || "",
+      editorLayer2: parseInt(objectData[61] || "0", 10),
+      groups: groupString,
       color1: parseInt(objectData[21] || "0", 10),
       color2: parseInt(objectData[22] || "0", 10),
       text: _decodeTextObjectString(objectData[31] ?? objectData["31"] ?? ""),
@@ -435,6 +448,8 @@ window.LevelObject = class LevelObject {
     this._colorTriggers = [];
     this._colorTriggerIdx = 0;
     this._touchColorTriggerActivated = new Set();
+    this._touchSpawnTriggerActivated = new Set();
+    this._touchMoveTriggerActivated = new Set();
     this._audioScaleSprites = [];
     this._editorTriggerVisuals = [];
     this._orbSprites = [];
@@ -457,6 +472,9 @@ window.LevelObject = class LevelObject {
     this._pulseTriggers = [];
     this._pulseTriggerIdx = 0;
     this._activePulses = [];
+    this._spawnTriggers = [];
+    this._spawnTriggerIdx = 0;
+    this._activeSpawnDelays = [];
     this._colorChannelSprites = {};
     this._groupSprites = {};
     this._groupOffsets = {};
@@ -485,6 +503,40 @@ window.LevelObject = class LevelObject {
         : (Array.isArray(window.levelObjects) ? window.levelObjects : (this._sourceLevelObjects || []));
       const startSpeedKey = options.startSpeedKey ?? window.settingsMap?.["kA4"] ?? 0;
       return calculateSongOffsetForX(targetX, startSpeedKey, sourceObjects);
+  }
+
+  _isTriggerSpawnTriggered(levelObj) {
+    return String(levelObj?._raw?.[62] ?? levelObj?._raw?.["62"] ?? "0") === "1";
+  }
+
+  _getLevelObjectGroupIds(levelObj) {
+    const values = [];
+    const addRawGroups = (rawGroups) => {
+      String(rawGroups ?? "")
+        .split(".")
+        .map(value => parseInt(value, 10))
+        .filter(value => Number.isFinite(value) && value > 0)
+        .forEach(value => values.push(value));
+    };
+
+    addRawGroups(levelObj?._raw?.[33] ?? levelObj?._raw?.["33"]);
+    addRawGroups(levelObj?._raw?.[57] ?? levelObj?._raw?.["57"]);
+    addRawGroups(levelObj?.groups);
+
+    return [...new Set(values)];
+  }
+
+  _makeTriggerBase(levelObj, linkedObjectId) {
+    return {
+      uid: linkedObjectId,
+      spawnTriggered: this._isTriggerSpawnTriggered(levelObj),
+      groups: this._getLevelObjectGroupIds(levelObj)
+    };
+  }
+
+  _triggerHasGroup(trigger, groupId) {
+    const target = parseInt(groupId ?? 0, 10);
+    return target > 0 && Array.isArray(trigger?.groups) && trigger.groups.includes(target);
   }
 
   fastForwardTriggers(targetX, colorManager) {
@@ -1003,7 +1055,6 @@ window.LevelObject = class LevelObject {
   _getTriggerTargetLabel(levelObj) {
     const raw = levelObj?._raw || {};
     const id = parseInt(levelObj?.id ?? 0, 10);
-    const values = [];
     const colorChannelLabel = (channelId) => {
       const parsed = parseInt(channelId ?? 0, 10);
       const labels = {
@@ -1015,34 +1066,30 @@ window.LevelObject = class LevelObject {
         1009: "G2",
         1013: "MG"
       };
-      return labels[parsed] || (parsed > 0 ? String(parsed) : "");
+      return labels[parsed] || String(Math.max(0, Number.isFinite(parsed) ? parsed : 0));
     };
-    const addNumeric = (value, mapper = null) => {
-      const parsed = parseInt(value ?? 0, 10);
-      if (!Number.isFinite(parsed) || parsed <= 0) return;
-      values.push(mapper ? mapper(parsed) : String(parsed));
+    const readInt = (key, fallback = 0) => {
+      const parsed = parseInt(raw[key] ?? raw[String(key)] ?? fallback, 10);
+      return Number.isFinite(parsed) ? parsed : fallback;
     };
+    const targetLabel = () => String(Math.max(0, readInt(51, 0)));
 
     if (id === 29) return "BG";
     if (id === 30) return "G1";
 
     const colorTriggerIds = new Set([105, 744, 899, 900, 915]);
-    if (colorTriggerIds.has(id)) {
-      addNumeric(raw[23] ?? 1, colorChannelLabel);
-    } else if (id === 1006) {
-      addNumeric(raw[51]);
-    } else {
-      addNumeric(raw[51]);
-      addNumeric(raw[71]);
+    if (colorTriggerIds.has(id)) return colorChannelLabel(readInt(23, 1));
+    if ([901, 1007, 1268].includes(id)) return targetLabel();
+
+    if (id === 1346) {
+      const targetGroup = targetLabel();
+      const centerGroup = readInt(71, 0);
+      return centerGroup > 0 ? `${targetGroup},${centerGroup}` : targetGroup;
     }
 
-    if (!values.length && levelObj?.groups) {
-      const groups = String(levelObj.groups).split(".").filter(Boolean);
-      if (groups.length) values.push(groups[0]);
-    }
+    if (id === 1006) return targetLabel();
 
-    const uniqueValues = [...new Set(values.filter(Boolean))];
-    return uniqueValues.length ? uniqueValues.join(",") : "";
+    return "";
   }
   _setTriggerEditorVisualVisible(visual, visible) {
     if (!visual) return;
@@ -1063,8 +1110,11 @@ window.LevelObject = class LevelObject {
     triggerContainer._eeZDepth = 995;
     triggerContainer._eeEditorTrigger = true;
     triggerContainer._eeObjectId = linkedObjectId;
+    triggerContainer._eeEditorLayer = parseInt(levelObj.editorLayer ?? levelObj._raw?.[20] ?? levelObj._raw?.["20"] ?? 0, 10) || 0;
+    triggerContainer._eeEditorLayer2 = parseInt(levelObj.editorLayer2 ?? levelObj._raw?.[61] ?? levelObj._raw?.["61"] ?? 0, 10) || 0;
 
-    const isColorTouchTrigger = objectDef?.type === triggerType && [29, 30, 105, 744, 899, 900, 915].includes(parseInt(levelObj.id ?? 0, 10)) && String(levelObj?._raw?.[11] ?? levelObj?._raw?.["11"] ?? "0") === "1";
+    const isTouchTrigger = objectDef?.type === triggerType && String(levelObj?._raw?.[11] ?? levelObj?._raw?.["11"] ?? "0") === "1";
+    const isSpawnTriggeredTrigger = objectDef?.type === triggerType && this._isTriggerSpawnTriggered(levelObj);
     let lineGfx = null;
     let hitboxGfx = null;
     if (!isStartPositionTrigger) {
@@ -1072,13 +1122,13 @@ window.LevelObject = class LevelObject {
       lineGfx.lineStyle(2, 0x1dffff, 1);
       lineGfx.lineBetween(0, -50000, 0, 50000);
       lineGfx._eeEditorTriggerLine = true;
-      lineGfx.setVisible(!isColorTouchTrigger);
+      lineGfx.setVisible(!isTouchTrigger && !isSpawnTriggeredTrigger);
 
       hitboxGfx = scene.add.graphics();
       hitboxGfx.lineStyle(2, 0x1dffff, 1);
       hitboxGfx.strokeRect(-30, baseY - 30, 60, 60);
       hitboxGfx._eeEditorTriggerHitbox = true;
-      hitboxGfx.setVisible(isColorTouchTrigger);
+      hitboxGfx.setVisible(isTouchTrigger && !isSpawnTriggeredTrigger);
     }
 
     const frameName = this._getTriggerFrameName(scene, objectDef, levelObj);
@@ -1142,6 +1192,10 @@ window.LevelObject = class LevelObject {
       triggerContainer.flipY = !!value;
       return triggerContainer;
     };
+    triggerContainer._eeTriggerSprite = triggerSprite;
+    triggerContainer._eeTriggerLabel = label;
+    triggerContainer._eeTriggerLine = lineGfx;
+    triggerContainer._eeTriggerHitbox = hitboxGfx;
     triggerContainer.getBounds = () => {
       const boundsTarget = triggerSprite || label;
       if (boundsTarget?.getBounds) return boundsTarget.getBounds();
@@ -1163,9 +1217,10 @@ window.LevelObject = class LevelObject {
     if (!this._editorTriggerVisuals) return;
     for (const visual of this._editorTriggerVisuals) {
       const saveObj = visual?.saveObj;
-      const isTouchColorTrigger = saveObj && [29, 30, 105, 744, 899, 900, 915].includes(parseInt(saveObj.id ?? 0, 10)) && String(saveObj?._raw?.[11] ?? saveObj?._raw?.["11"] ?? "0") === "1";
-      if (visual?.line?.setVisible) visual.line.setVisible(!isTouchColorTrigger);
-      if (visual?.hitbox?.setVisible) visual.hitbox.setVisible(!!isTouchColorTrigger);
+      const isTouchTrigger = saveObj && String(saveObj?._raw?.[11] ?? saveObj?._raw?.["11"] ?? "0") === "1";
+      const isSpawnTriggeredTrigger = saveObj && this._isTriggerSpawnTriggered(saveObj);
+      if (visual?.line?.setVisible) visual.line.setVisible(!isTouchTrigger && !isSpawnTriggeredTrigger);
+      if (visual?.hitbox?.setVisible) visual.hitbox.setVisible(!!isTouchTrigger && !isSpawnTriggeredTrigger);
       this._setTriggerEditorVisualVisible(visual, visible);
     }
   }
@@ -1202,7 +1257,7 @@ window.LevelObject = class LevelObject {
     textSprite.setScale(scale * (levelObj.flipX ? -1 : 1), scale * (levelObj.flipY ? -1 : 1));
     textSprite.setAngle(levelObj.rot || 0);
 
-    const depthBase = { "-3": -6, "-1": -3, 0: 0, 1: 3, 3: 6, 5: 9 };
+    const depthBase = { "-5": -12, "-3": -9, "-1": -6, 0: 0, 1: 3, 3: 6, 5: 9, 7: 10.5, 9: 12, 11: 13.5 };
     const zLayer = parseInt(levelObj.zLayer ?? objectDef?.default_z_layer ?? 3, 10) || 0;
     const zOrder = parseInt(levelObj.zOrder ?? objectDef?.default_z_order ?? 0, 10) || 0;
     const zDepth = (depthBase[zLayer] ?? 0) + zOrder * 0.001;
@@ -1216,6 +1271,8 @@ window.LevelObject = class LevelObject {
     textSprite._eeOrigAlpha = 1;
     textSprite._eeTextObject = true;
     textSprite._eeObjectId = linkedObjectId;
+    textSprite._eeEditorLayer = parseInt(levelObj.editorLayer ?? levelObj._raw?.[20] ?? levelObj._raw?.["20"] ?? 0, 10) || 0;
+    textSprite._eeEditorLayer2 = parseInt(levelObj.editorLayer2 ?? levelObj._raw?.[61] ?? levelObj._raw?.["61"] ?? 0, 10) || 0;
 
     const colorChannel = parseInt(levelObj.color1 || objectDef?.default_base_color_channel || 0, 10) || 0;
     if (colorChannel > 0 && objectDef?.can_color !== false) {
@@ -1258,9 +1315,11 @@ window.LevelObject = class LevelObject {
     const linkedObjectId = this._nextObjectId++;
     levelObj._eeObjectId = linkedObjectId;
     if (levelObj._raw) delete levelObj._raw._eeObjectId;
+    const triggerBase = this._makeTriggerBase(levelObj, linkedObjectId);
 
     if (levelObj.id === 29 || levelObj.id === 30) {
       this._colorTriggers.push({
+        ...triggerBase,
         x: levelObj.x * 2,
         y: levelObj.y * 2,
         uid: linkedObjectId,
@@ -1278,6 +1337,7 @@ window.LevelObject = class LevelObject {
 
     if (objectDef.enterEffect) {
       this._enterEffectTriggers.push({
+        ...triggerBase,
         x: levelObj.x * 2,
         effect: objectDef.enterEffect
       });
@@ -1286,21 +1346,27 @@ window.LevelObject = class LevelObject {
     if (levelObj.id === 901) {
       const _raw = levelObj._raw;
       this._moveTriggers.push({
+        ...triggerBase,
         x: levelObj.x * 2,
+        y: levelObj.y * 2,
+        touchTriggered: String(_raw?.[11] ?? _raw?.["11"] ?? "0") === "1",
         duration: parseFloat(_raw[10] ?? 0),
         easingType: parseInt(_raw[30] ?? 0, 10),
         easingRate: parseFloat(_raw[85] ?? 2),
         targetGroup: parseInt(_raw[51] ?? 0, 10),
         offsetX: parseFloat(_raw[28] ?? 0) * 2,
         offsetY: parseFloat(_raw[29] ?? 0) * 2,
-        lockX: _raw[58] === "1",
-        lockY: _raw[59] === "1"
+        lockX: String(_raw?.[58] ?? _raw?.["58"] ?? "0") === "1",
+        lockY: String(_raw?.[59] ?? _raw?.["59"] ?? "0") === "1",
+        lockCameraX: String(_raw?.[302] ?? _raw?.["302"] ?? "0") === "1",
+        lockCameraY: String(_raw?.[303] ?? _raw?.["303"] ?? "0") === "1"
       });
     }
 
     if (levelObj.id === 1007) {
       const _raw = levelObj._raw;
       this._alphaTriggers.push({
+        ...triggerBase,
         x: levelObj.x * 2,
         duration: parseFloat(_raw[10] ?? 0),
         targetGroup: parseInt(_raw[51] ?? 0, 10),
@@ -1313,6 +1379,7 @@ window.LevelObject = class LevelObject {
       const targetChannel = parseInt(_raw[23] ?? 0, 10);
       if (targetChannel > 0) {
         this._colorTriggers.push({
+          ...triggerBase,
           x: levelObj.x * 2,
           y: levelObj.y * 2,
           uid: linkedObjectId,
@@ -1333,6 +1400,7 @@ window.LevelObject = class LevelObject {
     if (levelObj.id === 1346) {
       const _raw = levelObj._raw;
       this._rotateTriggers.push({
+        ...triggerBase,
         x: levelObj.x * 2,
         targetGroup: parseInt(_raw[51] ?? 0, 10),
         degrees: parseFloat(_raw[68] ?? 0),
@@ -1349,6 +1417,7 @@ window.LevelObject = class LevelObject {
       const _raw = levelObj._raw;
       const targetType = parseInt(_raw[52] ?? 0, 10);
       this._pulseTriggers.push({
+        ...triggerBase,
         x: levelObj.x * 2,
         targetGroup: targetType === 1 ? parseInt(_raw[51] ?? 0, 10) : 0,
         targetChannel: targetType === 0 ? parseInt(_raw[51] ?? 0, 10) : 0,
@@ -1361,6 +1430,19 @@ window.LevelObject = class LevelObject {
         fadeIn: parseFloat(_raw[45] ?? 0),
         hold: parseFloat(_raw[46] ?? 0),
         fadeOut: parseFloat(_raw[47] ?? 0)
+      });
+    }
+
+    if (levelObj.id === 1268) {
+      const _raw = levelObj._raw;
+      this._spawnTriggers.push({
+        ...triggerBase,
+        x: levelObj.x * 2,
+        y: levelObj.y * 2,
+        touchTriggered: String(_raw?.[11] ?? _raw?.["11"] ?? "0") === "1",
+        targetGroup: parseInt(_raw[51] ?? 0, 10),
+        delay: Math.max(0, parseFloat(_raw[63] ?? 0) || 0),
+        randomDelay: Math.max(0, parseFloat(_raw[556] ?? _raw["556"] ?? 0) || 0)
       });
     }
 
@@ -1409,6 +1491,8 @@ window.LevelObject = class LevelObject {
   const registerObjectSprite = (spr) => {
     if (!spr) return;
     spr._eeObjectId = linkedObjectId;
+    spr._eeEditorLayer = parseInt(levelObj.editorLayer ?? levelObj._raw?.[20] ?? levelObj._raw?.["20"] ?? 0, 10) || 0;
+    spr._eeEditorLayer2 = parseInt(levelObj.editorLayer2 ?? levelObj._raw?.[61] ?? levelObj._raw?.["61"] ?? 0, 10) || 0;
     if (!this.objectSprites[linkedObjectId]) this.objectSprites[linkedObjectId] = [];
     this.objectSprites[linkedObjectId].push(spr);
   };
@@ -1424,7 +1508,7 @@ window.LevelObject = class LevelObject {
       levelObj.zLayer || (objectDef.default_z_layer !== undefined ? objectDef.default_z_layer : 0);
     const zOrd =
       levelObj.zOrder || (objectDef.default_z_order !== undefined ? objectDef.default_z_order : 0);
-    const depthBase = { "-3": -6, "-1": -3, 0: 0, 1: 3, 3: 6, 5: 9 };
+    const depthBase = { "-5": -12, "-3": -9, "-1": -6, 0: 0, 1: 3, 3: 6, 5: 9, 7: 10.5, 9: 12, 11: 13.5 };
     const objZDepth = (depthBase[zLayer] !== undefined ? depthBase[zLayer] : 0) + zOrd * 0.01;
 
     let col1 = levelObj.color1 || (objectDef.default_base_color_channel !== undefined ? objectDef.default_base_color_channel : 0);
@@ -1725,6 +1809,8 @@ window.LevelObject = class LevelObject {
       col._origBaseX = col.x;
       col._origBaseY = col.y;
       col._eeObjectId = linkedObjectId;
+      col._eeEditorLayer = parseInt(levelObj.editorLayer ?? levelObj._raw?.[20] ?? levelObj._raw?.["20"] ?? 0, 10) || 0;
+      col._eeEditorLayer2 = parseInt(levelObj.editorLayer2 ?? levelObj._raw?.[61] ?? levelObj._raw?.["61"] ?? 0, 10) || 0;
 
       if (!this.objectSprites[linkedObjectId]) {
         this.objectSprites[linkedObjectId] = [];
@@ -2065,7 +2151,7 @@ window.LevelObject = class LevelObject {
       if (!(_0x39c924.x <= _0x2b00ce)) {
         break;
       }
-      if (this._isTriggerSaveObjectLive(_0x39c924.uid) && !_0x39c924.touchTriggered) {
+      if (this._isTriggerSaveObjectLive(_0x39c924.uid) && !_0x39c924.touchTriggered && !_0x39c924.spawnTriggered) {
         _0x24b030.push(_0x39c924);
       }
       this._colorTriggerIdx++;
@@ -2082,7 +2168,7 @@ window.LevelObject = class LevelObject {
     const halfHitbox = 30 + playerHalfSize;
 
     for (const trig of this._colorTriggers) {
-      if (!trig || !trig.touchTriggered || !this._isTriggerSaveObjectLive(trig.uid)) continue;
+      if (!trig || !trig.touchTriggered || trig.spawnTriggered || !this._isTriggerSaveObjectLive(trig.uid)) continue;
       const uid = trig.uid ?? `${trig.x},${trig.y},${trig.index}`;
       if (this._touchColorTriggerActivated.has(uid)) continue;
       if (Math.abs(px - trig.x) <= halfHitbox && Math.abs(py - (trig.y ?? 0)) <= halfHitbox) {
@@ -2097,10 +2183,29 @@ window.LevelObject = class LevelObject {
     this._colorTriggerIdx = 0;
     this._touchColorTriggerActivated = new Set();
   }
+  _getSectionIndexForWorldX(worldX) {
+    return Math.max(0, Math.floor((Number(worldX) || 0) / 400));
+  }
+  _ensureSectionContainer(sectionIndex) {
+    if (!this._sectionContainers[sectionIndex]) {
+      const sectionContainer = {
+        additive: this._scene.add.container(0, 0),
+        normal: this._scene.add.container(0, 0)
+      };
+      const sectionVisible = this._visMinSec === undefined || this._visMinSec < 0 || (sectionIndex >= this._visMinSec && sectionIndex <= this._visMaxSec);
+      sectionContainer.additive.visible = sectionVisible;
+      sectionContainer.normal.visible = sectionVisible;
+      this.additiveContainer.add(sectionContainer.additive);
+      this.container.add(sectionContainer.normal);
+      this._sectionContainers[sectionIndex] = sectionContainer;
+    }
+    return this._sectionContainers[sectionIndex];
+  }
   _addToSection(sliderWidth) {
-    const _0x4ac40a = Math.max(0, Math.floor(sliderWidth._eeWorldX / 400));
+    const _0x4ac40a = this._getSectionIndexForWorldX(sliderWidth._eeWorldX);
     this._sections[_0x4ac40a] ||= [];
     this._sections[_0x4ac40a].push(sliderWidth);
+    sliderWidth._eeSectionIndex = _0x4ac40a;
     if (sliderWidth._eeZDepth !== undefined) {
       sliderWidth.depth = sliderWidth._eeZDepth;
     }
@@ -2109,16 +2214,7 @@ window.LevelObject = class LevelObject {
       this.topContainer.add(sliderWidth);
       return;
     }
-    if (!this._sectionContainers[_0x4ac40a]) {
-      const _0xc1a93d = {
-        additive: this._scene.add.container(0, 0),
-        normal: this._scene.add.container(0, 0)
-      };
-      this.additiveContainer.add(_0xc1a93d.additive);
-      this.container.add(_0xc1a93d.normal);
-      this._sectionContainers[_0x4ac40a] = _0xc1a93d;
-    }
-    const _0x2157d3 = this._sectionContainers[_0x4ac40a];
+    const _0x2157d3 = this._ensureSectionContainer(_0x4ac40a);
     if (_0x14d5f7 === 0) {
       _0x2157d3.additive.add(sliderWidth);
     } else if (sliderWidth._eeBehindParent) {
@@ -2127,10 +2223,75 @@ window.LevelObject = class LevelObject {
       _0x2157d3.normal.add(sliderWidth);
     }
   }
+  _refreshSpriteSection(sprite) {
+    if (!sprite || sprite._eeWorldX === undefined) return;
+    const nextSection = this._getSectionIndexForWorldX(sprite._eeWorldX);
+    let prevSection = Number.isInteger(sprite._eeSectionIndex) ? sprite._eeSectionIndex : -1;
+    if (prevSection < 0 && Array.isArray(this._sections)) {
+      for (let i = 0; i < this._sections.length; i++) {
+        const section = this._sections[i];
+        if (Array.isArray(section) && section.includes(sprite)) {
+          prevSection = i;
+          break;
+        }
+      }
+    }
+    if (prevSection === nextSection) {
+      sprite._eeSectionIndex = nextSection;
+      return;
+    }
+    if (prevSection >= 0 && Array.isArray(this._sections?.[prevSection])) {
+      const section = this._sections[prevSection];
+      const idx = section.indexOf(sprite);
+      if (idx !== -1) section.splice(idx, 1);
+    }
+    this._sections[nextSection] ||= [];
+    if (!this._sections[nextSection].includes(sprite)) this._sections[nextSection].push(sprite);
+    sprite._eeSectionIndex = nextSection;
+
+    const layer = sprite._eeLayer !== undefined ? sprite._eeLayer : 1;
+    if (layer === 2) {
+      if (sprite.parentContainer !== this.topContainer) this.topContainer.add(sprite);
+      return;
+    }
+
+    const sectionContainer = this._ensureSectionContainer(nextSection);
+    const targetContainer = layer === 0 ? sectionContainer.additive : sectionContainer.normal;
+    if (sprite.parentContainer === targetContainer) return;
+    if (layer !== 0 && sprite._eeBehindParent) targetContainer.addAt(sprite, 0);
+    else targetContainer.add(sprite);
+  }
   _addCollisionToSection(_0x3dce4b) {
     const _0x5cad3c = Math.max(0, Math.floor(_0x3dce4b.x / 400));
     this._collisionSections[_0x5cad3c] ||= [];
     this._collisionSections[_0x5cad3c].push(_0x3dce4b);
+    _0x3dce4b._eeCollisionSectionIndex = _0x5cad3c;
+  }
+  _refreshCollisionSection(_0x3dce4b) {
+    if (!_0x3dce4b) return;
+    const _0x5cad3c = Math.max(0, Math.floor(_0x3dce4b.x / 400));
+    let _0x2b0fa1 = Number.isInteger(_0x3dce4b._eeCollisionSectionIndex) ? _0x3dce4b._eeCollisionSectionIndex : -1;
+    if (_0x2b0fa1 < 0 && Array.isArray(this._collisionSections)) {
+      for (let i = 0; i < this._collisionSections.length; i++) {
+        const section = this._collisionSections[i];
+        if (Array.isArray(section) && section.includes(_0x3dce4b)) {
+          _0x2b0fa1 = i;
+          break;
+        }
+      }
+    }
+    if (_0x2b0fa1 === _0x5cad3c) {
+      _0x3dce4b._eeCollisionSectionIndex = _0x5cad3c;
+      return;
+    }
+    if (_0x2b0fa1 >= 0 && Array.isArray(this._collisionSections?.[_0x2b0fa1])) {
+      const section = this._collisionSections[_0x2b0fa1];
+      const idx = section.indexOf(_0x3dce4b);
+      if (idx !== -1) section.splice(idx, 1);
+    }
+    this._collisionSections[_0x5cad3c] ||= [];
+    if (!this._collisionSections[_0x5cad3c].includes(_0x3dce4b)) this._collisionSections[_0x5cad3c].push(_0x3dce4b);
+    _0x3dce4b._eeCollisionSectionIndex = _0x5cad3c;
   }
   _setSectionVisible(_0x2b0fa1, _0x488507) {
     const _0x141e9c = this._sectionContainers[_0x2b0fa1];
@@ -2219,24 +2380,64 @@ window.LevelObject = class LevelObject {
       if (!(_0x937c72.x <= _0x5d0838)) {
         break;
       }
-      this._activeEnterEffect = _0x937c72.effect;
-      this._activeExitEffect = _0x937c72.effect;
+      if (!_0x937c72.spawnTriggered) {
+        this._activeEnterEffect = _0x937c72.effect;
+        this._activeExitEffect = _0x937c72.effect;
+      }
       this._enterEffectTriggerIdx++;
     }
   }
+  _getMoveTriggerPlayerPosition() {
+    const scene = this._scene || {};
+    const playerX = Number(scene._playerWorldX ?? this._cameraXRef?._v ?? 0) || 0;
+    const playerY = Number(scene._state?.y ?? 0) || 0;
+    const cameraX = Number(this._cameraXRef?.value ?? this._cameraXRef?._v ?? scene._cameraX ?? 0) || 0;
+    const cameraY = Number(scene._cameraY ?? 0) || 0;
+    return { x: playerX, y: playerY, playerX, playerY, cameraX, cameraY };
+  }
+
+  _startMoveTriggerTween(trig) {
+    if (!trig || !this._isTriggerSaveObjectLive(trig.uid)) return;
+    const pos = this._getMoveTriggerPlayerPosition();
+    this._activeMoveTweens.push({
+      trig,
+      elapsed: 0,
+      prevProgress: 0,
+      prevPlayerX: pos.playerX,
+      prevPlayerY: pos.playerY,
+      prevCameraX: pos.cameraX,
+      prevCameraY: pos.cameraY,
+    });
+    if (!this._groupOffsets[trig.targetGroup]) {
+      this._groupOffsets[trig.targetGroup] = { x: 0, y: 0 };
+    }
+  }
+
   checkMoveTriggers(playerX) {
     while (this._moveTriggerIdx < this._moveTriggers.length) {
       const trig = this._moveTriggers[this._moveTriggerIdx];
       if (trig.x > playerX) break;
-      this._activeMoveTweens.push({
-        trig,
-        elapsed: 0,
-        prevProgress: 0,
-      });
-      if (!this._groupOffsets[trig.targetGroup]) {
-        this._groupOffsets[trig.targetGroup] = { x: 0, y: 0 };
-      }
+      if (!trig.spawnTriggered && !trig.touchTriggered) this._startMoveTriggerTween(trig);
       this._moveTriggerIdx++;
+    }
+  }
+
+  checkTouchMoveTriggers(playerX, playerY) {
+    const px = Number(playerX) || 0;
+    const py = Number(playerY) || 0;
+    this._touchMoveTriggerActivated ||= new Set();
+
+    const playerHalfSize = (typeof playerSize === "number" ? playerSize : 20);
+    const halfHitbox = 30 + playerHalfSize;
+
+    for (const trig of this._moveTriggers) {
+      if (!trig || !trig.touchTriggered || trig.spawnTriggered || !this._isTriggerSaveObjectLive(trig.uid)) continue;
+      const uid = trig.uid ?? `${trig.x},${trig.y},${trig.targetGroup}`;
+      if (this._touchMoveTriggerActivated.has(uid)) continue;
+      if (Math.abs(px - trig.x) <= halfHitbox && Math.abs(py - (trig.y ?? 0)) <= halfHitbox) {
+        this._touchMoveTriggerActivated.add(uid);
+        this._startMoveTriggerTween(trig);
+      }
     }
   }
 
@@ -2257,8 +2458,19 @@ window.LevelObject = class LevelObject {
 
       anim.prevProgress = progress;
 
-      const deltaX = trig.offsetX * amount;
-      const deltaY = -(trig.offsetY * amount);
+      const followPos = (trig.lockX || trig.lockY || trig.lockCameraX || trig.lockCameraY) ? this._getMoveTriggerPlayerPosition() : null;
+      const deltaX = trig.lockX
+        ? (followPos.playerX - anim.prevPlayerX)
+        : (trig.lockCameraX ? (followPos.cameraX - anim.prevCameraX) : (trig.offsetX * amount));
+      const deltaY = trig.lockY
+        ? -(followPos.playerY - anim.prevPlayerY)
+        : (trig.lockCameraY ? -(followPos.cameraY - anim.prevCameraY) : -(trig.offsetY * amount));
+      if (followPos) {
+        anim.prevPlayerX = followPos.playerX;
+        anim.prevPlayerY = followPos.playerY;
+        anim.prevCameraX = followPos.cameraX;
+        anim.prevCameraY = followPos.cameraY;
+      }
 
       const sprites = this._groupSprites[trig.targetGroup];
       const colliders = this._groupColliders[trig.targetGroup];
@@ -2273,6 +2485,7 @@ window.LevelObject = class LevelObject {
             spr.y = spr._origBaseY + off.y;
             spr._eeWorldX = spr.x;
             spr._eeBaseY  = spr.y;
+            this._refreshSpriteSection(spr);
             if (spr._coinWorldX !== undefined) {
               spr._coinWorldX = (spr._origWorldX + off.x) / 2;
             }
@@ -2287,6 +2500,7 @@ window.LevelObject = class LevelObject {
             col.y = col._origBaseY - off.y;
             col._baseX = col.x;
             col._baseY = col.y;
+            this._refreshCollisionSection(col);
           }
         }
       }
@@ -2302,6 +2516,7 @@ window.LevelObject = class LevelObject {
   resetMoveTriggers() {
     this._moveTriggerIdx = 0;
     this._activeMoveTweens = [];
+    this._touchMoveTriggerActivated = new Set();
     this._groupOffsets = {};
     for (const gid in this._groupSprites) {
       for (const spr of this._groupSprites[gid]) {
@@ -2310,6 +2525,7 @@ window.LevelObject = class LevelObject {
         spr.y = spr._origBaseY;
         spr._eeWorldX = spr._origWorldX;
         spr._eeBaseY = spr._origBaseY;
+        this._refreshSpriteSection(spr);
       }
     }
     for (const gid in this._groupColliders) {
@@ -2318,20 +2534,134 @@ window.LevelObject = class LevelObject {
         col.y = col._origBaseY;
         col._baseX = col._origBaseX;
         col._baseY = col._origBaseY;
+        this._refreshCollisionSection(col);
       }
     }
+  }
+
+  _startAlphaTriggerTween(trig) {
+    if (!trig || !this._isTriggerSaveObjectLive(trig.uid)) return;
+    const currentOpacity = this._groupOpacity[trig.targetGroup] ?? 1;
+    this._activeAlphaTweens.push({
+      trig,
+      elapsed: 0,
+      startOpacity: currentOpacity,
+    });
+  }
+
+  _startRotateTriggerTween(trig) {
+    if (!trig || !this._isTriggerSaveObjectLive(trig.uid)) return;
+    const totalDeg = trig.degrees + (trig.times360 * 360);
+    this._activeRotateTweens.push({
+      trig,
+      elapsed: 0,
+      prevProgress: 0,
+      totalRad: totalDeg * Math.PI / 180,
+    });
+  }
+
+  _startPulseTrigger(trig) {
+    if (!trig || !this._isTriggerSaveObjectLive(trig.uid)) return;
+    const totalDur = trig.fadeIn + trig.hold + trig.fadeOut;
+    this._activePulses.push({ trig, elapsed: 0, totalDuration: totalDur > 0 ? totalDur : 0.01 });
+  }
+
+  _queueSpawnTrigger(trig) {
+    if (!trig || !this._isTriggerSaveObjectLive(trig.uid)) return;
+    const targetGroup = parseInt(trig.targetGroup ?? 0, 10);
+    if (!Number.isFinite(targetGroup) || targetGroup <= 0) return;
+    const baseDelay = Math.max(0, Number(trig.delay) || 0);
+    const randomDelay = Math.max(0, Number(trig.randomDelay) || 0);
+    const randomizedDelay = randomDelay > 0
+      ? Math.max(0, baseDelay + ((Math.random() * 2) - 1) * randomDelay)
+      : baseDelay;
+    this._activeSpawnDelays.push({
+      targetGroup,
+      delay: randomizedDelay,
+      elapsed: 0
+    });
+  }
+
+  checkSpawnTriggers(playerX) {
+    while (this._spawnTriggerIdx < this._spawnTriggers.length) {
+      const trig = this._spawnTriggers[this._spawnTriggerIdx];
+      if (trig.x > playerX) break;
+      if (!trig.spawnTriggered && !trig.touchTriggered) this._queueSpawnTrigger(trig);
+      this._spawnTriggerIdx++;
+    }
+  }
+
+  _activateSpawnedGroup(groupId, colorManager) {
+    const targetGroup = parseInt(groupId ?? 0, 10);
+    if (!Number.isFinite(targetGroup) || targetGroup <= 0) return;
+
+    const spawnMatches = (list) => (Array.isArray(list) ? list : [])
+      .filter(trig => trig && trig.spawnTriggered && this._triggerHasGroup(trig, targetGroup) && this._isTriggerSaveObjectLive(trig.uid));
+
+    for (const trig of spawnMatches(this._colorTriggers)) {
+      if (colorManager && typeof colorManager.triggerColor === "function") {
+        colorManager.triggerColor(trig.index, trig.color, trig.duration);
+      }
+    }
+    for (const trig of spawnMatches(this._enterEffectTriggers)) {
+      this._activeEnterEffect = trig.effect;
+      this._activeExitEffect = trig.effect;
+    }
+    for (const trig of spawnMatches(this._moveTriggers)) this._startMoveTriggerTween(trig);
+    for (const trig of spawnMatches(this._alphaTriggers)) this._startAlphaTriggerTween(trig);
+    for (const trig of spawnMatches(this._rotateTriggers)) this._startRotateTriggerTween(trig);
+    for (const trig of spawnMatches(this._pulseTriggers)) this._startPulseTrigger(trig);
+    for (const trig of spawnMatches(this._spawnTriggers)) this._queueSpawnTrigger(trig);
+  }
+
+  checkTouchSpawnTriggers(playerX, playerY) {
+    const px = Number(playerX) || 0;
+    const py = Number(playerY) || 0;
+    this._touchSpawnTriggerActivated ||= new Set();
+
+    const playerHalfSize = (typeof playerSize === "number" ? playerSize : 20);
+    const halfHitbox = 30 + playerHalfSize;
+
+    for (const trig of this._spawnTriggers) {
+      if (!trig || !trig.touchTriggered || trig.spawnTriggered || !this._isTriggerSaveObjectLive(trig.uid)) continue;
+      const uid = trig.uid ?? `${trig.x},${trig.y},${trig.targetGroup}`;
+      if (this._touchSpawnTriggerActivated.has(uid)) continue;
+      if (Math.abs(px - trig.x) <= halfHitbox && Math.abs(py - (trig.y ?? 0)) <= halfHitbox) {
+        this._touchSpawnTriggerActivated.add(uid);
+        this._queueSpawnTrigger(trig);
+      }
+    }
+  }
+
+  stepSpawnTriggers(dt, colorManager) {
+    let i = 0;
+    let guard = 0;
+    while (i < this._activeSpawnDelays.length && guard++ < 256) {
+      const item = this._activeSpawnDelays[i];
+      item.elapsed += dt;
+      if (item.elapsed >= item.delay) {
+        this._activeSpawnDelays.splice(i, 1);
+        this._activateSpawnedGroup(item.targetGroup, colorManager);
+      } else {
+        i++;
+      }
+      if (i >= this._activeSpawnDelays.length && this._activeSpawnDelays.some(pending => pending && pending.delay <= pending.elapsed)) {
+        i = 0;
+      }
+    }
+  }
+
+  resetSpawnTriggers() {
+    this._spawnTriggerIdx = 0;
+    this._activeSpawnDelays = [];
+    this._touchSpawnTriggerActivated = new Set();
   }
 
   checkAlphaTriggers(playerX) {
     while (this._alphaTriggerIdx < this._alphaTriggers.length) {
       const trig = this._alphaTriggers[this._alphaTriggerIdx];
       if (trig.x > playerX) break;
-      const currentOpacity = this._groupOpacity[trig.targetGroup] ?? 1;
-      this._activeAlphaTweens.push({
-        trig,
-        elapsed: 0,
-        startOpacity: currentOpacity,
-      });
+      if (!trig.spawnTriggered) this._startAlphaTriggerTween(trig);
       this._alphaTriggerIdx++;
     }
   }
@@ -2386,13 +2716,7 @@ window.LevelObject = class LevelObject {
     while (this._rotateTriggerIdx < this._rotateTriggers.length) {
       const trig = this._rotateTriggers[this._rotateTriggerIdx];
       if (trig.x > playerX) break;
-      const totalDeg = trig.degrees + (trig.times360 * 360);
-      this._activeRotateTweens.push({
-        trig,
-        elapsed: 0,
-        prevProgress: 0,
-        totalRad: totalDeg * Math.PI / 180,
-      });
+      if (!trig.spawnTriggered) this._startRotateTriggerTween(trig);
       this._rotateTriggerIdx++;
     }
   }
@@ -2464,8 +2788,7 @@ window.LevelObject = class LevelObject {
     while (this._pulseTriggerIdx < this._pulseTriggers.length) {
       const trig = this._pulseTriggers[this._pulseTriggerIdx];
       if (trig.x > playerX) break;
-      const totalDur = trig.fadeIn + trig.hold + trig.fadeOut;
-      this._activePulses.push({ trig, elapsed: 0, totalDuration: totalDur > 0 ? totalDur : 0.01 });
+      if (!trig.spawnTriggered) this._startPulseTrigger(trig);
       this._pulseTriggerIdx++;
     }
   }
