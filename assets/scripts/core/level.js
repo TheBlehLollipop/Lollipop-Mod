@@ -1610,6 +1610,10 @@ window.LevelObject = class LevelObject {
         sprite._eeAudioScale = true;
         sprite._orbId = levelObj.id;
         this._orbSprites.push(sprite);
+        if (frameName.indexOf("dropRing") >= 0 || frameName.indexOf("gravJumpRing") >= 0) {
+          sprite._isSaw = true;
+          this._sawSprites.push(sprite);
+        }
 
         if (orbGlow) {
           orbGlow.setScale(0.75);
@@ -1696,7 +1700,15 @@ window.LevelObject = class LevelObject {
         const childSprite = addImageToScene(scene, spriteWorldX + childDx, baseY + childDy, childDef.frame);
 
         if (childSprite) {
-          this._applyVisualProps(scene, childSprite, childDef.frame, levelObj, childDef);
+          const childObjectData = (childDef.frame === "portal_01_extra_2_001.png" || childDef.frame === "portal_02_extra_2_001.png")
+            ? { ...levelObj, rot: 0 }
+            : levelObj;
+          this._applyVisualProps(scene, childSprite, childDef.frame, childObjectData, childDef);
+          const showguide = childDef.portalGuide ? (window.enablePortalGuide !== false) : true;
+          const showguide2 = childDef.orbGuide ? (window.enableOrbGuide !== false) : true;
+          childSprite.setVisible(showguide && showguide2);
+          if (childDef.portalGuide) childSprite._eePortalGuide = true;
+          if (childDef.orbGuide) childSprite._eeOrbGuide = true;
 
           if (childDef.audioScale) {
             childSprite.setScale(0.1);
@@ -1705,21 +1717,29 @@ window.LevelObject = class LevelObject {
             this._audioScaleSprites.push(childSprite);
           }
 
+           const bortalstuff = childDef.portalGuide ? { ...childDef, _portalFront: true } : childDef;
           if ((childDef.z !== undefined ? childDef.z : -1) < 0) {
             childSprite._eeLayer = 1;
             childSprite._eeBehindParent = true;
           } else {
-            this._addVisualSprite(childSprite, childDef);
+            this._addVisualSprite(childSprite, bortalstuff);
           }
 
           childSprite._eeWorldX = childWorldX;
           childSprite._eeBaseY = childBaseY;
-          childSprite._eeZDepth = objZDepth + ((childDef.z !== undefined ? childDef.z : -1) < 0 ? -0.003 : 0.001);
+          const guidelayer = childDef.portalGuide ? 0 : ((childDef.z !== undefined ? childDef.z : -1));
+          childSprite._eeZDepth = objZDepth + guidelayer;
           childSprite._eeOrigAlpha = 1;
           registerColor(childSprite, col1);
           this._addToSection(childSprite);
           registerToGroups(childSprite, childWorldX, childBaseY);
           registerObjectSprite(childSprite);
+
+          if (objectDef && objectDef.type === ringType && childDef.orbGuide) {
+            childSprite.setScale(0.75);
+            childSprite._orbId = levelObj.id;
+            this._orbSprites.push(childSprite);
+          }
 
           if (frameName.indexOf("sawblade") >= 0) {
             childSprite.setTint(0x000000);
@@ -3057,6 +3077,18 @@ window.LevelObject = class LevelObject {
     }
     for (let _0x5c5d9a of this._audioScaleSprites) {
       _0x5c5d9a.setScale(0.1);
+    }
+        for (const objectSpriteList of this.objectSprites || []) {
+      if (!objectSpriteList) continue;
+      for (const sprite of objectSpriteList) {
+        if (sprite && sprite._isPortalGuide && sprite._portalOriginalFrame) {
+          const originalFrameInfo = getAtlasFrame(this._scene, sprite._portalOriginalFrame);
+          if (originalFrameInfo) {
+            sprite.setTexture(originalFrameInfo.atlas, originalFrameInfo.frame);
+          }
+          sprite._portalGuideActive = false;
+        }
+      }
     }
     for (let _cs of this._coinSprites) {
       if (_cs) {
