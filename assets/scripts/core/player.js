@@ -423,6 +423,12 @@ class PlayerObject {
       deaths: 0
     };
   }
+    _makeportalguide(gameObj) {
+      if (!gameObj) return;
+      if (typeof this._activatePortalGuideGlow === "function") {
+        this._activatePortalGuideGlow(gameObj);
+    }
+  }
   _getSpiderIconBase() {
     const rawBase = String(window.currentSpider || "spider_01");
     const match = rawBase.match(/^spider_\d+/);
@@ -3354,6 +3360,7 @@ _updateWaveJump() {
           gameObj.activated = true;
           continue;
         }
+      const makeportalguide = (_colType.startsWith("portal_") || _colType === "speed") && !gameObj.activated && window.enablePortalGuide !== false;
         if (_colType === "portal_fly") {
           if (!gameObj.activated) {
             gameObj.activated = true;
@@ -3498,6 +3505,9 @@ _updateWaveJump() {
               playerSpeed = gameObj.speedValue;
             }
           }
+    }
+		if (makeportalguide) {
+          this._makeportalguide(gameObj);
         } else if (_colType === jumpPadType) {
           if (!gameObj.activated) {
             gameObj.activated = true;
