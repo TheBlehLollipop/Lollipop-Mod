@@ -4596,7 +4596,7 @@ _buildSettingsPopup() {
       { text: "Made by RobTop Games", scale: 0.8, font: "goldFont" },
       { text: "Modded by:", scale: 0.9, font: "bigFont" },
       { text: "breadbb, PinkDev, rohanis0000,", scale: 0.7, font: "goldFont" },
-      { text: "bog, Lasokar, AntiMatter,", scale: 0.7, font: "goldFont" },
+      { text: "bog, , AntiMatter,", scale: 0.7, font: "goldFont" },
       { text: "arbstro, and aloaf", scale: 0.7, font: "goldFont" },
       { text: "Contributors:", scale: 0.9, font: "bigFont" },
       { text: "t0nchi7 and Itzar.", scale: 0.7, font: "goldFont" },
@@ -5028,11 +5028,12 @@ _buildSettingsPopup() {
       { text: "checking for hazards lmao", scale: 0.7 },
       { text: "There's probably more but I forgot", color: 0x808080, scale: 0.5 },
       { text: "- Lasokar", scale: 0.7, color: 0x00e676 },
+      { text: "- ...", scale: 0.7, color: 0x9966CC },
       { text: "- Portal/Orb guides added", scale: 0.6 },
       { text: "- Info boxes in the options menu", scale: 0.6 },
-      { text: "- fixed the stupid missing clubstep tile", scale: 0.3 },
+      { text: "- fixed the stupid missing clubstep tile", scale: 0.35 },
       { text: "- Removed Herobrine", scale: 0.6 },
-      { text: "- Lasokar", scale: 0.5, color: 0x9966CC },
+      { text: "- Amethyst", scale: 0.5, color: 0x9966CC },
     ]; 
     let yPos = 0;
     const lineItems = [];
