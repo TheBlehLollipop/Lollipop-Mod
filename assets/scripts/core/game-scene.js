@@ -3963,17 +3963,72 @@ _buildSettingsPopup() {
     let pageContainer = this.add.container(0, 0);
     innerContainer.add(pageContainer);
 
-    const createToggle = (container, x, y, label, getVal, setVal, callback = null, fontSize = 25) => {
-        const getTex = () => getVal() ? "GJ_checkOn_001.png" : "GJ_checkOff_001.png";
-        const check = this.add.image(x + checkOffset, y, "GJ_GameSheet03", getTex()).setScale(0.8).setInteractive();
-        const txt = this.add.bitmapText(x + textOffset, y, "bigFont", label, fontSize).setOrigin(0, 0.5);
+    const createToggle = (container, x, y, label, getVal, setVal, callback, fontSize, hasInfoBox, infoText) => {
+        if (fontSize === undefined) fontSize = 25;
+        if (hasInfoBox === undefined) hasInfoBox = false;
+        if (infoText === undefined) infoText = null;
+
+        var isOn = getVal();
+        var checkTexture = isOn ? "GJ_checkOn_001.png" : "GJ_checkOff_001.png";
+        var check = this.add.image(x + checkOffset, y, "GJ_GameSheet03", checkTexture).setScale(0.8).setInteractive();
+        var txt = this.add.bitmapText(x + textOffset, y, "bigFont", label, fontSize).setOrigin(0, 0.5);
         container.add([check, txt]);
 
+        if (hasInfoBox) {
+            if (infoText) {
+                createInfoButton(container, x + checkOffset - 34, y - 30, infoText, 0.45);
+            }
+        }
+
         this._makeBouncyButton(check, 0.8, () => {
-            setVal(!getVal());
-            check.setTexture("GJ_GameSheet03", getTex());
-            if (callback) callback(getVal());
-            if (this._saveSettings) this._saveSettings();
+            var current = getVal();
+            setVal(!current);
+            var newTexture = getVal() ? "GJ_checkOn_001.png" : "GJ_checkOff_001.png";
+            check.setTexture("GJ_GameSheet03", newTexture);
+            if (callback) {
+                callback(getVal());
+            }
+            if (this._saveSettings) {
+                this._saveSettings();
+            }
+        });
+    };
+
+    function TextToSay(key) {
+        var normalized = String(key).replace(/[^a-z0-9]/gi, "").toLowerCase();
+        return String(key);
+    }
+
+    var infotextstuffsiwannabedonewiththis = {
+        "Enable Portal Guide": "Enables extra indicators on portals.",
+        "Enable Orb Guide": "Enables extra indicators on orbs.",
+        "Show Percentage": "Shows the percentage you are at in a level.",
+        "Percentage Decimals": "Shows decimals in level progress.",
+        "Hitboxes on Death": "Shows hitboxes upon death in both normal and practice mode.",
+    };
+
+    const createInfoButton = (container, x, y, infoTextOrKey, scale) => {
+        var key = String(infoTextOrKey || "");
+        var words = TextToSay(key);
+        var Infotext = null;
+        if (window.settingInfoText && window.settingInfoText[words]) {
+            Infotext = window.settingInfoText[words];
+        } else if (infotextstuffsiwannabedonewiththis[words]) {
+            Infotext = infotextstuffsiwannabedonewiththis[words];
+        }
+        var infoText = Infotext ? Infotext : key;
+        if (!infoText) {
+            return;
+        }
+
+        var infoButton = this.add.image(x, y, "GJ_GameSheet03", "GJ_infoIcon_001.png");
+        infoButton.setAngle(90);
+        infoButton.setScale(scale || 0.45);
+        infoButton.setInteractive();
+        container.add(infoButton);
+
+        this._makeBouncyButton(infoButton, scale, () => {
+            this.InfoBoxDoAThing(infoText);
         });
     };
     const createNumberInput = (container, x, y, label, getVal, setVal) => {
@@ -4100,12 +4155,19 @@ _buildSettingsPopup() {
         createToggle(container, column1X, startY, "Show Percentage", 
             () => window.showPercentage, 
             (v) => window.showPercentage = v,
-            (v) => { if (this._percentageLabel) this._percentageLabel.setVisible(v); }
+            (v) => { if (this._percentageLabel) this._percentageLabel.setVisible(v); },
+            undefined,
+            true,
+            "Show Percentage"
         );
 
         createToggle(container, column1X, startY + spacingY, "Percentage Decimals", 
             () => window.percentageDecimals, 
-            (v) => window.percentageDecimals = v
+            (v) => window.percentageDecimals = v,
+            undefined,
+            undefined,
+            true,
+            "Percentage Decimals"
         );
 
         createToggle(container, column1X, startY + (spacingY * 2), "StartPos Switcher", 
@@ -4162,7 +4224,11 @@ _buildSettingsPopup() {
         
         createToggle(container, column1X, startY + (spacingY * 2), "Hitboxes on Death", 
             () => window.hitboxesOnDeath, 
-            (v) => window.hitboxesOnDeath = v
+            (v) => window.hitboxesOnDeath = v,
+            undefined,
+            undefined,
+            true,
+            "Hitboxes on Death"
         );
 
         createToggle(container, column1X, startY + (spacingY * 3), "Show FPS", 
@@ -4197,6 +4263,21 @@ _buildSettingsPopup() {
             () => window.showObjectIds, 
             (v) => window.showObjectIds = v,
             null, 17
+        );
+                createToggle(container, column2X, startY + (spacingY * 3), "Enable Portal Guide", 
+            () => window.enablePortalGuide, 
+            (v) => window.enablePortalGuide = v,
+            null, 22,
+            true,
+            "Enable Portal Guide"
+        );
+        createToggle(container, column2X, startY + (spacingY * 4), "Enable Orb Guide", 
+            () => window.enableOrbGuide, 
+            (v) => window.enableOrbGuide = v,
+            null,
+            25,
+            true,
+            "Enable Orb Guide"
         );
     };
 
@@ -4257,7 +4338,10 @@ _buildSettingsPopup() {
         macroBot: window.macroBot,
         showGlow: window.showGlow,
         showEditorGlow: window.showEditorGlow,
-        useDirectInternet: !!window.useDirectInternet
+        useDirectInternet: !!window.useDirectInternet,
+        enablePortalGuide: window.enablePortalGuide,
+        enableOrbGuide: window.enableOrbGuide,
+        settingInfoText: window.settingInfoText || {}
     };
     localStorage.setItem("gd_settings", JSON.stringify(settings));
     localStorage.setItem("gd_useDirectInternet", String(!!window.useDirectInternet));
@@ -4282,7 +4366,9 @@ _buildSettingsPopup() {
         macroBot: false,
         showGlow: true,
         showEditorGlow: false,
-        useDirectInternet: true
+        useDirectInternet: true,
+        enablePortalGuide: true,
+        enableOrbGuide: false
     };
 
     const data = { ...defaults, ...(saved ? JSON.parse(saved) : {}) };
@@ -4304,6 +4390,9 @@ _buildSettingsPopup() {
     window.showEditorGlow = data.showEditorGlow;
     window.createObjectIds = data.createObjectIds;
     window.showObjectIds = data.showObjectIds;
+    window.enablePortalGuide = data.enablePortalGuide;
+    window.enableOrbGuide = data.enableOrbGuide;
+    window.settingInfoText = data.settingInfoText || {};
     window.useDirectInternet = !!data.useDirectInternet;
     localStorage.setItem("gd_useDirectInternet", String(!!window.useDirectInternet));
   }
@@ -4594,6 +4683,18 @@ _buildSettingsPopup() {
       ease: "Elastic.Out",
       easeParams: [1, 0.6]
     });
+        this._infoPopupCleanup = () => {
+      this.events.off('postupdate', updateMask);
+      maskShape.destroy();
+      geomMask.destroy();
+    };
+    this.tweens.add({
+      targets: bounceContainer,
+      scale: { from: 0, to: 1 },
+      duration: 660,
+      ease: "Elastic.Out",
+      easeParams: [1, 0.6]
+    });
   }
   _closeInfoPopup() {
     if (this._infoPopup) {
@@ -4603,7 +4704,116 @@ _buildSettingsPopup() {
       }
       this._infoPopup.destroy();
       this._infoPopup = null;
+        }
+    this._infogoaway = () => {
+      this.events.off('postupdate', updateMask);
+      maskShape.destroy();
+      geomMask.destroy();
+    };
+    this.tweens.add({
+      targets: bounceContainer,
+      scale: { from: 0, to: 1 },
+      duration: 660,
+      ease: "Elastic.Out",
+      easeParams: [1, 0.6]
+    });
+  }
+  _closeInfoPopup() {
+    if (this._infoPopup) {
+      if (this._infogoaway) {
+        this._infogoaway();
+        this._infogoaway = null;
+      }
+      this._infoPopup.destroy();
+      this._infoPopup = null;
     }
+  } //im so tired of this
+  InfoBoxDoAThing(displayText) {
+    if (this.EditInfoText) {
+      this.InfoBoxStopAThing();
+    }
+
+    const xPos = screenWidth / 2;
+    const centerY = screenHeight / 2;
+    this.EditInfoText = this.add.container(0, 0).setScrollFactor(0).setDepth(1000);
+
+    const background = this.add.rectangle(xPos, centerY, screenWidth, screenHeight, 0, 0.5).setInteractive();
+    this.EditInfoText.add(background);
+
+    const box = this.add.container(xPos, centerY).setScale(0);
+    this.EditInfoText.add(box);
+
+    const cornerRadius = this.textures.get("GJ_square01").source[0].width * 0.325;
+    const boxWidth = 720;
+    const boxHeight = 280;
+    box.add(this._drawScale9(0, 0, boxWidth, boxHeight, "square01_001", cornerRadius, 0xffffff, 1));
+    box.add(this.add.bitmapText(0, -90, "goldFont", "Info", 45).setOrigin(0.5));
+
+    const textAreaW = boxWidth - 60;
+    const textAreaH = boxHeight - 140;
+
+    const wrapText = (text, maxChars) => {
+      const words = String(text).split(" ");
+      const lines = [];
+      let line = "";
+      for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        if ((line + (line ? " " : "") + word).length <= maxChars) {
+          line = line ? `${line} ${word}` : word;
+        } else {
+          if (line) lines.push(line);
+          line = word;
+        }
+      }
+      if (line) lines.push(line);
+      return lines;
+    };
+
+    const infoText = String(displayText || "");
+    const wrappedText = wrapText(infoText, 40);
+    let y = -30;
+
+    wrappedText.forEach(line => {
+      box.add(this.add.text(0, y, line, {
+        fontFamily: "Arial",
+        fontSize: "30px",
+        color: "#ffffff",
+        align: "center"
+      }).setOrigin(0.5, 0));
+      y += 32;
+    });
+
+    const okBtnBg = this._drawScale9(0, 0, 100, 60, "GJ_button01", this.textures.get("GJ_button01").source[0].width * 0.3, 0xffffff, 1);
+    const okBtn = this.add.rectangle(0, 0, 100, 60).setInteractive();
+    const okLabel = this.add.bitmapText(0, 0, "goldFont", "OK", 48).setOrigin(0.55);
+    const okGroup = this.add.container(0, boxHeight / 2 - 50, [okBtnBg, okBtn, okLabel]);
+    okBtn._bouncyVisualTarget = okGroup;
+    box.add(okGroup);
+
+    this._makeBouncyButton(okBtn, 1.0, () => {
+      this.InfoBoxStopAThing();
+    });
+
+    this.tweens.add({
+      targets: box,
+      scale: { from: 0, to: 1 },
+      duration: 280,
+      ease: "Back.Out"
+    });
+  }
+
+  InfoBoxStopAThing() {
+    if (!this.EditInfoText) return;
+
+    if (this._infoEscKey) {
+      this._infoEscKey.off('down', this._infoEscHandler);
+      this._infoEscKey.destroy();
+      this._infoEscKey = null;
+      this._infoEscHandler = null;
+    }
+
+    this.EditInfoText.destroy();
+    this.EditInfoText = null;
   }
  _buildHowToPlayPopup() {
   if (this._howToPlayPopup) {
@@ -4818,6 +5028,13 @@ _buildSettingsPopup() {
       { text: "checking for hazards lmao", scale: 0.7 },
       { text: "There's probably more but I forgot", color: 0x808080, scale: 0.5 },
       { text: "- Lasokar", scale: 0.7, color: 0x00e676 },
+      { text: " ...", scale: 0.7, color: 0x9966CC },
+      { text: "- Portal/Orb guides added", scale: 0.6 },
+      { text: "- Info boxes in the options menu", scale: 0.6 },
+      { text: "- fixed the stupid missing clubstep tile", scale: 0.4 },
+      { text: "- Removed Herobrine", scale: 0.6 },
+      { text: "- Done by yours truly,", scale: 0.5, color: 0x9966CC },
+      { text: "- Amethyst", scale: 0.4, color: 0x9966CC },
     ]; 
     let yPos = 0;
     const lineItems = [];
