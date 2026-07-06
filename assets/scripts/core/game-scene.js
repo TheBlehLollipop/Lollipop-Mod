@@ -6528,11 +6528,32 @@ _buildSettingsPopup() {
         if (this._creatorMenuOpen) return;
         this._spaceWasDown = true;
         if (this._levelSelectOverlay) {
+        this._creatorMenuOpen;
+        this.input.enabled = false;
+
+        const lvl = window.currentlevel;
+        const songID = lvl[0];
+        const levelFileName = lvl[2];
+        const songFileName = lvl[4] ? lvl[4] : lvl[1].replaceAll(" ", "");
+
+        const loadingText = this.add.bitmapText(
+          screenWidth / 2, screenHeight / 2, "goldFont", "Downloading Level Assets...", 20
+        ).setOrigin(0.5).setDepth(200);
+
+        this.load.text(levelFileName, "assets/levels/" + levelFileName.split("_")[1] + ".txt");
+        this.load.audio(songID, "assets/music/" + songFileName + ".mp3");
+
+        this.load.once("complete", () => {
+          loadingText.destroy();
           this._audio.playEffect("playSound_01", { volume: 1 });
           this._closeLevelSelect(true);
           this._audio.stopMusic();
+          this.input.enabled = true;
           this.game.registry.set("autoStartGame", true);
           this.scene.restart();
+          });
+
+          this.load.start();
           return;
         }
         this._openLevelSelect();
