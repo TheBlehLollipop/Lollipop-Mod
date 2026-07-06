@@ -5783,14 +5783,17 @@ _buildSettingsPopup() {
 
     if (activeStartPos) {
       const pos = startPositions[this._startPosIndex];
+      const startPosY = Number.isFinite(Number(pos.y)) ? Number(pos.y) : 30;
 
       this._playerWorldX = pos.x;
-      this._state.y = pos.y;
+      this._state.y = startPosY;
+      this._state.lastY = startPosY;
+      this._state.lastGroundPosY = startPosY;
       if (pos.gameMode == 1) {
         this._player.enterShipMode();
       } else if (pos.gameMode == 2) {
-        this._state.y = 30;
-        this._player.enterBallMode({ y: 30 });
+        this._state.y = startPosY;
+        this._player.enterBallMode({ y: startPosY });
       } else if (pos.gameMode == 3) {
         this._player.enterUfoMode();
       } else if (pos.gameMode == 4) {
@@ -5814,6 +5817,10 @@ _buildSettingsPopup() {
         this._enableDualMode();
       }
       this._level.fastForwardTriggers(pos.x, this._colorManager);
+      if (this._player) {
+        this._player._lastCollisionWorldX = Number.isFinite(Number(this._playerWorldX)) ? Number(this._playerWorldX) : null;
+        this._player._lastCollisionWorldY = startPosY;
+      }
     }
 
     this._audio.reset();

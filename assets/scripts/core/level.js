@@ -312,7 +312,6 @@ if (!allObjects[1331]) {
     "portalParticleColor": 0x00ffff
   };
 }
-
 const _speedPortalIds = [200, 201, 202, 203, 1334];
 for (const _spId of _speedPortalIds) {
   if (!allObjects[_spId] || allObjects[_spId].type !== "speed") {
@@ -509,6 +508,56 @@ window.LevelObject = class LevelObject {
     return String(levelObj?._raw?.[62] ?? levelObj?._raw?.["62"] ?? "0") === "1";
   }
 
+  _getTeleportPortalYOffset(levelObj) {
+    const raw = levelObj?._raw || {};
+    const hasOffset = raw[54] !== undefined || raw["54"] !== undefined;
+    const parsed = parseFloat(hasOffset ? (raw[54] ?? raw["54"]) : 90);
+    return Number.isFinite(parsed) ? parsed : 90;
+  }
+
+  _normalizeTeleportPortals(levelObjects) {
+    if (!Array.isArray(levelObjects)) return [];
+
+    const normalized = [];
+    const standaloneExitPortals = [];
+
+    for (const obj of levelObjects) {
+      if (!obj) continue;
+      if (parseInt(obj.id ?? 0, 10) === 749) {
+        standaloneExitPortals.push(obj);
+      } else {
+        normalized.push(obj);
+      }
+    }
+
+    for (const exitObj of standaloneExitPortals) {
+      const exitX = parseFloat(exitObj.x ?? exitObj._raw?.[2] ?? exitObj._raw?.["2"] ?? 0) || 0;
+      let enterObj = null;
+      let bestDistance = Infinity;
+
+      for (const candidate of normalized) {
+        if (!candidate || parseInt(candidate.id ?? 0, 10) !== 747) continue;
+        const candidateX = parseFloat(candidate.x ?? candidate._raw?.[2] ?? candidate._raw?.["2"] ?? 0) || 0;
+        const distance = Math.abs(candidateX - exitX);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          enterObj = candidate;
+        }
+      }
+
+      if (enterObj) {
+        const enterY = parseFloat(enterObj.y ?? enterObj._raw?.[3] ?? enterObj._raw?.["3"] ?? 0) || 0;
+        const exitY = parseFloat(exitObj.y ?? exitObj._raw?.[3] ?? exitObj._raw?.["3"] ?? enterY) || enterY;
+        const yOffset = exitY - enterY;
+        enterObj._raw = enterObj._raw || {};
+        enterObj._raw[54] = String(yOffset);
+        enterObj._raw["54"] = String(yOffset);
+      }
+    }
+
+    return normalized.filter(Boolean);
+  }
+
   _getLevelObjectGroupIds(levelObj) {
     const values = [];
     const addRawGroups = (rawGroups) => {
@@ -556,6 +605,7 @@ window.LevelObject = class LevelObject {
       objects: levelObjects,
       settings: settingslist
     } = parseLevel(levelData);
+    levelObjects = this._normalizeTeleportPortals(levelObjects);
     this._sourceLevelObjects = levelObjects;
     this._spawnLevelObjects(levelObjects);
     this._setUpSettings(settingslist);
@@ -1307,11 +1357,96 @@ window.LevelObject = class LevelObject {
     return textSprite;
   }
 
+  _spawnTeleportExitPortalVisual(scene, enterObj, enterDef, linkedObjectId, registerObjectSprite, registerToGroups, registerColor, objZDepth, col1) {
+    if (parseInt(enterObj?.id ?? 0, 10) !== 747) return;
+
+    const offsetY = this._getTeleportPortalYOffset(enterObj);
+    const exitDefSource = getObjectFromId(749) || allObjects[749] || enterDef;
+    if (!exitDefSource) return;
+
+    const frameName = exitDefSource.frame || enterDef?.frame;
+    if (!frameName) return;
+
+    const enterX = parseFloat(enterObj.x ?? enterObj._raw?.[2] ?? enterObj._raw?.["2"] ?? 0) || 0;
+    const enterY = parseFloat(enterObj.y ?? enterObj._raw?.[3] ?? enterObj._raw?.["3"] ?? 0) || 0;
+    const exitY = enterY + offsetY;
+    const exitRot = parseFloat(enterObj.rot ?? enterObj._raw?.[6] ?? enterObj._raw?.["6"] ?? 0) || 0;
+    const worldX = enterX * 2;
+    const worldY = exitY * 2;
+    const baseY = b(worldY);
+
+    const exitLevelObj = {
+      ...enterObj,
+      id: 749,
+      y: exitY,
+      rot: exitRot,
+      flipX: true,
+      _generatedTeleportExit: true,
+      _raw: {
+        ...(enterObj._raw || {}),
+        1: "749",
+        "1": "749",
+        2: String(enterX),
+        "2": String(enterX),
+        3: String(exitY),
+        "3": String(exitY),
+        4: "1",
+        "4": "1",
+        6: String(exitRot),
+        "6": String(exitRot)
+      }
+    };
+
+    const exitDef = { ...exitDefSource, _portalFront: true, _generatedTeleportExit: true };
+    let portalBackSprite = null;
+
+    if (frameName.includes("_front_")) {
+      const backFrame = frameName.replace("_front_", "_back_");
+      portalBackSprite = addImageToScene(scene, worldX, baseY, backFrame);
+      if (portalBackSprite) {
+        this._applyVisualProps(scene, portalBackSprite, backFrame, exitLevelObj, exitDefSource);
+        portalBackSprite._eeLayer = 1;
+        portalBackSprite._eeWorldX = worldX;
+        portalBackSprite._eeBaseY = baseY;
+        portalBackSprite._eeZDepth = objZDepth - 0.004;
+        portalBackSprite._eeOrigAlpha = 1;
+        portalBackSprite._eeGeneratedTeleportExit = true;
+        this._addToSection(portalBackSprite);
+        registerToGroups(portalBackSprite, worldX, baseY);
+        registerColor(portalBackSprite, col1);
+        registerObjectSprite(portalBackSprite);
+      }
+    }
+
+    const sprite = addImageToScene(scene, worldX, baseY, frameName);
+    if (!sprite) return;
+
+    this._applyVisualProps(scene, sprite, frameName, exitLevelObj, exitDefSource);
+    if (portalBackSprite) {
+      portalBackSprite.x = sprite.x;
+      portalBackSprite.y = sprite.y;
+    }
+    this._addVisualSprite(sprite, exitDef);
+    sprite._eeWorldX = worldX;
+    sprite._eeBaseY = baseY;
+    sprite._eeZDepth = objZDepth + 0.004;
+    sprite._eeOrigAlpha = 1;
+    sprite._eeGeneratedTeleportExit = true;
+    registerColor(sprite, col1);
+    this._addToSection(sprite);
+    registerToGroups(sprite, worldX, baseY);
+    registerObjectSprite(sprite);
+  }
+
   _spawnObject(levelObj) {
   this.objectSprites = this.objectSprites || [];
 
   const scene = this._scene;
   const objectDef = getObjectFromId(levelObj.id);
+
+  if (parseInt(levelObj?.id ?? 0, 10) === 749 && !levelObj?._generatedTeleportExit) {
+    return objectDef || allObjects[749] || null;
+  }
 
   if (objectDef && objectDef.type === triggerType) {
     if (this._nextObjectId === undefined) {
@@ -1743,6 +1878,9 @@ window.LevelObject = class LevelObject {
         }
       }
     }
+    if (parseInt(levelObj.id ?? 0, 10) === 747) {
+      this._spawnTeleportExitPortalVisual(scene, levelObj, objectDef, linkedObjectId, registerObjectSprite, registerToGroups, registerColor, objZDepth, col1);
+    }
   }
 
   if (objectDef && objectDef.portalParticle && frameName && !window.isEditor && !scene?._editorPlaytestActive) {
@@ -1889,6 +2027,7 @@ window.LevelObject = class LevelObject {
         111: "ufo",
         745: "robot",
         1331: "spider",
+        747: "teleport",
         286: "dual_on",
         287: "dual_off"
       }[levelObj.id];
@@ -1906,6 +2045,7 @@ window.LevelObject = class LevelObject {
         ufo: portalUfoType,
         robot: "portal_robot",
         spider: "portal_spider",
+        teleport: "portal_teleport",
         mirrora: "portal_mirror_on",
         mirrorb: "portal_mirror_off",
         shrink: "portal_mini_on",
@@ -1915,8 +2055,21 @@ window.LevelObject = class LevelObject {
       }[portalSub] || null;
 
       if (portalColliderType) {
-        const collider = new Collider(portalColliderType, worldX, worldY, portalW, portalH, levelObj.rot || 0);
+        const portalRot = parseFloat(levelObj.rot || 0) || 0;
+        const portalRotRad = portalRot * Math.PI / 180;
+        const isTeleportPortal = portalColliderType === "portal_teleport";
+        const hitboxShift = isTeleportPortal ? -30 : 0;
+        const colliderX = worldX - Math.cos(portalRotRad) * hitboxShift;
+        const colliderY = worldY + Math.sin(portalRotRad) * hitboxShift;
+        const collider = new Collider(portalColliderType, colliderX, colliderY, portalW, portalH, portalRot);
+        collider.portalX = worldX;
         collider.portalY = worldY;
+        if (isTeleportPortal) {
+          const yOffset = this._getTeleportPortalYOffset(levelObj);
+          collider.teleportTargetX = worldX;
+          collider.teleportTargetY = worldY + yOffset * 2;
+          collider.teleportYOffset = yOffset * 2;
+        }
         registerCollider(collider);
         this.objects.push(collider);
         hasCollisionEntry = true;

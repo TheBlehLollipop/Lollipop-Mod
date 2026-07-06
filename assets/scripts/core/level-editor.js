@@ -622,6 +622,31 @@ class LevelEditor {
     for (const collider of this._level.objects) {
         if (!collider) continue;
 
+        if (collider.type === "portal_teleport" && Number.isInteger(collider._eeObjectId)) {
+            const saveObj = this._getEditorSaveObjectForObjectId?.(collider._eeObjectId);
+            if (saveObj && parseInt(saveObj.id ?? 0, 10) === 747) {
+                const worldX = (parseFloat(saveObj.x ?? saveObj._raw?.[2] ?? saveObj._raw?.["2"] ?? 0) || 0) * 2;
+                const worldY = (parseFloat(saveObj.y ?? saveObj._raw?.[3] ?? saveObj._raw?.["3"] ?? 0) || 0) * 2;
+                const portalRot = parseFloat(saveObj.rot ?? saveObj._raw?.[6] ?? saveObj._raw?.["6"] ?? 0) || 0;
+                const portalRotRad = portalRot * Math.PI / 180;
+                const hitboxShift = -30;
+                const offsetY = parseFloat(saveObj._raw?.[54] ?? saveObj._raw?.["54"] ?? 90);
+                const validOffsetY = Number.isFinite(offsetY) ? offsetY : 90;
+                collider.x = worldX - Math.cos(portalRotRad) * hitboxShift;
+                collider.y = worldY + Math.sin(portalRotRad) * hitboxShift;
+                collider._baseX = collider.x;
+                collider._baseY = collider.y;
+                collider._origBaseX = collider.x;
+                collider._origBaseY = collider.y;
+                collider.rotationDegrees = portalRot;
+                collider.portalX = worldX;
+                collider.portalY = worldY;
+                collider.teleportTargetX = worldX;
+                collider.teleportTargetY = worldY + validOffsetY * 2;
+                collider.teleportYOffset = validOffsetY * 2;
+            }
+        }
+
         if (typeof this._level._addCollisionToSection === "function") {
             this._level._addCollisionToSection(collider);
         }
@@ -815,8 +840,11 @@ class LevelEditor {
         return;
     }
 
+    const startPosY = Number.isFinite(Number(pos.y)) ? Number(pos.y) : 30;
     this._playerWorldX = pos.x || 0;
-    this._state.y = pos.y ?? 30;
+    this._state.y = startPosY;
+    this._state.lastY = startPosY;
+    this._state.lastGroundPosY = startPosY;
     this._state.onGround = true;
     this._state.canJump = true;
     this._player.setCubeVisible(true);
@@ -834,8 +862,8 @@ class LevelEditor {
     if (gamemode == 1) {
         this._player.enterShipMode();
     } else if (gamemode == 2) {
-        this._state.y = 30;
-        this._player.enterBallMode({ y: 30 });
+        this._state.y = startPosY;
+        this._player.enterBallMode({ y: startPosY });
     } else if (gamemode == 3) {
         this._player.enterUfoMode();
     } else if (gamemode == 4) {
@@ -857,6 +885,10 @@ class LevelEditor {
     }
 
     this._level.fastForwardTriggers(pos.x || 0, this._colorManager);
+    if (this._player) {
+        this._player._lastCollisionWorldX = Number.isFinite(Number(this._playerWorldX)) ? Number(this._playerWorldX) : null;
+        this._player._lastCollisionWorldY = startPosY;
+    }
     this._level.applyColorChannels(this._colorManager);
     this._bg.setTint(this._colorManager.getHex(fs));
     this._level.setGroundColor(this._colorManager.getHex(gs));
@@ -1600,6 +1632,7 @@ class LevelEditor {
         });
         const activeCatDef = OBJECT_CATEGORIES.find(c => c.id === this._currentBuildCategory);
         for (let i = 1; i <= this._totalIds; i++) {
+            if (i === 749) continue;
             const def = getObjectFromId(i);
             const rawDef = allObjectsData[String(i)]; 
             
@@ -1795,6 +1828,22 @@ class LevelEditor {
     const selectedObjectIds = this._getCurrentSelectedEditorObjectIds();
     if (!selectedObjectIds.length) return;
 
+    if (selectedObjectIds.length === 1 && this._editorSelectedTeleportExitObjectId === selectedObjectIds[0]) {
+        const selectedObjectId = selectedObjectIds[0];
+        const saveObj = this._getEditorSaveObjectForObjectId(selectedObjectId);
+        if (!saveObj || parseInt(saveObj.id ?? 0, 10) !== 747) return;
+
+        const currentOffset = parseFloat(saveObj._raw?.[54] ?? saveObj._raw?.["54"] ?? 90);
+        const nextOffset = (Number.isFinite(currentOffset) ? currentOffset : 90) - (dy / 2);
+        this._setTeleportExitYOffset(saveObj, nextOffset);
+        this._refreshTeleportExitVisualsForSaveObject(saveObj);
+        this._editorTeleportExitSelectionRequest = selectedObjectId;
+        this._selectEditorObjectsByIds([selectedObjectId], this._currentSelectedTintByObjectId?.[selectedObjectId] ?? 0x00ff00);
+        this._refreshEditorCollisionCaches();
+        this._applyEditorLayerFilter?.();
+        return;
+    }
+
     for (const selectedObjectId of selectedObjectIds) {
         const sprites = this._level.objectSprites[selectedObjectId];
         const saveObj = this._getEditorSaveObjectForObjectId(selectedObjectId);
@@ -1988,6 +2037,8 @@ class LevelEditor {
 
 
   _selectEditorObjectsByIds(objectIds, tint = 0x00ff00) {
+    const requestedTeleportExitObjectId = Number.isInteger(this._editorTeleportExitSelectionRequest) ? this._editorTeleportExitSelectionRequest : -1;
+    this._editorTeleportExitSelectionRequest = -1;
     const previousTintByObjectId = this._currentSelectedTintByObjectId || {};
     this._restoreEditorSelectionTint();
 
@@ -1995,6 +2046,8 @@ class LevelEditor {
     this._currentSelectedSprite = null;
     this._currentSelectedObjectIds = [];
     this._currentSelectedTintByObjectId = {};
+    this._editorSelectedTeleportExitObjectId = -1;
+    this._editorTeleportExitSelectionRequest = -1;
     window.editorSelectedObject = -1;
 
     const uniqueIds = [];
@@ -2006,12 +2059,18 @@ class LevelEditor {
         uniqueIds.push(parsed);
     }
 
+    const teleportExitOnlyObjectId = uniqueIds.length === 1 && requestedTeleportExitObjectId === uniqueIds[0] ? requestedTeleportExitObjectId : -1;
+    this._editorSelectedTeleportExitObjectId = teleportExitOnlyObjectId;
+
     for (const objectId of uniqueIds) {
         const linkedSprites = this._level.objectSprites[objectId];
         const objectTint = previousTintByObjectId[objectId] ?? tint;
         this._currentSelectedTintByObjectId[objectId] = objectTint;
+        const spritesToTint = objectId === teleportExitOnlyObjectId
+            ? linkedSprites.filter(spr => spr && spr._eeGeneratedTeleportExit)
+            : linkedSprites;
 
-        for (const spr of linkedSprites) {
+        for (const spr of spritesToTint) {
             if (!spr) continue;
 
             if (spr._editorPrevTint === undefined) {
@@ -2030,7 +2089,9 @@ class LevelEditor {
 
     if (uniqueIds.length) {
         const firstSprites = this._level.objectSprites[uniqueIds[0]];
-        this._currentSelectedSprite = firstSprites?.[0] || null;
+        this._currentSelectedSprite = uniqueIds[0] === teleportExitOnlyObjectId
+            ? (firstSprites?.find(spr => spr && spr._eeGeneratedTeleportExit) || firstSprites?.[0] || null)
+            : (firstSprites?.[0] || null);
         window.editorSelectedObject = uniqueIds[0];
     }
 
@@ -2045,6 +2106,8 @@ class LevelEditor {
     this._currentSelectedSprite = null;
     this._currentSelectedObjectIds = [];
     this._currentSelectedTintByObjectId = {};
+    this._editorSelectedTeleportExitObjectId = -1;
+    this._editorTeleportExitSelectionRequest = -1;
     window.editorSelectedObject = -1;
     this._updateEditorActionButtons();
   }
@@ -2393,6 +2456,107 @@ class LevelEditor {
   }
 
 
+  _setTeleportExitYOffset(enterSaveObj, yOffset) {
+    if (!enterSaveObj) return false;
+    const parsed = parseFloat(yOffset);
+    const offset = Number.isFinite(parsed) ? parsed : 90;
+    enterSaveObj._raw = enterSaveObj._raw || {};
+    enterSaveObj._raw[54] = String(offset);
+    enterSaveObj._raw["54"] = String(offset);
+    return true;
+  }
+
+
+  _refreshTeleportExitVisualsForSaveObject(enterSaveObj) {
+    if (!enterSaveObj || parseInt(enterSaveObj.id ?? 0, 10) !== 747) return false;
+
+    const linkedId = Number.isInteger(enterSaveObj._eeObjectId) ? enterSaveObj._eeObjectId : -1;
+    if (linkedId < 0 || !this._level?.objectSprites?.[linkedId]) return false;
+
+    const sprites = this._level.objectSprites[linkedId];
+    for (const spr of sprites.slice()) {
+      if (spr && spr._eeGeneratedTeleportExit && spr.destroy) spr.destroy();
+    }
+    this._level.objectSprites[linkedId] = sprites.filter(spr => spr && !spr._eeGeneratedTeleportExit);
+
+    const objectDef = getObjectFromId(enterSaveObj.id);
+    const depthBase = { "-5": -12, "-3": -9, "-1": -6, 0: 0, 1: 3, 3: 6, 5: 9, 7: 10.5, 9: 12, 11: 13.5 };
+    const zLayer = enterSaveObj.zLayer || objectDef?.default_z_layer || 0;
+    const zOrder = enterSaveObj.zOrder || objectDef?.default_z_order || 0;
+    const objZDepth = (depthBase[zLayer] !== undefined ? depthBase[zLayer] : 0) + zOrder * 0.01;
+    const groupIds = this._getEditorObjectGroupIds ? this._getEditorObjectGroupIds(enterSaveObj) : [];
+    const col1 = enterSaveObj.color1 || objectDef?.default_base_color_channel || 0;
+
+    const registerObjectSprite = (spr) => {
+      if (!spr) return;
+      spr._eeObjectId = linkedId;
+      spr._eeEditorLayer = parseInt(enterSaveObj.editorLayer ?? enterSaveObj._raw?.[20] ?? enterSaveObj._raw?.["20"] ?? 0, 10) || 0;
+      spr._eeEditorLayer2 = parseInt(enterSaveObj.editorLayer2 ?? enterSaveObj._raw?.[61] ?? enterSaveObj._raw?.["61"] ?? 0, 10) || 0;
+      if (!this._level.objectSprites[linkedId]) this._level.objectSprites[linkedId] = [];
+      this._level.objectSprites[linkedId].push(spr);
+    };
+
+    const registerToGroups = (spr, baseWorldX, baseBaseY) => {
+      if (!spr || !groupIds.length) return;
+      spr._origWorldX = baseWorldX;
+      spr._origBaseY = baseBaseY;
+      for (const gid of groupIds) {
+        if (!this._level._groupSprites[gid]) this._level._groupSprites[gid] = [];
+        this._level._groupSprites[gid].push(spr);
+      }
+    };
+
+    const registerColor = (spr, ch) => {
+      if (ch > 0 && objectDef?.can_color !== false && spr && !spr._isSaw) {
+        spr._eeColorChannel = ch;
+        if (!this._level._colorChannelSprites[ch]) this._level._colorChannelSprites[ch] = [];
+        this._level._colorChannelSprites[ch].push(spr);
+      }
+    };
+
+    this._level._spawnTeleportExitPortalVisual?.(this, enterSaveObj, objectDef, linkedId, registerObjectSprite, registerToGroups, registerColor, objZDepth, col1);
+    return true;
+  }
+
+
+  _applyTeleportExitPlacement(exitX, exitY) {
+    if (!Array.isArray(window.levelObjects)) return false;
+
+    const selectedIds = this._getCurrentSelectedEditorObjectIds ? this._getCurrentSelectedEditorObjectIds() : [];
+    let enterSaveObj = null;
+
+    for (const objectId of selectedIds) {
+      const candidate = this._getEditorSaveObjectForObjectId(objectId);
+      if (candidate && parseInt(candidate.id ?? 0, 10) === 747) {
+        enterSaveObj = candidate;
+        break;
+      }
+    }
+
+    if (!enterSaveObj) {
+      let bestDistance = Infinity;
+      for (const obj of window.levelObjects) {
+        if (!obj || parseInt(obj.id ?? 0, 10) !== 747) continue;
+        const dx = Number(obj.x ?? 0) - Number(exitX ?? 0);
+        const dist = Math.abs(dx);
+        if (dist < bestDistance) {
+          bestDistance = dist;
+          enterSaveObj = obj;
+        }
+      }
+    }
+
+    if (!enterSaveObj) return false;
+
+    const yOffset = (Number(exitY) || 0) - (Number(enterSaveObj.y) || 0);
+    this._setTeleportExitYOffset(enterSaveObj, yOffset);
+    this._refreshTeleportExitVisualsForSaveObject(enterSaveObj);
+
+    this._refreshEditorCollisionCaches?.();
+    this._applyEditorLayerFilter?.();
+    return true;
+  }
+
   _placeObject() {
     const pointer = this.input.activePointer;
 
@@ -2409,6 +2573,11 @@ class LevelEditor {
     const objectDef = getObjectFromId(objId);
 
     if (!objectDef) return;
+
+    if (parseInt(objId ?? 0, 10) === 749) {
+        this._applyTeleportExitPlacement(transformedX, transformedY);
+        return;
+    }
 
     const saveData = {
         id: objId,
@@ -2456,6 +2625,11 @@ class LevelEditor {
 
     if (this._isEditorColorTriggerId(objId) && ![29, 30].includes(parseInt(objId ?? 0, 10))) {
         saveData._raw["23"] = "1";
+    }
+
+    if (parseInt(objId ?? 0, 10) === 747) {
+        saveData._raw[54] = "90";
+        saveData._raw["54"] = "90";
     }
 
     if (objectDef.textObject) {
@@ -2520,6 +2694,7 @@ class LevelEditor {
   _selectObjectAtPointer(addToSelection = false) {
     const pointer = this.input.activePointer;
     let foundObjectIndex = -1;
+    let foundSprite = null;
 
     for (let i = this._level.objectSprites.length - 1; i >= 0; i--) {
         const spriteList = this._level.objectSprites[i];
@@ -2533,6 +2708,7 @@ class LevelEditor {
             const bounds = spr.getBounds();
             if (bounds.contains(pointer.x, pointer.y)) {
                 foundObjectIndex = i;
+                foundSprite = spr;
                 break;
             }
         }
@@ -2547,11 +2723,15 @@ class LevelEditor {
         return;
     }
 
+    const clickedTeleportExit = !!foundSprite?._eeGeneratedTeleportExit;
+
     if (addToSelection || (this._editorTab === "edit" && this._isSwipeEnabled)) {
         const selectedIds = this._getCurrentSelectedEditorObjectIds();
         if (!selectedIds.includes(foundObjectIndex)) selectedIds.push(foundObjectIndex);
+        this._editorTeleportExitSelectionRequest = -1;
         this._selectEditorObjectsByIds(selectedIds, 0x00ff00);
     } else {
+        this._editorTeleportExitSelectionRequest = clickedTeleportExit ? foundObjectIndex : -1;
         this._selectEditorObjectsByIds([foundObjectIndex], 0x00ff00);
     }
   }
@@ -8106,6 +8286,10 @@ _serializeObject(object) {
     return "";
   }
 
+  if (parseInt(object.id ?? 0, 10) === 749) {
+    return "";
+  }
+
   let objectData = { ...(object._raw || {}) };
 
   objectData[1] = String(object.id);
@@ -8319,6 +8503,9 @@ LevelEditor.methodNames = [
   "_updateEditorActionButtons",
   "_updateEditorGrid",
   "_editorAction",
+  "_setTeleportExitYOffset",
+  "_refreshTeleportExitVisualsForSaveObject",
+  "_applyTeleportExitPlacement",
   "_placeObject",
   "_selectObjectAtPointer",
   "_deleteObjectAtPointer",

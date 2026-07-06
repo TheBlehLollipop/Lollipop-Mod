@@ -412,6 +412,9 @@ class PlayerObject {
     this._lastScreenX = centerX;
     this._lastScreenY = b(this.p.y);
     this._hitboxTrail = [];
+    this._lastCollisionWorldX = null;
+    this._lastCollisionWorldY = null;
+    this._ignoreTeleportUntilClear = false;
     this._createSprites();
     this._hitboxGraphics = scene.add.graphics().setScrollFactor(0).setDepth(20);
     this._initParticles(scene);
@@ -2458,7 +2461,8 @@ if (this.p.isFlying || this.p.isUfo) {
       portal_mini_on: "04",
       portal_mini_off: "04",
       portal_dual_on: "05",
-      portal_dual_off: "05"
+      portal_dual_off: "05",
+      portal_teleport: "06"
     };
 
     const typeStr = portalShineMap[portalType] || ((type === 1) ? "02" : "01");
@@ -2602,10 +2606,13 @@ if (this.p.isFlying || this.p.isUfo) {
     return fixedKey;
   }
 
-  _createPortalShineSprite(scene, x, y, frameName, rotationDegrees = 0) {
+  _createPortalShineSprite(scene, x, y, frameName, rotationDegrees = 0, flipX = false, flipY = false) {
     const correctedTextureKey = this._getCorrectedPortalShineTextureKey(scene, frameName);
     if (correctedTextureKey) {
-      return scene.add.image(x, y, correctedTextureKey).setAngle(rotationDegrees || 0);
+      const correctedSprite = scene.add.image(x, y, correctedTextureKey).setAngle(rotationDegrees || 0);
+      if (correctedSprite?.setFlipX) correctedSprite.setFlipX(!!flipX);
+      if (correctedSprite?.setFlipY) correctedSprite.setFlipY(!!flipY);
+      return correctedSprite;
     }
 
     let shineSprite = null;
@@ -2620,8 +2627,8 @@ if (this.p.isFlying || this.p.isUfo) {
 
     const visualPropsObject = {
       rot: rotationDegrees || 0,
-      flipX: false,
-      flipY: false,
+      flipX: !!flipX,
+      flipY: !!flipY,
       scale: 1
     };
 
@@ -2636,12 +2643,16 @@ if (this.p.isFlying || this.p.isUfo) {
 
   _playPortalShine(_0x49e81f, type = 1) {
     const _0x4ed8ff = this._scene;
-    const _0xf31b0d = _0x49e81f.x;
-    const _0x3824c0 = b(_0x49e81f.portalY);
+    const portalX = Number(_0x49e81f.portalX);
+    const portalY = Number(_0x49e81f.portalY);
+    const _0xf31b0d = Number.isFinite(portalX) ? portalX : _0x49e81f.x;
+    const _0x3824c0 = b(Number.isFinite(portalY) ? portalY : _0x49e81f.y);
     const shineFrames = this._getPortalShineFrames(_0x49e81f, type);
+    const flipX = !!(_0x49e81f.flipX || _0x49e81f.portalFlipX);
+    const flipY = !!(_0x49e81f.flipY || _0x49e81f.portalFlipY);
 
     for (const shineDef of shineFrames) {
-      const pieceSize = this._createPortalShineSprite(_0x4ed8ff, _0xf31b0d, _0x3824c0, shineDef.frame, _0x49e81f.rotationDegrees);
+      const pieceSize = this._createPortalShineSprite(_0x4ed8ff, _0xf31b0d, _0x3824c0, shineDef.frame, _0x49e81f.rotationDegrees, flipX, flipY);
       if (!pieceSize) {
         continue;
       }
@@ -3302,6 +3313,140 @@ _updateWaveJump() {
       }
     }
   }
+  _isPortalCollisionType(colType) {
+    const typeStr = String(colType || "");
+    return typeStr.startsWith("portal_") || typeStr === speedType || typeStr === "speed";
+  }
+
+  _rotatedRectanglesOverlap(cx1, cy1, hw1, hh1, rotDeg1, cx2, cy2, hw2, hh2, rotDeg2 = 0) {
+    const makeRect = (cx, cy, hw, hh, rotDeg) => {
+      const rad = (Number(rotDeg) || 0) * Math.PI / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+      return {
+        cx,
+        cy,
+        hw,
+        hh,
+        ux: { x: cos, y: sin },
+        uy: { x: -sin, y: cos }
+      };
+    };
+
+    const a = makeRect(cx1, cy1, hw1, hh1, rotDeg1);
+    const b = makeRect(cx2, cy2, hw2, hh2, rotDeg2);
+    const axes = [a.ux, a.uy, b.ux, b.uy];
+    const dx = b.cx - a.cx;
+    const dy = b.cy - a.cy;
+
+    for (const axis of axes) {
+      const centerDistance = Math.abs(dx * axis.x + dy * axis.y);
+      const radiusA =
+        a.hw * Math.abs(axis.x * a.ux.x + axis.y * a.ux.y) +
+        a.hh * Math.abs(axis.x * a.uy.x + axis.y * a.uy.y);
+      const radiusB =
+        b.hw * Math.abs(axis.x * b.ux.x + axis.y * b.ux.y) +
+        b.hh * Math.abs(axis.x * b.uy.x + axis.y * b.uy.y);
+
+      if (centerDistance >= radiusA + radiusB) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  _isPlayerTouchingPortalHitbox(portalObj, playerWorldX, playerWorldY, playerHalfSize, previousWorldX = null, previousWorldY = null) {
+    if (!portalObj) return false;
+
+    const portalHalfW = (Number(portalObj.w) || 0) / 2;
+    const portalHalfH = (Number(portalObj.h) || 0) / 2;
+    const playerHalf = Math.max(0, Number(playerHalfSize) || 0);
+
+    if (portalHalfW <= 0 || portalHalfH <= 0 || playerHalf <= 0) {
+      return false;
+    }
+
+    const portalCenterX = Number(portalObj.x) || 0;
+    const portalCenterY = Number(portalObj.y) || 0;
+    const portalRotation = -(Number(portalObj.rotationDegrees) || 0);
+    const touchesAt = (worldX, worldY) => this._rotatedRectanglesOverlap(
+      portalCenterX,
+      portalCenterY,
+      portalHalfW,
+      portalHalfH,
+      portalRotation,
+      Number(worldX) || 0,
+      Number(worldY) || 0,
+      playerHalf,
+      playerHalf,
+      0
+    );
+
+    if (touchesAt(playerWorldX, playerWorldY)) return true;
+
+    const prevX = Number(previousWorldX);
+    const prevY = Number(previousWorldY);
+    const curX = Number(playerWorldX);
+    const curY = Number(playerWorldY);
+    if (!Number.isFinite(prevX) || !Number.isFinite(prevY) || !Number.isFinite(curX) || !Number.isFinite(curY)) {
+      return false;
+    }
+
+    const dx = curX - prevX;
+    const dy = curY - prevY;
+    const distance = Math.max(Math.abs(dx), Math.abs(dy));
+    if (distance <= 0) return false;
+
+    const rad = portalRotation * Math.PI / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const toLocal = (worldX, worldY) => {
+      const lx = worldX - portalCenterX;
+      const ly = worldY - portalCenterY;
+      return {
+        x: lx * cos + ly * sin,
+        y: lx * -sin + ly * cos
+      };
+    };
+    const start = toLocal(prevX, prevY);
+    const end = toLocal(curX, curY);
+    const segDx = end.x - start.x;
+    const segDy = end.y - start.y;
+    const expandedHalfW = portalHalfW + playerHalf;
+    const expandedHalfH = portalHalfH + playerHalf;
+    let tMin = 0;
+    let tMax = 1;
+    const clipAxis = (startValue, deltaValue, minValue, maxValue) => {
+      if (Math.abs(deltaValue) < 1e-8) {
+        return startValue >= minValue && startValue <= maxValue;
+      }
+      let t1 = (minValue - startValue) / deltaValue;
+      let t2 = (maxValue - startValue) / deltaValue;
+      if (t1 > t2) {
+        const swap = t1;
+        t1 = t2;
+        t2 = swap;
+      }
+      tMin = Math.max(tMin, t1);
+      tMax = Math.min(tMax, t2);
+      return tMin <= tMax;
+    };
+
+    if (clipAxis(start.x, segDx, -expandedHalfW, expandedHalfW) &&
+        clipAxis(start.y, segDy, -expandedHalfH, expandedHalfH)) {
+      return true;
+    }
+
+    const steps = Math.min(12, Math.max(2, Math.ceil(distance / Math.max(1, playerHalf))));
+    for (let i = 1; i < steps; i++) {
+      const t = i / steps;
+      if (touchesAt(prevX + dx * t, prevY + dy * t)) return true;
+    }
+
+    return false;
+  }
+
   checkCollisions(_0x2f5078) {
     this.noclipStats.totalFrames++;
     this.p.diedThisFrame = false;
@@ -3312,8 +3457,10 @@ _updateWaveJump() {
     const playerSize = this.p.isMini ? 18 : 30;
     const waveHitSize = this.p.isMini ? 6 : 9;
     const pieceWidth = _0x2f5078 + centerX;
+    const previousWorldX = Number.isFinite(this._lastCollisionWorldX) ? this._lastCollisionWorldX : pieceWidth;
     const playersY = this.p.y;
     const playersLastY = this.p.lastY;
+    const previousCollisionWorldY = Number.isFinite(this._lastCollisionWorldY) ? this._lastCollisionWorldY : playersLastY;
     const gamemodeAddition = this.p.isFlying || this.p.isWave || this.p.isUfo ? 12 : 20;
     this.p.collideTop = 0;
     this.p.collideBottom = 0;
@@ -3321,6 +3468,8 @@ _updateWaveJump() {
     this.p.touchingRing = false;
     let _0x30410f = false;
     let _boostedThisStep = false;
+    let _teleportedThisStep = false;
+    let _touchingTeleportDuringRespawnIgnore = false;
     const _0x198534 = this._gameLayer.getNearbySectionObjects(pieceWidth);
     for (let gameObj of _0x198534) {
       let left = gameObj.x - gameObj.w / 2;
@@ -3348,13 +3497,61 @@ _updateWaveJump() {
       } else {
         _broadPhaseHit = !(pieceWidth + _broadSize <= rotatedLeft) && !(pieceWidth - _broadSize >= rotatedRight) && !(playersY + _broadSize <= rotatedTop) && !(playersY - _broadSize >= rotatedBottom);
       }
+      const _colType = gameObj.type;
+      if (!_broadPhaseHit && _colType === "portal_teleport") {
+        _broadPhaseHit = this._isPlayerTouchingPortalHitbox(gameObj, pieceWidth, playersY, _broadSize, previousWorldX, previousCollisionWorldY);
+      }
       if (_broadPhaseHit) {
-        const _colType = gameObj.type;
-        if (this.p.ignorePortals && (_colType.startsWith("portal_") || _colType === "speed")) {
+        if (!_hasCircleHitbox && this._isPortalCollisionType(_colType)) {
+          _broadPhaseHit = _colType === "portal_teleport"
+            ? this._isPlayerTouchingPortalHitbox(gameObj, pieceWidth, playersY, _broadSize, previousWorldX, previousCollisionWorldY)
+            : this._isPlayerTouchingPortalHitbox(gameObj, pieceWidth, playersY, _broadSize);
+          if (!_broadPhaseHit) continue;
+        }
+        if (_colType === "portal_teleport" && this._ignoreTeleportUntilClear) {
+          _touchingTeleportDuringRespawnIgnore = true;
           gameObj.activated = true;
           continue;
         }
-        if (_colType === "portal_fly") {
+        if (this.p.ignorePortals && (_colType.startsWith("portal_") || _colType === "speed")) {
+          if (_colType === "portal_teleport") _touchingTeleportDuringRespawnIgnore = true;
+          gameObj.activated = true;
+          continue;
+        }
+        if (_colType === "portal_teleport") {
+          if (!gameObj.activated) {
+            gameObj.activated = true;
+            this._playPortalShine(gameObj);
+            let targetY = Number(gameObj.teleportTargetY);
+            if (Number.isFinite(targetY)) {
+              const targetX = Number(gameObj.teleportTargetX);
+              const currentCeilingY = this._gameLayer?.getCeilingY?.();
+              if (currentCeilingY !== null && currentCeilingY !== undefined) {
+                const ceilingExitY = currentCeilingY - playerSize - 1;
+                if (targetY >= ceilingExitY) targetY = ceilingExitY;
+              }
+              this._playPortalShine({
+                ...gameObj,
+                x: Number.isFinite(targetX) ? targetX : gameObj.x,
+                portalX: Number.isFinite(targetX) ? targetX : gameObj.portalX,
+                portalY: targetY,
+                flipX: true,
+                portalFlipX: true
+              });
+              this.p.y = targetY;
+              this.p.lastY = targetY;
+              this.p.lastGroundPosY = targetY;
+              if (Math.abs(targetY - playersY) > 0.001) {
+                this.p.onGround = false;
+                this.p.canJump = false;
+              }
+              _boostedThisStep = true;
+              _teleportedThisStep = true;
+              this._lastCollisionWorldY = targetY;
+              break;
+            }
+          }
+        } else if (_colType === "portal_fly") {
           if (!gameObj.activated) {
             gameObj.activated = true;
             this._playPortalShine(gameObj);
@@ -3952,7 +4149,7 @@ _updateWaveJump() {
       }
     }
     let _0x496456 = this._gameLayer.getCeilingY();
-    if (_0x496456 !== null && this.p.y >= _0x496456 - _effectiveSize && !iscube) {
+    if (!_teleportedThisStep && _0x496456 !== null && this.p.y >= _0x496456 - _effectiveSize && !iscube) {
       this.p.y = _0x496456 - _effectiveSize;
       this.hitGround();
       this.p.onCeiling = true;
@@ -3961,6 +4158,9 @@ _updateWaveJump() {
       this.killPlayer();
       return;
     }
+    if (this._ignoreTeleportUntilClear && !_touchingTeleportDuringRespawnIgnore) {
+      this._ignoreTeleportUntilClear = false;
+    }
     if (this.p.isFlying || this.p.isWave || this.p.isUfo || this.p.isSpider) {
       const _0x354b7c = this.p.y <= _0x3020c8 + _effectiveSize;
       const _0xdc296 = _0x496456 !== null && this.p.y >= _0x496456 - _effectiveSize;
@@ -3968,6 +4168,8 @@ _updateWaveJump() {
         this.p.onGround = false;
       }
     }
+    this._lastCollisionWorldX = pieceWidth;
+    this._lastCollisionWorldY = this.p.y;
     this.p.wasUpKeyDown = this.p.upKeyDown;
     if (this.p.diedThisFrame == true && window.noClipAccuracy){
       this.noclipStats.deathFrames++;
@@ -4288,6 +4490,11 @@ _updateWaveJump() {
     this.p._robotHoldTimer = 0;
     this._lastCameraX = 0;
     this._lastCameraY = 0;
+    const _resetWorldX = Number(this._scene?._playerWorldX);
+    const _resetWorldY = Number(this.p?.y);
+    this._lastCollisionWorldX = Number.isFinite(_resetWorldX) ? _resetWorldX : null;
+    this._lastCollisionWorldY = Number.isFinite(_resetWorldY) ? _resetWorldY : null;
+    this._ignoreTeleportUntilClear = true;
     this.setCubeVisible(true);
     this.setShipVisible(false);
     this.setBallVisible(false);
