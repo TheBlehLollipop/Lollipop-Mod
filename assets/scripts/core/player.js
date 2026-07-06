@@ -1963,15 +1963,13 @@ if (this.p.isFlying || this.p.isUfo) {
   }
   enterSpiderMode(portal = null) {
     if (this.p.isSpider) return;
-    const enteredFromPortal = !!portal;
-    const portalYVelocity = enteredFromPortal ? this.p.yVelocity : null;
     this.exitShipMode();
     this.exitRobotMode();
     this.exitBallMode();
     this.exitWaveMode();
-    const savedPortalYVelocity = Number.isFinite(portalYVelocity) ? portalYVelocity : null;
+    const enteredFromPortal = !!portal;
     this.p.isSpider = true;
-    if (!enteredFromPortal) this.p.yVelocity = 0;
+    this.p.yVelocity = 0;
     this.p.onGround = !enteredFromPortal;
     this.p.onCeiling = !enteredFromPortal && !!this.p.gravityFlipped;
     this.p.canJump = !enteredFromPortal;
@@ -1994,7 +1992,6 @@ if (this.p.isFlying || this.p.isUfo) {
     const spiderBaseHeight = typeof f !== "undefined" ? f : 480;
     const spiderFlyHeight = Math.max(spiderBlockSize, spiderBaseHeight - spiderBlockSize);
     this._gameLayer.setFlyMode(true, _y, spiderFlyHeight, false, spiderFlyHeight);
-    if (savedPortalYVelocity !== null) this.p.yVelocity = savedPortalYVelocity;
     this._primeSpiderAnimationFrame(1 / 30);
   }
   exitSpiderMode() {
@@ -2022,14 +2019,12 @@ if (this.p.isFlying || this.p.isUfo) {
   }
   enterRobotMode(portal = null) {
     if (this.p.isRobot) return;
-    const enteredFromPortal = !!portal;
-    const portalYVelocity = enteredFromPortal ? this.p.yVelocity : null;
     this.exitShipMode();
     this.exitBallMode();
     this.exitWaveMode();
     this.exitSpiderMode();
     this.exitUfoMode();
-    const savedPortalYVelocity = Number.isFinite(portalYVelocity) ? portalYVelocity : null;
+    const enteredFromPortal = !!portal;
     this.p.isRobot = true;
     this.p._robotHold = false;
     this.p._robotHoldTimer = 0;
@@ -2049,7 +2044,6 @@ if (this.p.isFlying || this.p.isUfo) {
     this.setBirdVisible(false);
     this.setRobotVisible(true);
     this._gameLayer.setFlyMode(false, 0);
-    if (savedPortalYVelocity !== null) this.p.yVelocity = savedPortalYVelocity;
     this._primeRobotAnimationFrame(1 / 30);
   }
   exitRobotMode() {
@@ -3634,28 +3628,24 @@ _updateWaveJump(dt) {
           if (!gameObj.activated) {
             gameObj.activated = true;
             this._playPortalShine(gameObj);
-            const _portalRobotYVelocity = this.p.yVelocity;
             this.exitShipMode();
             this.exitBallMode();
             this.exitWaveMode();
             this.exitUfoMode();
             this.exitSpiderMode();
             this.exitRobotMode();
-            if (Number.isFinite(_portalRobotYVelocity)) this.p.yVelocity = _portalRobotYVelocity;
             this.enterRobotMode(gameObj);
           }
         } else if (_colType === "portal_spider") {
           if (!gameObj.activated) {
             gameObj.activated = true;
             this._playPortalShine(gameObj);
-            const _portalSpiderYVelocity = this.p.yVelocity;
             this.exitShipMode();
             this.exitRobotMode();
             this.exitBallMode();
             this.exitWaveMode();
             this.exitUfoMode();
             this.exitSpiderMode();
-            if (Number.isFinite(_portalSpiderYVelocity)) this.p.yVelocity = _portalSpiderYVelocity;
             this.enterSpiderMode(gameObj);
           }
         } else if (_colType === "portal_gravity_down") {
@@ -3910,15 +3900,15 @@ _updateWaveJump(dt) {
                   else if (_orbId === 84) { _orbVel = _swingBase * 0.4; _flipAfter = true; }
                   else if (_orbId === 1022) { _orbVel = _spiderBase * -1; _flipAfter = true; }
                   else if (_orbId === 1330) { _orbVel = -28; }
-                } else if (this.p.isBall || this.p.isSpider) {
+         } else if (this.p.isBall || this.p.isSpider) {
                   const _ballBase = _cubeJump * 0.7 * (this.p.isMini ? 0.8 : 1);
                   if (_orbId === 36) { _orbVel = _ballBase; }
                   else if (_orbId === 141) { _orbVel = _ballBase * 0.77; }
                   else if (_orbId === 1333) { _orbVel = _ballBase * 1.34; }
                   else if (_orbId === 84) { _orbVel = _ballBase * 0.4; _flipAfter = true; }
-                  else if (_orbId === 1022) { _orbVel = _ballBase * -1; _flipAfter = true; }
+                  else if (_orbId === 1022) { _orbVel = _ballBase; _flipBefore = true; } // was: _ballBase * -1, _flipAfter = true
                   else if (_orbId === 1330) { _orbVel = -30; }
-                } else if (this.p.isUfo) {
+                  } else if (this.p.isUfo) {
                   const _ufoYellowOrb = this.p.isMini ? 17.888 : 22.36;
                   const _ufoPinkOrb = this.p.isMini ? 7.674 : 9.592;
                   const _ufoBlueOrb = (this.p.isMini ? -7.155 : -8.944) * 2;
