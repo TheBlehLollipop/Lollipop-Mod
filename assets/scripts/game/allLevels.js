@@ -137,12 +137,14 @@ window.allLevels = [
 	    "level_99",
 	    ["MindCap", "Dimrain47"]
     ],
+	*/
     [
         "bloodbath",
 	    "Bloodbath",
 	    "level_100",
 	    ["Riot", "Dimrain47"]
     ],
+	/*
     [
         "the_nightmare",
 	    "The Nightmare",
