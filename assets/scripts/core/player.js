@@ -3129,7 +3129,7 @@ _updateBallJump(_0x2fe319) {
     }
   }
 _updateWaveJump(dt) {
-    const _baseSpeed = this.p.isMini ? 22.7720072 : 11.3860036;
+    const _baseSpeed = this.p.isMini ? 22.7700072 : 11.3850036;
     const _speedMod = (playerSpeed / 11.540004);
     const _waveVel = _baseSpeed * _speedMod;
     const isPushingUp = this.p.upKeyDown; 
