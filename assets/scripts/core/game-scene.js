@@ -4383,21 +4383,27 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     }
   }
   _pauseGame() {
-    if (!this._paused && !this._menuActive && !this._slideIn && !this._state.isDead && !this._levelWon) {
+    if (!this._paused && !this._menuActive && !this._slideIn && !this._levelWon) {
       this._paused = true;
       this._pauseBtn.setVisible(false);
       this._audio.pauseMusic();
       this._setParticleTimeScale(0);
+      this._player?.setDeathAnimationPaused?.(true);
+      this._player2?.setDeathAnimationPaused?.(true);
       this._buildPauseOverlay();
     }
   }
   _resumeGame() {
     if (this._paused) {
       this._setParticleTimeScale(1);
+      this._player?.setDeathAnimationPaused?.(false);
+      this._player2?.setDeathAnimationPaused?.(false);
       this._paused = false;
       this._pauseBtn.setVisible(true).setAlpha(75 / 255);
-      this._audio.resumeMusic();
-      this._audio._ensureCorrectMusicMode();
+      if (!this._state.isDead || this._practicedMode?.practiceMode) {
+        this._audio.resumeMusic();
+        this._audio._ensureCorrectMusicMode();
+      }
       if (this._pauseContainer) {
         this._pauseContainer.destroy();
         this._pauseContainer = null;
@@ -6457,7 +6463,8 @@ _buildSettingsPopup() {
       let _primaryImmediateGravitySynced = false;
       if (_primaryImmediateGravityChanged) {
         _primaryImmediateGravitySynced = this._syncDualGlobalsFromPrimary({
-          skipBallInputGravity: this._state.isBall && _primaryImmediateJumped
+          skipBallInputGravity: this._state.isBall && _primaryImmediateJumped,
+          skipSpiderInputGravity: this._state.isSpider && _primaryImmediateJumped
         });
       }
       if (this._isDual && !this._state2.isDead) {
@@ -6467,6 +6474,7 @@ _buildSettingsPopup() {
         }
         const _secondaryImmediateBeforeGravity = !!this._state2.gravityFlipped;
         const _secondaryImmediateBallInput = this._state2.isBall && this._state2.upKeyPressed;
+        const _secondaryImmediateSpiderInput = this._state2.isSpider && this._state2.upKeyPressed;
         if (!this._state2.isFlying && !this._state2.isWave && !this._state2.isUfo && this._state2.canJump) {
           this._player2.updateJump(0);
         } else if (this._state2.isUfo) {
@@ -6476,7 +6484,8 @@ _buildSettingsPopup() {
         }
         if (!!this._state2.gravityFlipped !== _secondaryImmediateBeforeGravity) {
           this._syncDualGlobalsFromSecondary({
-            skipBallInputGravity: _secondaryImmediateBallInput
+            skipBallInputGravity: _secondaryImmediateBallInput,
+            skipSpiderInputGravity: _secondaryImmediateSpiderInput
           });
         }
       }
@@ -6965,6 +6974,7 @@ _buildSettingsPopup() {
     if (checkpoint.dualMode) {
       this._isDual = false;
       this._dualBallOverlapResolved = false;
+      this._dualBallSpawnGravityLock = false;
       this._state2.reset();
       this._player2.reset();
       this._player2.setInvertedColors?.(true);
@@ -7504,7 +7514,9 @@ _buildSettingsPopup() {
           }
         }
       }
-      this._player.updateExplosionPieces(deltaTime);
+      if (this._isDual) {
+        this._player2?.updateExplosionPieces?.(deltaTime);
+      }
       if (this._player?._hitboxGraphics) {
         if (window.showHitboxes || window.hitboxesOnDeath) {
           this._player.drawHitboxes(this._player._hitboxGraphics, this._cameraX, this._cameraY);
@@ -7631,7 +7643,8 @@ _buildSettingsPopup() {
       let _primaryGravitySynced = false;
       if (this._isDual && this._getDualSharedSignature(this._state) !== _primarySharedBefore) {
         _primaryGravitySynced = this._syncDualGlobalsFromPrimary({
-          skipBallInputGravity: _primaryGravityChanged && this._state.isBall && _dualInputState.upKeyPressed
+          skipBallInputGravity: _primaryGravityChanged && this._state.isBall && _dualInputState.upKeyPressed,
+          skipSpiderInputGravity: _primaryGravityChanged && this._state.isSpider && _dualInputState.upKeyPressed
         });
       }
       if (this._isDual && this._state.isDead && !this._state2.isDead) {
@@ -7647,12 +7660,14 @@ _buildSettingsPopup() {
         this._state2.lastY = this._state2.y;
         const _secondarySharedBefore = this._getDualSharedSignature(this._state2);
         const _secondaryBallInputGravity = this._state2.isBall && this._state2.upKeyPressed;
+        const _secondarySpiderInputGravity = this._state2.isSpider && this._state2.upKeyPressed;
         this._player2.updateJump(verticalDelta);
         this._state2.y += this._state2.yVelocity * verticalDelta;
         this._player2.checkCollisions(this._playerWorldX - centerX - horizontalDelta);
         if (this._isDual && !this._state2.isDead && this._getDualSharedSignature(this._state2) !== _secondarySharedBefore) {
           this._syncDualGlobalsFromSecondary({
-            skipBallInputGravity: _secondaryBallInputGravity
+            skipBallInputGravity: _secondaryBallInputGravity,
+            skipSpiderInputGravity: _secondarySpiderInputGravity
           });
         }
         this._resolveDualBallOverlap();
@@ -8054,13 +8069,18 @@ _applyMirrorEffect() {
     toState._orbActivationConsumedForPress = !!fromState.upKeyDown && (!!toState._orbActivationConsumedForPress || fromConsumed);
   }
   _shouldSuppressDualGravityAction(state, gravityAlreadySynced) {
-    return !!(gravityAlreadySynced && state && (state.isBall || state.isSpider) && state.upKeyPressed);
+    return !!(gravityAlreadySynced && state && state.isBall && state.upKeyPressed);
   }
   _shouldSkipDualBallGravitySync(fromState, toState, options = {}) {
     if (!fromState?.isBall || !toState) return false;
     if (options.forceGravitySync) return false;
     if (options.skipBallInputGravity) return true;
     return !(toState.onGround || toState.onCeiling || toState.canJump);
+  }
+  _shouldSkipDualSpiderInputGravitySync(fromState, options = {}) {
+    if (!fromState?.isSpider) return false;
+    if (options.forceGravitySync) return false;
+    return !!options.skipSpiderInputGravity;
   }
   _isDualBallOnSurface(state) {
     return !!(state && (state.onGround || state.onCeiling || state.canJump));
@@ -8122,7 +8142,7 @@ _applyMirrorEffect() {
   _syncDualGlobalsFromPrimary(options = {}) {
     if (!this._isDual || !this._state || !this._state2 || this._state2.isDead) return false;
     let gravitySynced = false;
-    if (!this._shouldSkipDualBallGravitySync(this._state, this._state2, options)) {
+    if (!this._shouldSkipDualBallGravitySync(this._state, this._state2, options) && !this._shouldSkipDualSpiderInputGravitySync(this._state, options)) {
       const nextGravity = !this._state.gravityFlipped;
       this._state2.gravityFlipped = nextGravity;
       gravitySynced = true;
@@ -8134,7 +8154,7 @@ _applyMirrorEffect() {
   _syncDualGlobalsFromSecondary(options = {}) {
     if (!this._isDual || !this._state || !this._state2 || this._state.isDead || this._state2.isDead) return false;
     let gravitySynced = false;
-    if (!this._shouldSkipDualBallGravitySync(this._state2, this._state, options)) {
+    if (!this._shouldSkipDualBallGravitySync(this._state2, this._state, options) && !this._shouldSkipDualSpiderInputGravitySync(this._state2, options)) {
       const nextGravity = !this._state2.gravityFlipped;
       this._state.gravityFlipped = nextGravity;
       gravitySynced = true;
