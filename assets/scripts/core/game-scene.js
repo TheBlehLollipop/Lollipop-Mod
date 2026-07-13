@@ -1056,6 +1056,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
 
         window.currentlevel = [songKey, window._onlineLevelName, window._onlineLevelId, ["Online", songArtist]];
         this.game.registry.set("autoStartGame", true);
+        window._onlineReturnToPlayMenu = { lvl, backTarget: this._playMenuBackTarget };
         this._closePlayMenu(false, () => this.scene.restart());
       } catch (err) {
         console.warn("Failed to start online level", err);
@@ -1660,7 +1661,11 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             container.destroy();
             overlay.destroy();
             blocker.destroy();
+            this._levelViewOverlay = null;
+            this._closeLevelView = null;
         };
+        this._levelViewOverlay = overlay;
+        this._closeLevelView = () => { cleanup(); this._openEditorMenu(); };
 
         const btnY = sh * 0.58;
         const editBtn = this.add.image(centerX - 220, btnY, "GJ_GameSheet03", "GJ_editBtn_001.png").setInteractive().setScale(1.1);
@@ -1670,9 +1675,10 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         const shareBtn = this.add.image(centerX + 220, btnY, "GJ_GameSheet03", "GJ_shareBtn_001.png").setInteractive().setScale(1.1);
         this._makeBouncyButton(shareBtn, 1.1, () => { this._exportGMD(level); });
         const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_03_001.png").setFlipX(true).setFlipY(true).setRotation(Math.PI).setInteractive();
-        this._makeBouncyButton(backBtn, 1, () => { cleanup(); this._openEditorMenu(); });
+        this._makeBouncyButton(backBtn, 1, () => { this._closeLevelView(); });
         const deleteBtn = this.add.image(sw - 50, 48, "GJ_GameSheet03", "GJ_deleteBtn_001.png").setInteractive().setScale(0.8);
         this._makeBouncyButton(deleteBtn, 0.8, () => { deleteLevel(); });
+
 
         const footerY = sh - 100; 
         const subFooterY = sh - 30;
@@ -3449,6 +3455,23 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         this._closeUpdateLogPopup();
         return;
       } 
+      if (this._levelViewOverlay) {
+        this._closeLevelView();
+        return;
+      }
+      if (this._editorOverlay) {
+        this._closeEditorMenu();
+        this._openCreatorMenu();
+        return;
+      }
+      if (this._playOverlay) {
+        this._closePlayMenu(false, () => this._playMenuBackTarget());
+        return;
+      }
+      if (this._searchResultOverlay) {
+        this._closeSearchResultScene();
+        return;
+      }
       if (this._searchOverlay) {
         this._closeSearchMenu(true);
         this._openCreatorMenu();
@@ -3668,6 +3691,11 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       } else {
         console.warn("autoStartGame: missing settingsMap for", window.currentlevel && window.currentlevel[2]);
       }
+    } else if (window._onlineReturnToPlayMenu) {
+      const { lvl, backTarget } = window._onlineReturnToPlayMenu;
+      window._onlineReturnToPlayMenu = null;
+      window._selectedLevelData = lvl;
+      this._openPlayMenu(backTarget);
     }
   }
   _parseLevelColors(levelId) {
@@ -9086,14 +9114,14 @@ _applyMirrorEffect() {
     const backBtn = this.add.image(45, 45, "GJ_GameSheet03", "GJ_arrow_01_001.png")
       .setScrollFactor(0).setDepth(204).setOrigin(0.5).setInteractive();
     objects.push(backBtn);
-    const closeOverlay = () => {
+    const closeOverlay = (onClosed = onBack) => {
       const fadeOut = this.add.graphics().setScrollFactor(0).setDepth(400).setAlpha(0);
       fadeOut.fillStyle(0x000000, 1);
       fadeOut.fillRect(0, 0, sw, sh);
       this.tweens.add({ targets: fadeOut, alpha: 1, duration: 160, ease: "Linear",
         onComplete: () => {
           for (const o of objects) if (o && o.destroy) o.destroy();
-          if (onBack) onBack();
+          if (onClosed) onClosed();
           this.tweens.add({ targets: fadeOut, alpha: 0, duration: 160, ease: "Linear",
             onComplete: () => fadeOut.destroy() });
         }
@@ -9398,7 +9426,8 @@ _applyMirrorEffect() {
         btn9.setScale(_baseScale);
         btnLbl.setScale(_baseScale);
         window._selectedLevelData = levelData;
-        closeOverlay();
+        this._onlineLevelsOverlay = null;
+        closeOverlay(() => {});
         this._openPlayMenu(() => this._openOnlineLevelsScene(params));
       });
 
@@ -9782,14 +9811,14 @@ _applyMirrorEffect() {
     const backBtn = this.add.image(45, 45, "GJ_GameSheet03", "GJ_arrow_01_001.png")
       .setScrollFactor(0).setDepth(204).setOrigin(0.5).setInteractive();
     objects.push(backBtn);
-    const closeOverlay = () => {
+    const closeOverlay = (onClosed = () => this._openCreatorMenu()) => {
       const fadeOut = this.add.graphics().setScrollFactor(0).setDepth(400).setAlpha(0);
       fadeOut.fillStyle(0x000000, 1);
       fadeOut.fillRect(0, 0, sw, sh);
       this.tweens.add({ targets: fadeOut, alpha: 1, duration: 160, ease: "Linear",
         onComplete: () => {
           for (const o of objects) if (o && o.destroy) o.destroy();
-          this._openCreatorMenu();
+          if (onClosed) onClosed();
           this.tweens.add({ targets: fadeOut, alpha: 0, duration: 160, ease: "Linear",
             onComplete: () => fadeOut.destroy() });
         }
@@ -10032,7 +10061,7 @@ _applyMirrorEffect() {
         btn9.setScale(_baseScale);
         btnLbl.setScale(_baseScale);
         window._selectedLevelData = levelData;
-        closeOverlay();
+        closeOverlay(() => {});
         this._openPlayMenu(() => this._openSavedLevelsScene());
       });
 
@@ -10399,7 +10428,8 @@ _applyMirrorEffect() {
       btn9.setScale(_baseScale);
       btnLbl.setScale(_baseScale);
       window._selectedLevelData = levelData;
-      closeOverlay();
+      this._searchResultOverlay = null;
+      closeOverlay(() => {});
       this._openPlayMenu(() => this._openSearchResultScene(levelData));
     });
 
