@@ -1679,7 +1679,6 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         const deleteBtn = this.add.image(sw - 50, 48, "GJ_GameSheet03", "GJ_deleteBtn_001.png").setInteractive().setScale(0.8);
         this._makeBouncyButton(deleteBtn, 0.8, () => { deleteLevel(); });
 
-
         const footerY = sh - 100; 
         const subFooterY = sh - 30;
         const lengthValues=[
@@ -3454,7 +3453,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       if (this._updateLogPopup) {
         this._closeUpdateLogPopup();
         return;
-      } 
+      }
       if (this._levelViewOverlay) {
         this._closeLevelView();
         return;
@@ -3471,7 +3470,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       if (this._searchResultOverlay) {
         this._closeSearchResultScene();
         return;
-      }
+      } 
       if (this._searchOverlay) {
         this._closeSearchMenu(true);
         this._openCreatorMenu();
@@ -3691,7 +3690,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       } else {
         console.warn("autoStartGame: missing settingsMap for", window.currentlevel && window.currentlevel[2]);
       }
-    } else if (window._onlineReturnToPlayMenu) {
+      } else if (window._onlineReturnToPlayMenu) {
       const { lvl, backTarget } = window._onlineReturnToPlayMenu;
       window._onlineReturnToPlayMenu = null;
       window._selectedLevelData = lvl;
@@ -9114,14 +9113,14 @@ _applyMirrorEffect() {
     const backBtn = this.add.image(45, 45, "GJ_GameSheet03", "GJ_arrow_01_001.png")
       .setScrollFactor(0).setDepth(204).setOrigin(0.5).setInteractive();
     objects.push(backBtn);
-    const closeOverlay = (onClosed = onBack) => {
+    const closeOverlay = () => {
       const fadeOut = this.add.graphics().setScrollFactor(0).setDepth(400).setAlpha(0);
       fadeOut.fillStyle(0x000000, 1);
       fadeOut.fillRect(0, 0, sw, sh);
       this.tweens.add({ targets: fadeOut, alpha: 1, duration: 160, ease: "Linear",
         onComplete: () => {
           for (const o of objects) if (o && o.destroy) o.destroy();
-          if (onClosed) onClosed();
+          if (onBack) onBack();
           this.tweens.add({ targets: fadeOut, alpha: 0, duration: 160, ease: "Linear",
             onComplete: () => fadeOut.destroy() });
         }
@@ -9243,6 +9242,7 @@ _applyMirrorEffect() {
     let currentPage = 0;
     let _knownMaxPages = 1;
     const cache = {};
+    const _processedCache = {};
     let activeCellObjs = [];
     let _loading = false;
     let scrollOffsetY = 0;
@@ -9426,8 +9426,7 @@ _applyMirrorEffect() {
         btn9.setScale(_baseScale);
         btnLbl.setScale(_baseScale);
         window._selectedLevelData = levelData;
-        this._onlineLevelsOverlay = null;
-        closeOverlay(() => {});
+        closeOverlay();
         this._openPlayMenu(() => this._openOnlineLevelsScene(params));
       });
 
@@ -9528,6 +9527,21 @@ _applyMirrorEffect() {
         scrollOffsetY = 0;
         // wip
         _lastLevelStrs = levelStrs;
+        if (_processedCache[page]) {
+          _lastLevelData = _processedCache[page];
+          _lastLevelData.forEach((levelData, idx) => {
+            const cellObjs = _buildLevelCell(levelData, idx);
+            activeCellObjs.push(...cellObjs);
+            addRow();
+          });
+          spinSprite.setVisible(false);
+          refreshBtn.setVisible(true);
+          pageLbl.setVisible(true);
+          prevBtn.setVisible(page > 0);
+          nextBtn.setVisible(hasNextPage);
+          _loading = false;
+          return;
+        }
         _lastLevelData = levelStrs.map((ls) => {
           const m = _parseKV(ls);
           const rawLikes = parseInt(m["14"]) || 0;
@@ -9579,6 +9593,7 @@ _applyMirrorEffect() {
               .catch(() => {});
           }));
         }
+        _processedCache[page] = _lastLevelData;
         _lastLevelData.forEach((levelData, idx) => {
           const cellObjs = _buildLevelCell(levelData, idx);
           activeCellObjs.push(...cellObjs);
@@ -9595,7 +9610,7 @@ _applyMirrorEffect() {
     nextBtn.removeAllListeners("pointerup");
     prevBtn.on("pointerup", () => { if (!_loading && currentPage > 0) _setPage(currentPage - 1); });
     nextBtn.on("pointerup", () => { if (!_loading) _setPage(currentPage + 1); });
-    this._makeBouncyButton(refreshBtn, 1, () => { delete cache[currentPage]; _setPage(currentPage); });
+    this._makeBouncyButton(refreshBtn, 1, () => { delete cache[currentPage]; delete _processedCache[currentPage]; _setPage(currentPage); });
     const _onWheel = (pointer, gameObjects, deltaX, deltaY) => {
       if (pointer.x < listLeft || pointer.x > listLeft + panelW) return;
       if (pointer.y < listTop  || pointer.y > listTop + panelH) return;
@@ -9811,14 +9826,14 @@ _applyMirrorEffect() {
     const backBtn = this.add.image(45, 45, "GJ_GameSheet03", "GJ_arrow_01_001.png")
       .setScrollFactor(0).setDepth(204).setOrigin(0.5).setInteractive();
     objects.push(backBtn);
-    const closeOverlay = (onClosed = () => this._openCreatorMenu()) => {
+    const closeOverlay = () => {
       const fadeOut = this.add.graphics().setScrollFactor(0).setDepth(400).setAlpha(0);
       fadeOut.fillStyle(0x000000, 1);
       fadeOut.fillRect(0, 0, sw, sh);
       this.tweens.add({ targets: fadeOut, alpha: 1, duration: 160, ease: "Linear",
         onComplete: () => {
           for (const o of objects) if (o && o.destroy) o.destroy();
-          if (onClosed) onClosed();
+          this._openCreatorMenu();
           this.tweens.add({ targets: fadeOut, alpha: 0, duration: 160, ease: "Linear",
             onComplete: () => fadeOut.destroy() });
         }
@@ -10061,7 +10076,7 @@ _applyMirrorEffect() {
         btn9.setScale(_baseScale);
         btnLbl.setScale(_baseScale);
         window._selectedLevelData = levelData;
-        closeOverlay(() => {});
+        closeOverlay();
         this._openPlayMenu(() => this._openSavedLevelsScene());
       });
 
@@ -10428,8 +10443,7 @@ _applyMirrorEffect() {
       btn9.setScale(_baseScale);
       btnLbl.setScale(_baseScale);
       window._selectedLevelData = levelData;
-      this._searchResultOverlay = null;
-      closeOverlay(() => {});
+      closeOverlay();
       this._openPlayMenu(() => this._openSearchResultScene(levelData));
     });
 
