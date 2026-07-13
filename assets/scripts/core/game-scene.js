@@ -688,6 +688,35 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     this._searchOverlayObjects = [];
     this._playOverlay = null;
     this._playOverlayObjects = [];
+    this._saveOnlineLevelToSavedList = (lvl) => {
+      if (!lvl || !lvl.id) return;
+      try {
+        const _savedKey = "gd_saved_online_levels";
+        let _savedLevels = JSON.parse(localStorage.getItem(_savedKey) || "[]");
+        const numericId = String(lvl.id);
+        const _alreadySaved = _savedLevels.some(sl => String(sl.id) === numericId);
+        if (!_alreadySaved) {
+          _savedLevels.unshift({
+            id:            numericId,
+            name:          lvl.name || "Online Level",
+            author:        lvl.author || "Unknown",
+            customSongID:  lvl.customSongID || null,
+            songName:      lvl.songName || "Unknown",
+            difficulty:    lvl.difficulty || 0,
+            downloads:     lvl.downloads || 0,
+            likes:         lvl.likes || 0,
+            stars:         lvl.stars || 0,
+            coins:         lvl.coins || 0,
+            coinsVerified: lvl.coinsVerified || false,
+            length:        lvl.length || 0,
+            featured:      !!lvl.featured,
+            epic:          lvl.epic || 0,
+            savedAt:       Date.now()
+          });
+          localStorage.setItem(_savedKey, JSON.stringify(_savedLevels));
+        }
+      } catch (_e) {}
+    };
     this._openPlayMenu = (onBack = null) => {
       if (this._playOverlay) return;
       const sw = screenWidth;
@@ -726,6 +755,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       this._playOverlayObjects.push(overlay, blocker, backBtn, cornerBL, cornerBR);
       const lvl = window._selectedLevelData || {};
       if (lvl.id) localStorage.setItem("viewedLevel_" + lvl.id, "1");
+      this._saveOnlineLevelToSavedList(lvl);
       const centerX = sw / 2;
 
       const _diffFrames = [
@@ -1025,35 +1055,6 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         } else if (window.allLevels && window.allLevels[officialSong]) {
           songArtist = window.allLevels[officialSong][3] || "Unknown";
         }
-        try {
-          const _savedKey = "gd_saved_online_levels";
-          let _savedLevels = JSON.parse(localStorage.getItem(_savedKey) || "[]");
-          const numericId = String(lvl.id);
-          const _alreadySaved = _savedLevels.some(sl => String(sl.id) === numericId);
-          if (!_alreadySaved) {
-            _savedLevels.unshift({
-              id:            numericId,
-              name:          lvl.name || "Online Level",
-              author:        lvl.author || "Unknown",
-              customSongID:  isCustomSong ? customSongID : null,
-              songName:      isCustomSong
-                ? (songTitle || lvl.songName || ("Song #" + customSongID))
-                : (lvl.songName || (window.allLevels && window.allLevels[officialSong] ? window.allLevels[officialSong][1] : "Unknown")),
-              difficulty:    lvl.difficulty || 0,
-              downloads:     lvl.downloads || 0,
-              likes:         lvl.likes || 0,
-              stars:         lvl.stars || 0,
-              coins:         lvl.coins || 0,
-              coinsVerified: lvl.coinsVerified || false,
-              length:        lvl.length || 0,
-              featured:      !!lvl.featured,
-              epic:          lvl.epic || 0,
-              savedAt:       Date.now()
-            });
-            localStorage.setItem(_savedKey, JSON.stringify(_savedLevels));
-          }
-        } catch (_e) {}
-
         window.currentlevel = [songKey, window._onlineLevelName, window._onlineLevelId, ["Online", songArtist]];
         this.game.registry.set("autoStartGame", true);
         window._onlineReturnToPlayMenu = { lvl, backTarget: this._playMenuBackTarget };
