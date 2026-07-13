@@ -9205,14 +9205,15 @@ _applyMirrorEffect() {
     const backBtn = this.add.image(45, 45, "GJ_GameSheet03", "GJ_arrow_01_001.png")
       .setScrollFactor(0).setDepth(204).setOrigin(0.5).setInteractive();
     objects.push(backBtn);
-    const closeOverlay = () => {
+    const closeOverlay = (returnToParent = true, onComplete = null) => {
       const fadeOut = this.add.graphics().setScrollFactor(0).setDepth(400).setAlpha(0);
       fadeOut.fillStyle(0x000000, 1);
       fadeOut.fillRect(0, 0, sw, sh);
       this.tweens.add({ targets: fadeOut, alpha: 1, duration: 160, ease: "Linear",
         onComplete: () => {
           for (const o of objects) if (o && o.destroy) o.destroy();
-          if (onBack) onBack();
+          if (returnToParent && onBack) onBack();
+          if (onComplete) onComplete();
           this.tweens.add({ targets: fadeOut, alpha: 0, duration: 160, ease: "Linear",
             onComplete: () => fadeOut.destroy() });
         }
@@ -9525,8 +9526,11 @@ _applyMirrorEffect() {
         btn9.setScale(_baseScale);
         btnLbl.setScale(_baseScale);
         window._selectedLevelData = levelData;
-        closeOverlay();
-        this._openPlayMenu(() => this._openOnlineLevelsScene(params));
+        closeOverlay(false, () => {
+          this._onlineLevelsOverlay = null;
+          this._closeOnlineLevelsOverlay = null;
+          this._openPlayMenu(() => this._openOnlineLevelsScene(params));
+        });
       });
 
       return cellObjs;
@@ -9925,14 +9929,15 @@ _applyMirrorEffect() {
     const backBtn = this.add.image(45, 45, "GJ_GameSheet03", "GJ_arrow_01_001.png")
       .setScrollFactor(0).setDepth(204).setOrigin(0.5).setInteractive();
     objects.push(backBtn);
-    const closeOverlay = () => {
+    const closeOverlay = (returnToCreator = true, onComplete = null) => {
       const fadeOut = this.add.graphics().setScrollFactor(0).setDepth(400).setAlpha(0);
       fadeOut.fillStyle(0x000000, 1);
       fadeOut.fillRect(0, 0, sw, sh);
       this.tweens.add({ targets: fadeOut, alpha: 1, duration: 160, ease: "Linear",
         onComplete: () => {
           for (const o of objects) if (o && o.destroy) o.destroy();
-          this._openCreatorMenu();
+          if (returnToCreator) this._openCreatorMenu();
+          if (onComplete) onComplete();
           this.tweens.add({ targets: fadeOut, alpha: 0, duration: 160, ease: "Linear",
             onComplete: () => fadeOut.destroy() });
         }
@@ -10175,8 +10180,9 @@ _applyMirrorEffect() {
         btn9.setScale(_baseScale);
         btnLbl.setScale(_baseScale);
         window._selectedLevelData = levelData;
-        closeOverlay();
-        this._openPlayMenu(() => this._openSavedLevelsScene());
+        closeOverlay(false, () => {
+          this._openPlayMenu(() => this._openSavedLevelsScene());
+        });
       });
 
       return cellObjs;
@@ -10542,8 +10548,11 @@ _applyMirrorEffect() {
       btn9.setScale(_baseScale);
       btnLbl.setScale(_baseScale);
       window._selectedLevelData = levelData;
-      closeOverlay();
-      this._openPlayMenu(() => this._openSearchResultScene(levelData));
+      closeOverlay(false, () => {
+        this._searchResultOverlay = null;
+        this._closeSearchResultOverlay = null;
+        this._openPlayMenu(() => this._openSearchResultScene(levelData));
+      });
     });
 
     addRow();
