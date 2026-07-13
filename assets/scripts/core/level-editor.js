@@ -8381,7 +8381,12 @@ class LevelEditor {
             cb: async () => { 
                 this._showEditorPauseMenu(false);
                 this._stopEditorPlaytest?.();
-                this._saveEditorLevel(); 
+                this._saveEditorLevel();
+                const savedRecord = this._getCurrentEditorLevelRecord?.().level || null;
+                window._createdLevelReturnToView = {
+                    createdId: savedRecord?.createdId ?? window.currentlevel?.[2] ?? window._onlineLevelId,
+                    snapshot: savedRecord ? { ...savedRecord } : null
+                };
                 await this._showLoadingBuffer("Loading...");
                 window._editorReturnToLevelViewId = null;
                 window.isEditor = false; 

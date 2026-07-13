@@ -1202,9 +1202,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             }
         });
 
-        const lengthValues=[
-          "Tiny", "Short", "Medium", "Long", "XL"
-        ]
+        const lengthValues = ["Tiny", "Short", "Medium", "Long", "XL", "Plat."]
 
         const listContainer = this.add.container(0, 0);
         const maskShape = this.add.graphics().fillStyle(0xffffff).fillRect(tableX, tableY, tableW, tableH).setVisible(false);
@@ -1233,7 +1231,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
             ).setOrigin(0, 0.5);
             const infoY = slotY + 18;
             const lenIcon = this.add.image(tableX + 35, infoY, "GJ_GameSheet03", "GJ_timeIcon_001.png").setScale(0.65);
-            const lenTxt = this.add.bitmapText(lenIcon.x + 22, infoY, "bigFont", lengthValues[level.levelLength], 18).setOrigin(0, 0.5);
+            const lenTxt = this.add.bitmapText(lenIcon.x + 22, infoY, "bigFont", lengthValues[parseInt(level.levelLength, 10)] || "Tiny", 18).setOrigin(0, 0.5);
             const songIcon = this.add.image(tableX + 150, infoY, "GJ_GameSheet03", "GJ_musicIcon_001.png").setScale(0.65);
             const songTxt = this.add.bitmapText(songIcon.x + 22, infoY, "bigFont", level.song, 18).setOrigin(0, 0.5);
             const statusIcon = this.add.image(tableX + 380, infoY, "GJ_GameSheet03", "GJ_infoIcon_001.png").setScale(0.65);
@@ -1724,12 +1722,10 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
 
         const footerY = sh - 100; 
         const subFooterY = sh - 30;
-        const lengthValues=[
-          "Tiny", "Short", "Medium", "Long", "XL"
-        ]
+        const lengthValues = ["Tiny", "Short", "Medium", "Long", "XL", "Plat."]
 
         const lengthIcon = this.add.image(centerX - 350, footerY, "GJ_GameSheet03", "GJ_timeIcon_001.png").setScale(1).setDepth(152);
-        const lengthLabel = this.add.bitmapText(centerX - 310, footerY, "bigFont", lengthValues[level.levelLength], 33).setOrigin(0, 0.5).setDepth(152);
+        const lengthLabel = this.add.bitmapText(centerX - 310, footerY, "bigFont", lengthValues[parseInt(level.levelLength, 10)] || "Tiny", 33).setOrigin(0, 0.5).setDepth(152);
         const songIcon = this.add.image(centerX - 160, footerY, "GJ_GameSheet03", "GJ_musicIcon_001.png").setScale(1).setDepth(152);
         const songLabel = this.add.bitmapText(centerX - 115, footerY, "bigFont", level.song, 29).setOrigin(0, 0.5).setDepth(152);
         const statusIcon = this.add.image(centerX + 200, footerY, "GJ_GameSheet03", "GJ_infoIcon_001.png").setScale(1).setDepth(152);
@@ -1749,6 +1745,12 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         window._onlineLevelString = level.levelString;
         window._onlineLevelName = level.levelName;
         window._onlineLevelId = level.createdId;
+        if (!isEditor) {
+          window._createdLevelReturnToView = {
+            createdId: level.createdId,
+            snapshot: { ...level }
+          };
+        }
         window._onlineSongBuffer = null;
         window._onlineSongKey = null;
         window._onlineSongOffset = 0;
@@ -3737,6 +3739,28 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       } else {
         console.warn("autoStartGame: missing settingsMap for", window.currentlevel && window.currentlevel[2]);
       }
+    } else if (window._createdLevelReturnToView) {
+      const returnTarget = window._createdLevelReturnToView;
+      window._createdLevelReturnToView = null;
+      const levelId = returnTarget?.createdId;
+      let level = null;
+      try {
+        const createdLevels = JSON.parse(localStorage.getItem("created_levels") || "[]");
+        level = createdLevels.find(entry =>
+          entry && levelId !== undefined && levelId !== null &&
+          String(entry.createdId) === String(levelId)
+        ) || null;
+      } catch (err) {
+        console.warn("Failed to restore the created-level view", err);
+      }
+      if (!level && returnTarget?.snapshot) {
+        level = returnTarget.snapshot;
+      }
+      if (level) {
+        this._openLevelView(level);
+      } else {
+        this._openEditorMenu();
+      }
     } else if (window._editorReturnToLevelViewId) {
       const levelId = window._editorReturnToLevelViewId;
       window._editorReturnToLevelViewId = null;
@@ -4472,6 +4496,60 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       }
     }
   }
+  _queueGameplayLevelViewReturn() {
+    const currentLevelId = window.currentlevel?.[2] ?? window._onlineLevelId ?? null;
+    const pendingCreatedReturn = window._createdLevelReturnToView || null;
+    const candidateCreatedIds = [
+      pendingCreatedReturn?.createdId,
+      currentLevelId,
+      window._onlineLevelId
+    ].filter(value => value !== undefined && value !== null);
+
+    let createdLevel = null;
+    try {
+      const createdLevels = JSON.parse(localStorage.getItem("created_levels") || "[]");
+      createdLevel = createdLevels.find(level => {
+        if (!level) return false;
+        return candidateCreatedIds.some(id =>
+          String(level.createdId) === String(id) ||
+          (level.levelId !== undefined && level.levelId !== null && String(level.levelId) === String(id))
+        );
+      }) || null;
+    } catch (err) {
+      console.warn("Failed to determine the created-level return target", err);
+    }
+
+    if (createdLevel || pendingCreatedReturn?.snapshot) {
+      const targetLevel = createdLevel || pendingCreatedReturn.snapshot;
+      window._createdLevelReturnToView = {
+        createdId: targetLevel.createdId ?? pendingCreatedReturn?.createdId ?? currentLevelId,
+        snapshot: { ...targetLevel }
+      };
+      window._editorReturnToLevelViewId = null;
+      window._onlineReturnToPlayMenu = null;
+      return true;
+    }
+
+    const levelSource = window.currentlevel?.[3]?.[0];
+    const isOnlineLevel = levelSource === "Online" || String(currentLevelId || "").startsWith("online_");
+    if (isOnlineLevel) {
+      const existingReturn = window._onlineReturnToPlayMenu;
+      const selectedLevel = existingReturn?.lvl || window._selectedLevelData || null;
+      if (selectedLevel) {
+        window._onlineReturnToPlayMenu = {
+          lvl: selectedLevel,
+          backTarget: existingReturn?.backTarget || null
+        };
+        window._createdLevelReturnToView = null;
+        window._editorReturnToLevelViewId = null;
+        return true;
+      }
+    }
+
+    window._createdLevelReturnToView = null;
+    return false;
+  }
+
   _createPauseToggleButton(_0x5376fd, _0x3b6200, _0x2b25c8, _0xe203c3, _0x268e2b, _0x2d04c4) {
     const _0x4864cc = this.add.container(_0x3b6200, _0x2b25c8);
     const pieceHeight = this.add.image(0, 0, "GJ_GameSheet03", _0x268e2b ? "GJ_checkOn_001.png" : "GJ_checkOff_001.png").setScale(0.7).setInteractive();
@@ -4564,6 +4642,9 @@ _buildPauseOverlay() {
         { frame: "GJ_playBtn2_001.png", atlas: "GJ_WebSheet", action: () => this._resumeGame() },
         { frame: "GJ_menuBtn_001.png", atlas: "GJ_WebSheet", action: () => {
             this._audio.playEffect("quitSound_01");
+            this._queueGameplayLevelViewReturn();
+            this.game.registry.remove("autoStartGame");
+            window.isEditor = false;
             this._audio.stopMusic();
             this._resumeGame();
             this.scene.restart();
@@ -6182,9 +6263,6 @@ _buildSettingsPopup() {
     }
   }
   _drawScale9(x, y, scaleWidth, scaleHeight, textureKey, borderSize, tint, alpha) {
-    // Keep drawScale9 isolated from the source texture. The old implementation
-    // added temporary _s9_* frames to the shared texture, which could corrupt
-    // native NineSlice instances created from that texture afterwards.
     const container = this.add.container(x, y);
     const texture = this.textures.get(textureKey);
     const baseFrame = texture?.get?.();
@@ -6192,10 +6270,6 @@ _buildSettingsPopup() {
     const textureWidth = baseFrame?.width || source?.width || scaleWidth;
     const textureHeight = baseFrame?.height || source?.height || scaleHeight;
     const requestedBorder = Math.max(0, Number(borderSize) || 0);
-
-    // Phaser requires the fixed edges to fit both the source frame and the
-    // requested output size. Clamp only when necessary, matching drawScale9's
-    // previous dimensions for all normal-sized panels and buttons.
     const horizontalBorder = Math.min(requestedBorder, textureWidth / 2, scaleWidth / 2);
     const verticalBorder = Math.min(requestedBorder, textureHeight / 2, scaleHeight / 2);
 
@@ -7240,6 +7314,7 @@ _buildSettingsPopup() {
         }
         return;
     }
+
     let rawPercent = (this._playerWorldX / this._level.endXPos) * 100;
     rawPercent = Math.min(100, Math.max(0, rawPercent));
     let displayValue;
@@ -7510,6 +7585,7 @@ _buildSettingsPopup() {
           }
         }
       }
+      this._player?.updateExplosionPieces?.(deltaTime);
       if (this._isDual) {
         this._player2?.updateExplosionPieces?.(deltaTime);
       }
