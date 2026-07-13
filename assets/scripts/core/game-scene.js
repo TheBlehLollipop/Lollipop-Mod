@@ -2117,7 +2117,16 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
                 this.tweens.killTweensOf(btnContainer, "scale");
                 btnContainer.setScale(baseScale);
                 this._closeSearchMenu(true);
-                this._openOnlineLevelsScene({ type });
+                const searchParams = { type };
+                const diffParam = _getActiveDiffParam();
+                if (diffParam) {
+                  searchParams.diff = diffParam;
+                  const demonIcon = this._diffFilterIcons && this._diffFilterIcons[6];
+                  if (demonIcon && demonIcon._diffFilterActive && this._selectedDemonTier) {
+                    searchParams.demonFilter = this._selectedDemonTier;
+                  }
+                }
+                this._openOnlineLevelsScene(searchParams);
               }
             });
           } else {
@@ -2261,20 +2270,15 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         window.removeEventListener("resize", _repositionInput);
         this._closeSearchMenu(true);
         const diffParam = _getActiveDiffParam();
+        const searchParams = rawInput ? { type: 0, str: rawInput } : { type: 2 };
         if (diffParam) {
-          const searchParams = { type: 2, diff: diffParam };
+          searchParams.diff = diffParam;
           const demonIcon = this._diffFilterIcons && this._diffFilterIcons[6];
           if (demonIcon && demonIcon._diffFilterActive && this._selectedDemonTier) {
             searchParams.demonFilter = this._selectedDemonTier;
           }
-          this._openOnlineLevelsScene(searchParams);
-          return;
         }
-        if (!rawInput) {
-          this._openOnlineLevelsScene({ type: 2 });
-          return;
-        }
-        this._openOnlineLevelsScene({ type: 0, str: rawInput });
+        this._openOnlineLevelsScene(searchParams);
       };
       const _doSearchInner = async (levelId) => {
         const PROXY_BASE = (window._gdProxyUrl || "").replace(/\/$/, "");
