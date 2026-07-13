@@ -302,8 +302,8 @@ class LevelEditor {
 
     this._zoomButtons = this.add.container(48, screenHeight / 2 - 20).setScrollFactor(0).setDepth(1000);
     
-    const zoomInBtn = this.add.image(0, 0, "GJ_GameSheet03", "GJ_zoomInBtn_001.png").setAngle(90).setFlipY(true).setInteractive().setScale(0.9);
-    const zoomOutBtn = this.add.image(0, 75, "GJ_GameSheet03", "GJ_zoomOutBtn_001.png").setAngle(90).setFlipY(true).setInteractive().setScale(0.9);
+    const zoomInBtn = this.add.image(0, 0, "GJ_GameSheet03", "GJ_zoomInBtn_001.png").setInteractive().setScale(0.9);
+    const zoomOutBtn = this.add.image(0, 75, "GJ_GameSheet03", "GJ_zoomOutBtn_001.png").setInteractive().setScale(0.9);
     
     this._zoomButtons.add([zoomInBtn, zoomOutBtn]);
 
@@ -1819,15 +1819,15 @@ class LevelEditor {
             { dx: -3, dy: 0, icon: "edit_upBtn_001.png", angle: 270, scale: 1, flipX: false },
             { dx: 3, dy: 0,  icon: "edit_upBtn_001.png", angle: 90, scale: 1, flipX: false },
 
-            { dx: 0, dy: -60, icon: "edit_upBtn2_001.png", angle: 90, scale: 1, flipX: false },
-            { dx: 0, dy: 60,  icon: "edit_upBtn2_001.png", angle: 270, scale: 1, flipX: false },
-            { dx: -60, dy: 0, icon: "edit_upBtn2_001.png", angle: 0, scale: 1, flipX: false },
-            { dx: 60, dy: 0,  icon: "edit_upBtn2_001.png", angle: 180, scale: 1, flipX: false },
+            { dx: 0, dy: -60, icon: "edit_upBtn2_001.png", angle: 0, scale: 1, flipX: false },
+            { dx: 0, dy: 60,  icon: "edit_upBtn2_001.png", angle: 180, scale: 1, flipX: false },
+            { dx: -60, dy: 0, icon: "edit_upBtn2_001.png", angle: 270, scale: 1, flipX: false },
+            { dx: 60, dy: 0,  icon: "edit_upBtn2_001.png", angle: 90, scale: 1, flipX: false },
 
-            { dx: 0, dy: -300, icon: "edit_upBtn3_001.png", angle: 90, scale: 1, flipX: false },
-            { dx: 0, dy: 300,  icon: "edit_upBtn3_001.png", angle: 270, scale: 1, flipX: false },
-            { dx: -300, dy: 0, icon: "edit_upBtn3_001.png", angle: 0, scale: 1, flipX: false },
-            { dx: 300, dy: 0,  icon: "edit_upBtn3_001.png", angle: 180, scale: 1, flipX: false },
+            { dx: 0, dy: -300, icon: "edit_upBtn3_001.png", angle: 0, scale: 1, flipX: false },
+            { dx: 0, dy: 300,  icon: "edit_upBtn3_001.png", angle: 180, scale: 1, flipX: false },
+            { dx: -300, dy: 0, icon: "edit_upBtn3_001.png", angle: 270, scale: 1, flipX: false },
+            { dx: 300, dy: 0,  icon: "edit_upBtn3_001.png", angle: 90, scale: 1, flipX: false },
 
             { dx: 0, dy: -1, icon: "edit_upBtn_001.png", angle: 0, scale: 0.7, flipX: false },
             { dx: 0, dy: 1,  icon: "edit_upBtn_001.png", angle: 180, scale: 0.7, flipX: false },
@@ -1848,7 +1848,7 @@ class LevelEditor {
         flipActions.forEach(a => itemsForGrid.push({ type: "action", subType: "flip", ...a }));
 
         const rotateActions = [
-            { degrees: 90,  icon: "edit_ccwBtn_001.png", angle: 0, scale: 0.8, flipX: false },
+            { degrees: 90,  icon: "edit_ccwBtn_001.png", angle: 0, scale: 0.8, flipX: true },
             { degrees: -90, icon: "edit_ccwBtn_001.png", angle: 0, scale: 0.8, flipX: false },
             { degrees: 45,  icon: "edit_rotate45rBtn_001.png", angle: 0, scale: 0.85, flipX: false },
             { degrees: -45, icon: "edit_rotate45lBtn_001.png", angle: 0, scale: 0.85, flipX: false }
@@ -8356,6 +8356,24 @@ class LevelEditor {
         .setInteractive();
     this._editorMenuContainer.add(bgDim);
 
+    const returnToLevelView = async (showLoading = false) => {
+        this._showEditorPauseMenu(false);
+        this._stopEditorPlaytest?.();
+
+        const levelId = window.currentlevel?.[2] || window._onlineLevelId;
+        if (levelId) {
+            window._editorReturnToLevelViewId = levelId;
+        }
+
+        if (showLoading) {
+            await this._showLoadingBuffer("Loading...");
+        }
+
+        window.isEditor = false;
+        this.game.registry.remove("autoStartGame");
+        this.scene.restart();
+    };
+
     const buttonData = [
         { text: "Resume", cb: () => this._showEditorPauseMenu(false) },
         { 
@@ -8365,6 +8383,7 @@ class LevelEditor {
                 this._stopEditorPlaytest?.();
                 this._saveEditorLevel(); 
                 await this._showLoadingBuffer("Loading...");
+                window._editorReturnToLevelViewId = null;
                 window.isEditor = false; 
                 this.game.registry.set("autoStartGame", true); 
                 this.scene.restart(); 
@@ -8373,16 +8392,12 @@ class LevelEditor {
         { 
             text: "Save and Exit", 
             cb: async () => { 
-                this._showEditorPauseMenu(false);
-                this._stopEditorPlaytest?.();
-                this._saveEditorLevel(); 
-                await this._showLoadingBuffer("Loading...");
-                window.isEditor = false; 
-                this.scene.restart(); 
+                this._saveEditorLevel();
+                await returnToLevelView(true);
             } 
         },
         { text: "Save", cb: () => this._saveEditorLevel() },
-        { text: "Exit", cb: () => { this._showEditorPauseMenu(false); this._stopEditorPlaytest?.(); window.isEditor = false; this.scene.restart(); } }
+        { text: "Exit", cb: () => { returnToLevelView(false); } }
     ];
 
     buttonData.forEach((data, i) => {

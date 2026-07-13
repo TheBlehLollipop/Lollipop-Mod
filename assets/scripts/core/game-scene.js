@@ -768,7 +768,27 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       const playBtnY = sh * 0.36 - 15;
       const playBtn2 = this.add.image(centerX, playBtnY, "GJ_GameSheet03", "GJ_playBtn2_001.png")
         .setScrollFactor(0).setDepth(504).setInteractive();
-      this._makeBouncyButton(playBtn2, 1, () => { this._playSelectedOnlineLevel(lvl); });
+      let playBtnLoading = false;
+      this._makeBouncyButton(playBtn2, 1, async () => {
+        if (playBtnLoading) return;
+        playBtnLoading = true;
+        this._audio.playEffect("playSound_01", { volume: 1 });
+        playBtn2.setTint(0x666666);
+        playBtn2.disableInteractive();
+
+        let started = false;
+        try {
+          started = await this._playSelectedOnlineLevel(lvl);
+        } catch (err) {
+          console.warn("Failed to start selected online level", err);
+        }
+
+        if (!started && playBtn2.scene) {
+          playBtnLoading = false;
+          playBtn2.clearTint();
+          playBtn2.setInteractive();
+        }
+      }, () => !playBtnLoading);
       this._playOverlayObjects.push(playBtn2);
 
       const _playStatDefs = [
@@ -956,9 +976,9 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       });
     };
     this._playSelectedOnlineLevel = async (lvl) => {
-      if (!lvl || !lvl.id) return;
+      if (!lvl || !lvl.id) return false;
       const PROXY_BASE = (window._gdProxyUrl || "").replace(/\/$/, "");
-      if (!PROXY_BASE) { console.warn("Play online level: window._gdProxyUrl is not configured"); return; }
+      if (!PROXY_BASE) { console.warn("Play online level: window._gdProxyUrl is not configured"); return false; }
       try {
         const res = await fetch(`${PROXY_BASE}/downloadGJLevel22.php`, {
           method: "POST",
@@ -967,7 +987,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         });
         if (!res.ok) throw new Error(`Proxy returned ${res.status}`);
         const rawResponse = await res.text();
-        if (!rawResponse || rawResponse === "-1" || !rawResponse.includes(":")) return;
+        if (!rawResponse || rawResponse === "-1" || !rawResponse.includes(":")) return false;
 
         const lvlParts = rawResponse.split("#")[0].split(":");
         const m = {};
@@ -1058,8 +1078,10 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         this.game.registry.set("autoStartGame", true);
         window._onlineReturnToPlayMenu = { lvl, backTarget: this._playMenuBackTarget };
         this._closePlayMenu(false, () => this.scene.restart());
+        return true;
       } catch (err) {
         console.warn("Failed to start online level", err);
+        return false;
       }
     };
     this._duplicateOnlineLevelToEditor = async (lvl) => {
@@ -1671,7 +1693,27 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         const editBtn = this.add.image(centerX - 220, btnY, "GJ_GameSheet03", "GJ_editBtn_001.png").setInteractive().setScale(1.1);
         this._makeBouncyButton(editBtn, 1.1, () => { cleanup(); this._startCreatedLevel(level, true); });
         const playBtn = this.add.image(centerX, btnY, "GJ_GameSheet03", "GJ_playBtn2_001.png").setInteractive().setScale(1.1);
-        this._makeBouncyButton(playBtn, 1.1, () => { cleanup(); this._startCreatedLevel(level, false); });
+        let playBtnLoading = false;
+        this._makeBouncyButton(playBtn, 1.1, async () => {
+            if (playBtnLoading) return;
+            playBtnLoading = true;
+            this._audio.playEffect("playSound_01", { volume: 1 });
+            playBtn.setTint(0x666666);
+            playBtn.disableInteractive();
+
+            let started = false;
+            try {
+                started = await this._startCreatedLevel(level, false, cleanup);
+            } catch (err) {
+                console.warn("Failed to start saved level", err);
+            }
+
+            if (!started && playBtn.scene) {
+                playBtnLoading = false;
+                playBtn.clearTint();
+                playBtn.setInteractive();
+            }
+        }, () => !playBtnLoading);
         const shareBtn = this.add.image(centerX + 220, btnY, "GJ_GameSheet03", "GJ_shareBtn_001.png").setInteractive().setScale(1.1);
         this._makeBouncyButton(shareBtn, 1.1, () => { this._exportGMD(level); });
         const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_03_001.png").setFlipX(true).setFlipY(true).setRotation(Math.PI).setInteractive();
@@ -1701,7 +1743,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
 
         container.add([nameBox, titleText, titleCursor, descBox, descText, descCursor, playBtn, editBtn, shareBtn, backBtn, deleteBtn, lengthIcon, lengthLabel, songIcon, songLabel, statusIcon, statusLabel, versionText, idText]);
     };
-    this._startCreatedLevel = async (level, isEditor) => {
+    this._startCreatedLevel = async (level, isEditor, onBeforeRestart = null) => {
         const PROXY_BASE = (window._gdProxyUrl || "").replace(/\/$/, "");
         window._onlineLevelString = level.levelString;
         window._onlineLevelName = level.levelName;
@@ -1709,9 +1751,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         window._onlineSongBuffer = null;
         window._onlineSongKey = null;
         window._onlineSongOffset = 0;
-        if (isEditor){
-          window.isEditor = true;
-        }
+        window.isEditor = !!isEditor;
         this.game.registry.set("autoStartGame", true);
         window.currentlevel = [
             "Placeholder",
@@ -1767,7 +1807,9 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
               }
           }
         }
+        if (onBeforeRestart) onBeforeRestart();
         this.scene.restart();
+        return true;
     };
     this._closeEditorMenu = () => {
         if (this._editorObjects) {
@@ -3690,7 +3732,22 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       } else {
         console.warn("autoStartGame: missing settingsMap for", window.currentlevel && window.currentlevel[2]);
       }
-      } else if (window._onlineReturnToPlayMenu) {
+    } else if (window._editorReturnToLevelViewId) {
+      const levelId = window._editorReturnToLevelViewId;
+      window._editorReturnToLevelViewId = null;
+      let level = null;
+      try {
+        const createdLevels = JSON.parse(localStorage.getItem("created_levels") || "[]");
+        level = createdLevels.find(entry => entry && entry.createdId === levelId) || null;
+      } catch (err) {
+        console.warn("Failed to restore the editor level view", err);
+      }
+      if (level) {
+        this._openLevelView(level);
+      } else {
+        this._openEditorMenu();
+      }
+    } else if (window._onlineReturnToPlayMenu) {
       const { lvl, backTarget } = window._onlineReturnToPlayMenu;
       window._onlineReturnToPlayMenu = null;
       window._selectedLevelData = lvl;
@@ -6119,112 +6176,46 @@ _buildSettingsPopup() {
       } catch (_0x22124f) {}
     }
   }
-  _drawScale9(_0x147730, _0x4c8cbf, scaleWidth, scaleHeight, _0x24a44b, borderSize, _0x590eba, _0x206735) {
-    const _0x4080b2 = this.add.container(_0x147730, _0x4c8cbf);
-    const _0x2522df = this.textures.get(_0x24a44b);
-    const _0x401ec1 = _0x2522df.source[0];
-    const _0x3f82ec = _0x401ec1.width;
-    const _0x294746 = _0x401ec1.height;
-    const _0x2b09f1 = scaleWidth - borderSize * 2;
-    const _0x990515 = scaleHeight - borderSize * 2;
-    const _0x1d065e = [{
-      sx: 0,
-      sy: 0,
-      sw: borderSize,
-      sh: borderSize,
-      dx: -scaleWidth / 2,
-      dy: -scaleHeight / 2,
-      dw: borderSize,
-      dh: borderSize
-    }, {
-      sx: borderSize,
-      sy: 0,
-      sw: _0x3f82ec - borderSize * 2,
-      sh: borderSize,
-      dx: -scaleWidth / 2 + borderSize,
-      dy: -scaleHeight / 2,
-      dw: _0x2b09f1,
-      dh: borderSize
-    }, {
-      sx: _0x3f82ec - borderSize,
-      sy: 0,
-      sw: borderSize,
-      sh: borderSize,
-      dx: scaleWidth / 2 - borderSize,
-      dy: -scaleHeight / 2,
-      dw: borderSize,
-      dh: borderSize
-    }, {
-      sx: 0,
-      sy: borderSize,
-      sw: borderSize,
-      sh: _0x294746 - borderSize * 2,
-      dx: -scaleWidth / 2,
-      dy: -scaleHeight / 2 + borderSize,
-      dw: borderSize,
-      dh: _0x990515
-    }, {
-      sx: borderSize,
-      sy: borderSize,
-      sw: _0x3f82ec - borderSize * 2,
-      sh: _0x294746 - borderSize * 2,
-      dx: -scaleWidth / 2 + borderSize,
-      dy: -scaleHeight / 2 + borderSize,
-      dw: _0x2b09f1,
-      dh: _0x990515
-    }, {
-      sx: _0x3f82ec - borderSize,
-      sy: borderSize,
-      sw: borderSize,
-      sh: _0x294746 - borderSize * 2,
-      dx: scaleWidth / 2 - borderSize,
-      dy: -scaleHeight / 2 + borderSize,
-      dw: borderSize,
-      dh: _0x990515
-    }, {
-      sx: 0,
-      sy: _0x294746 - borderSize,
-      sw: borderSize,
-      sh: borderSize,
-      dx: -scaleWidth / 2,
-      dy: scaleHeight / 2 - borderSize,
-      dw: borderSize,
-      dh: borderSize
-    }, {
-      sx: borderSize,
-      sy: _0x294746 - borderSize,
-      sw: _0x3f82ec - borderSize * 2,
-      sh: borderSize,
-      dx: -scaleWidth / 2 + borderSize,
-      dy: scaleHeight / 2 - borderSize,
-      dw: _0x2b09f1,
-      dh: borderSize
-    }, {
-      sx: _0x3f82ec - borderSize,
-      sy: _0x294746 - borderSize,
-      sw: borderSize,
-      sh: borderSize,
-      dx: scaleWidth / 2 - borderSize,
-      dy: scaleHeight / 2 - borderSize,
-      dw: borderSize,
-      dh: borderSize
-    }];
-    for (let _0x24f653 = 0; _0x24f653 < _0x1d065e.length; _0x24f653++) {
-      const scale9Piece = _0x1d065e[_0x24f653];
-      const _0xade586 = "_s9_" + _0x24f653;
-      if (!_0x2522df.has(_0xade586)) {
-        _0x2522df.add(_0xade586, 0, scale9Piece.sx, scale9Piece.sy, scale9Piece.sw, scale9Piece.sh);
-      }
-      const _0x1145e5 = this.add.image(scale9Piece.dx, scale9Piece.dy, _0x24a44b, _0xade586).setOrigin(0, 0).setDisplaySize(scale9Piece.dw, scale9Piece.dh);
-      if (_0x590eba !== undefined) {
-        _0x1145e5.setTint(_0x590eba);
-      }
-      if (_0x206735 !== undefined) {
-        _0x1145e5.setAlpha(_0x206735);
-      }
-      _0x4080b2.add(_0x1145e5);
+  _drawScale9(x, y, scaleWidth, scaleHeight, textureKey, borderSize, tint, alpha) {
+    // Keep drawScale9 isolated from the source texture. The old implementation
+    // added temporary _s9_* frames to the shared texture, which could corrupt
+    // native NineSlice instances created from that texture afterwards.
+    const container = this.add.container(x, y);
+    const texture = this.textures.get(textureKey);
+    const baseFrame = texture?.get?.();
+    const source = texture?.source?.[0];
+    const textureWidth = baseFrame?.width || source?.width || scaleWidth;
+    const textureHeight = baseFrame?.height || source?.height || scaleHeight;
+    const requestedBorder = Math.max(0, Number(borderSize) || 0);
+
+    // Phaser requires the fixed edges to fit both the source frame and the
+    // requested output size. Clamp only when necessary, matching drawScale9's
+    // previous dimensions for all normal-sized panels and buttons.
+    const horizontalBorder = Math.min(requestedBorder, textureWidth / 2, scaleWidth / 2);
+    const verticalBorder = Math.min(requestedBorder, textureHeight / 2, scaleHeight / 2);
+
+    const nineSlice = this.add.nineslice(
+      0,
+      0,
+      textureKey,
+      null,
+      scaleWidth,
+      scaleHeight,
+      horizontalBorder,
+      horizontalBorder,
+      verticalBorder,
+      verticalBorder
+    ).setOrigin(0.5);
+
+    if (tint !== undefined) {
+      nineSlice.setTint(tint);
     }
-    return _0x4080b2;
+    if (alpha !== undefined) {
+      nineSlice.setAlpha(alpha);
+    }
+
+    container.add(nineSlice);
+    return container;
   }
   _startGame() {
     if (!this._menuActive) {
@@ -9197,7 +9188,14 @@ _applyMirrorEffect() {
     const shell = this._openListScene(
       isFeatured ? "" : "Online Levels",
       180,
-      () => { this._onlineLevelsOverlay = null; this._openCreatorMenu(); }
+      () => {
+        this._onlineLevelsOverlay = null;
+        if (isFeatured) {
+          this._openCreatorMenu();
+        } else {
+          this._openSearchMenu();
+        }
+      }
     );
     const { objects, listLeft, listTop, panelW, panelH,
             panelCX, panelCY, addRow, clearRows,
