@@ -2229,7 +2229,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         extraComingSoon);
 
       let _loading = false;
-      const _diffFilterCodeMap = [-1, 1, 2, 3, 4, 5, -2, 0];
+      const _diffFilterCodeMap = [-1, 1, 2, 3, 4, 5, -2, -3];
       const _getActiveDiffParam = () => {
         const icons = this._diffFilterIcons || [];
         const activeCodes = [];
