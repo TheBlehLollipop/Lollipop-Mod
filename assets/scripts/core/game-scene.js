@@ -5413,7 +5413,7 @@ _buildSettingsPopup() {
       { text: "bog, Lasokar, AntiMatter,", scale: 0.7, font: "goldFont" },
       { text: "arbstro, and aloaf", scale: 0.7, font: "goldFont" },
       { text: "Contributors:", scale: 0.9, font: "bigFont" },
-      { text: "t0nchi7 and Itzar.", scale: 0.7, font: "goldFont" },
+      { text: "t0nchi7, Itzar, and CoraBitz", scale: 0.7, font: "goldFont" },
       { text: "© 2026 RobTop Games. All rights reserved.", scale: 0.4, font: "Arial", color: 0x000000 },
     ]; 
     let yPos = 0;
@@ -5838,6 +5838,7 @@ _buildSettingsPopup() {
       { text: "- Fingerdash is beatable now", scale: 0.7 },
       { text: "- Fixed spider/robot portals", scale: 0.7 },
       { text: "- Fix wave trail (credit 2 pinkdev)", scale: 0.7 },
+      { text: "- New branding (credit 2 CoraBitz)", scale: 0.7 },
       { text: "There's probably more but I forgot", color: 0x808080, scale: 0.5 },
       { text: "- Lasokar", scale: 0.7, color: 0x00e676 },
     ]; 
