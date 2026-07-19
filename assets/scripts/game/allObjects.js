@@ -872,6 +872,7 @@ window.allobjects = function() {
     "type": "solid",
     "frame": "square_b_01_001.png",
     "can_color": false,
+    "black": true,
     "gridW": 1,
     "gridH": 0.5,
     "default_detail_color_channel": -1,
@@ -882,6 +883,7 @@ window.allobjects = function() {
     "type": "solid",
     "frame": "square_b_02_001.png",
     "can_color": false,
+    "black": true,
     "gridW": 1,
     "gridH": 0.5,
     "default_detail_color_channel": -1,
@@ -892,6 +894,7 @@ window.allobjects = function() {
     "type": "solid",
     "frame": "square_b_03_001.png",
     "can_color": false,
+    "black": true,
     "gridW": 1,
     "gridH": 0.5,
     "default_detail_color_channel": -1,
@@ -902,6 +905,7 @@ window.allobjects = function() {
     "type": "solid",
     "frame": "square_b_04_001.png",
     "can_color": false,
+    "black": true,
     "gridW": 1,
     "gridH": 0.5,
     "default_detail_color_channel": -1,
@@ -932,6 +936,7 @@ window.allobjects = function() {
     "type": "solid",
     "frame": "square_b_06_001.png",
     "can_color": false,
+    "black": true,
     "gridW": 1,
     "gridH": 0.5,
     "default_detail_color_channel": -1,
@@ -11368,7 +11373,7 @@ window.allobjects = function() {
   },
   "667": {
     "black": true,
-    "can_color": true,
+    "can_color": false,
     "color_channel": "black",
     "default_base_color_channel": 1004,
     "frame": "pit_07_001.png",
@@ -11400,7 +11405,7 @@ window.allobjects = function() {
   },
   "669": {
     "black": true,
-    "can_color": true,
+    "can_color": false,
     "color_channel": "black",
     "default_base_color_channel": 1004,
     "frame": "d_pixelArt01_002_001.png",
@@ -11432,7 +11437,7 @@ window.allobjects = function() {
   },
   "671": {
     "black": true,
-    "can_color": true,
+    "can_color": false,
     "color_channel": "black",
     "default_base_color_channel": 1004,
     "frame": "d_pixelArt01_004_001.png",
@@ -11448,7 +11453,7 @@ window.allobjects = function() {
   },
   "672": {
     "black": true,
-    "can_color": true,
+    "can_color": false,
     "color_channel": "black",
     "default_base_color_channel": 1004,
     "frame": "d_pixelArt01_005_001.png",
@@ -11694,7 +11699,7 @@ window.allobjects = function() {
   },
   "688": {
     "black": true,
-    "can_color": true,
+    "can_color": false,
     "color_channel": "black",
     "default_base_color_channel": 1004,
     "frame": "lighttriangle_01_04_color_001.png",
@@ -12182,7 +12187,7 @@ window.allobjects = function() {
   },
   "719": {
     "can_color": true,
-    "default_base_color_channel": 1,
+    "default_base_color_channel": -1,
     "frame": "pit_07_shine_001.png",
     "glow_frame": "pit_07_shine_glow_001.png",
     "gridH": 0.3166666626930237,
@@ -16812,7 +16817,7 @@ window.allobjects = function() {
   },
   "989": {
     "black": true,
-    "can_color": true,
+    "can_color": false,
     "color_channel": "black",
     "default_base_color_channel": 1004,
     "frame": "pit_07_3_001.png",
@@ -18870,7 +18875,7 @@ window.allobjects = function() {
   },
   "1080": {
     "black": true,
-    "can_color": true,
+    "can_color": false,
     "children": [
       {
         "frame": "block007_color_006_001.png",
