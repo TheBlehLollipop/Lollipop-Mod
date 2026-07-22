@@ -318,9 +318,11 @@ function _resolveSlopeDir(objectDef, flipX, objId) {
   const text = frames.join(" ");
   let dir = 1;
 
+  /*
   if (/slope_02[^0-9]|slope_04|slope_06|slope_02[bcd]_|pit_0[14]_slope_02|plank_01_slope_02|slope_square_02|slope_square_04|slope_square_05/.test(text)) {
     dir = -1;
   }
+  */
   
   if (flipX) dir = -dir;
   return dir;
