@@ -7,7 +7,7 @@
   src="./wd_assets/wordmark/wordmark_1080.png" 
   />
   <p>
-  <strong>A Modded Geometry Dash demo with extra features added!</strong>
+  <strong>A modded Geometry Dash demo with extra features added!</strong>
   </p>
   <a 
   href="https://web-dashers.github.io/" 
