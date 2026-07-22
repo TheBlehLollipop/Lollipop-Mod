@@ -5249,8 +5249,8 @@ _buildSettingsPopup() {
       });
 
       const importBtn = this.add.image(centerX - 300, centerY + 20,"importMacro").setInteractive();
-      const exportBtn = this.add.image(centerX - 150, centerY + 20, "GJ_GameSheet03", "GJ_shareBtn_001.png").setInteractive().setFlipY(true).setAngle(90).setScale(0.53);
-      const createBtn = this.add.image(centerX, centerY + 20, "GJ_GameSheet03", "GJ_plusBtn_001.png").setInteractive().setFlipY(true).setAngle(90).setScale(1.2);
+      const exportBtn = this.add.image(centerX - 150, centerY + 20, "GJ_GameSheet03", "GJ_shareBtn_001.png").setInteractive().setScale(0.53);
+      const createBtn = this.add.image(centerX, centerY + 20, "GJ_GameSheet03", "GJ_plusBtn_001.png").setInteractive().setScale(1.2);
       const playbackBtn = this.add.image(centerX + 150, centerY + 20, this._macroBot?.playing ? "stopPlayback" : "playbackMacro").setInteractive().setScale(0.25);
       const recordBtn = this.add.image(centerX + 300, centerY + 20, this._macroBot?.recording ? "stopRecord" : "recordMacro").setInteractive().setScale(0.25);
 
@@ -7108,6 +7108,7 @@ _buildSettingsPopup() {
     }
     if (this._player2?._hitboxGraphics) this._player2._hitboxGraphics.clear();
 
+    this._deltaBuffer = 0;
     this._physicsFrame = checkpoint.physicsFrame;
     if (this._macroBot?.recording == true){
       this._macroBot?.rollbackRecording(this._physicsFrame);
@@ -7553,7 +7554,7 @@ _buildSettingsPopup() {
     }
     if (this._state.isDead) {
       if (!this._deathSoundPlayed) {
-        if (!this._practicedMode.practiceMode) {
+        if (!this._audio._shouldUsePracticeSong()) {
           this._audio.stopMusic();
         }
         this._audio.playEffect("explode_11", {
