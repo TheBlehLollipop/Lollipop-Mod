@@ -41,6 +41,10 @@ class PlayerState {
     this._robotHold = false;
     this._robotHoldTimer = 0;
     this._spiderTeleportNoclipDeathPending = false;
+    this.ballShouldRotate = false;
+    this.ballRotateOpposite = false;
+    this.ballNormalRotate = 1;
+    this.ballHitPad = false;
   }
 }
 
@@ -1848,7 +1852,7 @@ if (this.p.isFlying || this.p.isUfo) {
             if (this.p.isWave && this._waveLayers.includes(playerLayer)) {
               _miniS *= 0.94; //fix wave size
             }
-            playerLayer.sprite.scaleY = (this.p.gravityFlipped ? -_miniS : _miniS);
+            playerLayer.sprite.scaleY = isBallLayer ? _miniS : (this.p.gravityFlipped ? -_miniS : _miniS);
             playerLayer.sprite.scaleX = (this.p.mirrored ? -_miniS : _miniS);
         }
       }
@@ -1868,7 +1872,7 @@ if (this.p.isFlying || this.p.isUfo) {
             if (this.p.isWave && this._waveLayers.includes(playerLayer)) {
               _miniS *= 0.94; //fix wave size
             }
-            playerLayer.sprite.scaleY = (this.p.gravityFlipped ? -_miniS : _miniS);
+            playerLayer.sprite.scaleY = isBallLayer ? _miniS : (this.p.gravityFlipped ? -_miniS : _miniS);
             playerLayer.sprite.scaleX = (this.p.mirrored ? -_miniS : _miniS);
         }
       }
@@ -2001,6 +2005,10 @@ if (this.p.isFlying || this.p.isUfo) {
     this.exitRobotMode();
     this.exitWaveMode();
     this.p.isBall = true;
+    this.p.ballShouldRotate = false;
+    this.p.ballRotateOpposite = false;
+    this.p.ballNormalRotate = 1;
+    this.p.ballHitPad = false;
     this.p.onGround = false;
     this.p.canJump = false;
     this.p.isJumping = false;
@@ -2020,6 +2028,10 @@ if (this.p.isFlying || this.p.isUfo) {
       return;
     }
     this.p.isBall = false;
+    this.p.ballShouldRotate = false;
+    this.p.ballRotateOpposite = false;
+    this.p.ballNormalRotate = 1;
+    this.p.ballHitPad = false;
     this.p.onGround = false;
     this.p.canJump = false;
     this.p.isJumping = false;
@@ -2266,6 +2278,11 @@ if (this.p.isFlying || this.p.isUfo) {
       if (_0x4a38a5) {
         this._rotation = Math.round(this._rotation / Math.PI) * Math.PI;
       }
+      this.p.ballShouldRotate = true;
+      this.p.ballRotateOpposite = false;
+      this.p.ballHitPad = false;
+      const gravityDir = this.p.gravityFlipped ? -1 : 1;
+      this.p.ballNormalRotate = this.p.mirrored ? -gravityDir : gravityDir;
     } else if (this.p.isSpider) {
       if (_0x4a38a5) {
         this._rotation = Math.round(this._rotation / Math.PI) * Math.PI;
@@ -3121,6 +3138,9 @@ if (this.p.isFlying || this.p.isUfo) {
       this.p.yVelocity *= _0x11bbde;
       this.p.onGround = false;
       this.p.canJump = false;
+      if (this.p.isBall) {
+        this.p.ballShouldRotate = true;
+      }
   }
   runRotateAction() {
     this.rotateActionActive = true;
@@ -3190,11 +3210,21 @@ if (this.p.isFlying || this.p.isUfo) {
     this._rotation = this.slerp2D(this._rotation, _0x183c2a, _0x17a9a6);
   }
   updateBallRoll(_0x1dd8af, onSurface) {
-    const gravityDir = this.p.gravityFlipped ? -1 : 1;
-	  const rollDir = this.p.mirrored ? -gravityDir : gravityDir;
-    const speedFactor = onSurface ? 0.5 : 0.35;
+    if (!this.p.ballShouldRotate) {
+      return;
+    }
+    let rollDir = this.p.ballNormalRotate || 1;
+    if (this.p.ballRotateOpposite) {
+      rollDir = -rollDir;
+    }
+    const groundSpeedFactor = 0.45;
+    let airSpeedFactor = this.p.ballRotateOpposite ? 0.25 : 0.45;
+    if (this.p.ballHitPad) {
+      airSpeedFactor *= 1.3;
+    }
+    const speedFactor = onSurface ? groundSpeedFactor : airSpeedFactor;
     const miniRollScale = this.p.isMini ? 1 / 0.8 : 1;
-    this._rotation += _0x1dd8af / (g / 2) * gravityDir * speedFactor * miniRollScale;
+    this._rotation += _0x1dd8af / (g / 2) * rollDir * speedFactor * miniRollScale;
   }
   updateShipRotation(_0x217ad3) {
     let _0x48f422 = -(this.p.y - this.p.lastY);
@@ -4058,18 +4088,30 @@ _updateWaveJump(dt) {
           if (!this._isObjectActivated(gameObj)) {
             this._setObjectActivated(gameObj, true);
             this._playPortalShine(gameObj, 2);
+            if (this.p.isBall) {
+              this.p.ballShouldRotate = true;
+              this.p.ballRotateOpposite = true;
+            }
             this.flipGravity(false, 0.5);
           }
         } else if (_colType === "portal_gravity_up") {
           if (!this._isObjectActivated(gameObj)) {
             this._setObjectActivated(gameObj, true);
             this._playPortalShine(gameObj, 2);
+            if (this.p.isBall) {
+              this.p.ballShouldRotate = true;
+              this.p.ballRotateOpposite = true;
+            }
             this.flipGravity(true, 0.5);
           }
         } else if (_colType === "portal_gravity_toggle") {
           if (!this._isObjectActivated(gameObj)) {
             this._setObjectActivated(gameObj, true);
             this._playPortalShine(gameObj, 2);
+            if (this.p.isBall) {
+              this.p.ballShouldRotate = true;
+              this.p.ballRotateOpposite = true;
+            }
             this.flipGravity(!this.p.gravityFlipped, 0.5);
           }
         } else if (_colType === "portal_mirror_on") {
@@ -4155,6 +4197,9 @@ _updateWaveJump(dt) {
               this.p.yVelocity = 0;
               this.p.onGround = false;
               this.p.canJump = false;
+              if (this.p.isBall) {
+                this.p.ballHitPad = true;
+              }
               this.p.isJumping = false;
               _boostedThisStep = true;
             } else {
@@ -4189,6 +4234,9 @@ _updateWaveJump(dt) {
               this.p.onGround = false;
               this.p.canJump = false;
               this.p.yVelocity = _fm * _padVel;
+              if (this.p.isBall) {
+                this.p.ballHitPad = true;
+              }
               if (_padFlip) {
                 this.flipGravity(!this.p.gravityFlipped);
                 if (_padId === 67) this._syncOtherDualGravityForBlueBoost();
@@ -4338,6 +4386,10 @@ _updateWaveJump(dt) {
                 if (_orbId === 1330) {
                   this.p.wasBoosted = false;
                 }
+                if (this.p.isBall) {
+                  this.p.ballShouldRotate = true;
+                  this.p.ballRotateOpposite = true;
+                }
                 this.runRotateAction();
                 _boostedThisStep = true;
                 if (_flipAfter) {
@@ -4437,7 +4489,7 @@ _updateWaveJump(dt) {
           const _0xLandBot = (this.p.yVelocity <= 0 || this.p.onGround) && (_0x146a97 >= bottom || _0x869e42 >= bottom);
           const _0xLandTop = (this.p.yVelocity >= 0 || this.p.onGround) && (_0x3e7199 <= top || _0x135a9d <= top);
           const isstandingOnAPlatform = this.p.gravityFlipped ? _0xLandTop : _0xLandBot;
-          if (iscolliding && !isstandingOnAPlatform) {
+          if (iscolliding && !isstandingOnAPlatform && !this.p.isBall) {
             if (window.noClip) this.p.diedThisFrame = true;
             if (window.noClip || gameObj.objid === 143) continue
             this.killPlayer();
