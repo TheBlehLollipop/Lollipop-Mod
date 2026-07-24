@@ -3219,7 +3219,11 @@ if (this.p.isFlying || this.p.isUfo) {
     }
     const groundSpeedFactor = 0.45;
     let airSpeedFactor = this.p.ballRotateOpposite ? 0.25 : 0.45;
-    if (this.p.ballHitPad) {
+    if (this.p.isDashing) {
+      const dashSpeed = Math.abs(this.p.dashYVelocity || this.p.yVelocity || 0);
+      const speedScale = Math.max(0.15, Math.min(1, dashSpeed / 24));
+      airSpeedFactor = 0.3 + speedScale * 0.3;
+    } else if (this.p.ballHitPad) {
       airSpeedFactor *= 1.3;
     }
     const speedFactor = onSurface ? groundSpeedFactor : airSpeedFactor;
