@@ -6892,6 +6892,7 @@ _buildSettingsPopup() {
       this._macroBot?.clearPlayback();
     }
     this._level._updateGlowVisibility?.();
+    this._updateCameraY(0, true);
   }
   _getSongOffsetForWorldX(worldX) {
     const startX = Number.isFinite(Number(worldX)) ? Number(worldX) : 0;
@@ -6925,6 +6926,7 @@ _buildSettingsPopup() {
     this._slideIn = false;
     this._playerWorldX = checkpoint.x;
     this._cameraX = checkpoint.cameraX;
+    this._cameraY = checkpoint.cameraY;
     this._cameraXRef._v = this._cameraX;
     this._state.y = checkpoint.y;
     this._state.yVelocity = checkpoint.yVelocity;
@@ -7219,7 +7221,7 @@ _buildSettingsPopup() {
     }
     this._bg.tilePositionY = tileY;
   }
-  _updateCameraY(_0xc7c517) {
+  _updateCameraY(_0xc7c517, snap = false) {
     let explosionPiece = this._cameraY;
     let _0x1a27be = explosionPiece;
     if (this._level.flyCameraTarget !== null) {
@@ -7228,25 +7230,27 @@ _buildSettingsPopup() {
       let _0x2bc8fb = this._state.y;
       let _0x259956 = 140;
       let _0x5025ec = 80;
-      let _0x1f7976 = explosionPiece - o + 320;
+      let _0x1f7976 = explosionPiece - (typeof o !== 'undefined' ? o : 0) + 320;
       if (this._state.gravityFlipped) {
         if (_0x2bc8fb > _0x1f7976 + _0x5025ec) {
-          _0x1a27be = _0x2bc8fb - 320 - _0x5025ec + o;
+          _0x1a27be = _0x2bc8fb - 320 - _0x5025ec + (typeof o !== 'undefined' ? o : 0);
         } else if (_0x2bc8fb < _0x1f7976 - _0x259956) {
-          _0x1a27be = _0x2bc8fb - 320 + _0x259956 + o;
+          _0x1a27be = _0x2bc8fb - 320 + _0x259956 + (typeof o !== 'undefined' ? o : 0);
         }
       } else {
         if (_0x2bc8fb > _0x1f7976 + _0x259956) {
-          _0x1a27be = _0x2bc8fb - 320 - _0x259956 + o;
+          _0x1a27be = _0x2bc8fb - 320 - _0x259956 + (typeof o !== 'undefined' ? o : 0);
         } else if (_0x2bc8fb < _0x1f7976 - _0x5025ec) {
-          _0x1a27be = _0x2bc8fb - 320 + _0x5025ec + o;
+          _0x1a27be = _0x2bc8fb - 320 + _0x5025ec + (typeof o !== 'undefined' ? o : 0);
         }
       }
     }
     if (_0x1a27be < 0) {
       _0x1a27be = 0;
     }
-    if (_0xc7c517 !== 0) {
+    if (snap) {
+      this._cameraY = _0x1a27be;
+    } else if (_0xc7c517 !== 0) {
       explosionPiece += (_0x1a27be - explosionPiece) / (10 / _0xc7c517);
       if (explosionPiece < 0) {
         explosionPiece = 0;
