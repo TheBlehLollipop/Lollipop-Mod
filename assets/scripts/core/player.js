@@ -3219,7 +3219,11 @@ if (this.p.isFlying || this.p.isUfo) {
     }
     const groundSpeedFactor = 0.45;
     let airSpeedFactor = this.p.ballRotateOpposite ? 0.25 : 0.45;
-    if (this.p.ballHitPad) {
+    if (this.p.isDashing) { //i forgot this god damnit
+      const dashSpeed = Math.abs(this.p.dashYVelocity || this.p.yVelocity || 0);
+      const speedScale = Math.max(0.15, Math.min(1, dashSpeed / 24));
+      airSpeedFactor = 0.3 + speedScale * 0.3;
+    } else if (this.p.ballHitPad) {
       airSpeedFactor *= 1.3;
     }
     const speedFactor = onSurface ? groundSpeedFactor : airSpeedFactor;
@@ -4198,6 +4202,8 @@ _updateWaveJump(dt) {
               this.p.onGround = false;
               this.p.canJump = false;
               if (this.p.isBall) {
+				this.p.ballShouldRotate = true;
+                this.p.ballRotateOpposite = false;
                 this.p.ballHitPad = true;
               }
               this.p.isJumping = false;
@@ -4235,6 +4241,8 @@ _updateWaveJump(dt) {
               this.p.canJump = false;
               this.p.yVelocity = _fm * _padVel;
               if (this.p.isBall) {
+                this.p.ballShouldRotate = true;
+                this.p.ballRotateOpposite = false;
                 this.p.ballHitPad = true;
               }
               if (_padFlip) {
@@ -4279,6 +4287,11 @@ _updateWaveJump(dt) {
                 this.p.onGround = false;
                 this.p.canJump = false;
                 this.p.isJumping = false;
+                if (this.p.isBall) {
+                  this.p.ballShouldRotate = true;
+                  this.p.ballRotateOpposite = false;
+                  this.p.ballHitPad = true;
+                }
                 this.runRotateAction();
                 _boostedThisStep = true;
                 this._markActivatedOrbSprites(gameObj);
