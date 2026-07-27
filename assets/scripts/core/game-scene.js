@@ -5842,6 +5842,9 @@ _buildSettingsPopup() {
       { text: "levels now (thanks lasokadadyy)", scale: 0.7, },
       { text: "fixed SOME objects", scale: 0.7 },
       { text: "-pinkdih", scale: 0.7, color: 0xFF008E },
+      { text: "fixed a lot more objects", scale: 0.55 },
+      { text: "reworked the ball's rolling physics", scale: 0.55 },
+      { text: "particles soon", scale: 0.55, color: 0x708090},
     ]; 
     let yPos = 0;
     const lineItems = [];
