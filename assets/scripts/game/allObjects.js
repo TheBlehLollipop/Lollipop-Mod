@@ -713,47 +713,74 @@ window.allobjects = function() {
   },
   "50": {
     "type": "deco",
-    "frame": "d_ball_01_001.png",
+    "frame": "none",
     "gridW": 0,
     "gridH": 0,
     "default_detail_color_channel": -1,
     "default_z_layer": 3,
-    "default_z_order": 9
+    "default_z_order": 9,
+    "children": [
+      {
+        "frame": "rod_ball_01_001.png",
+        "z": 1,
+        "audioScale": true
+      }
+    ],
   },
   "51": {
     "type": "deco",
-    "frame": "d_ball_02_001.png",
+    "frame": "none",
     "gridW": 0,
     "gridH": 0,
     "default_detail_color_channel": -1,
     "default_z_layer": 3,
-    "default_z_order": 9
+    "default_z_order": 9,
+    "children": [
+      {
+        "frame": "rod_ball_02_001.png",
+        "z": 1,
+        "audioScale": true
+      }
+    ]
   },
   "52": {
     "type": "deco",
-    "frame": "d_ball_03_001.png",
+    "frame": "none",
     "gridW": 0,
     "gridH": 0,
     "default_detail_color_channel": -1,
     "default_z_layer": 3,
-    "default_z_order": 9
+    "default_z_order": 9,
+    "children": [
+      {
+        "frame": "rod_ball_03_001.png",
+        "z": 1,
+        "audioScale": true
+      }
+    ]
   },
   "53": {
     "type": "deco",
-    "frame": "d_ball_04_001.png",
+    "frame": "none",
     "gridW": 0,
     "gridH": 0,
     "blend": "additive",
     "tint": 64511,
     "default_detail_color_channel": -1,
     "default_z_layer": 3,
-    "default_z_order": 9
+    "default_z_order": 9,
+    "children": [
+      {
+        "frame": "d_ball_04_001.png",
+        "z": 1,
+        "audioScale": true
+      }
+    ]
   },
   "54": {
     "can_color": true,
     "default_base_color_channel": 1006,
-    "frame": "d_ball_05_001.png",
-    "glow_frame": "d_ball_05_glow_001.png",
+    "frame": "none",
     "gridH": 0.949999988079071,
     "gridW": 1,
     "spritesheet": "GJ_GameSheet-uhd",
@@ -761,7 +788,14 @@ window.allobjects = function() {
     "z": 9,
     "default_detail_color_channel": -1,
     "default_z_layer": 3,
-    "default_z_order": 9
+    "default_z_order": 9,
+    "children": [
+      {
+        "frame": "d_ball_05_001.png",
+        "z": 1,
+        "audioScale": true
+      }
+    ]
   },
   "55": {
     "type": "trigger",
@@ -846,12 +880,19 @@ window.allobjects = function() {
   },
   "60": {
     "type": "deco",
-    "frame": "d_ball_06_001.png",
+    "frame": "none",
     "gridW": 0,
     "gridH": 0,
     "default_detail_color_channel": -1,
     "default_z_layer": 3,
-    "default_z_order": 9
+    "default_z_order": 9,
+    "children": [
+      {
+        "frame": "d_ball_06_001.png",
+        "z": 1,
+        "audioScale": true
+      }
+    ]
   },
   "61": {
     "type": "hazard",
@@ -1057,7 +1098,8 @@ window.allobjects = function() {
       {
         "frame": "blockOutline_05_001.png",
         "localDy": 0,
-        "z": 1
+        "z": 1,
+        "rot": 180
       }
     ],
     "default_detail_color_channel": -1,
@@ -1263,25 +1305,22 @@ window.allobjects = function() {
         "frame": "d_cogwheel_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
       },
       {
         "frame": "d_cogwheel_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 180
       },
       {
         "frame": "d_cogwheel_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
-      },
-      {
-        "frame": "d_cogwheel_01_001.png",
-        "localDy": 0,
-        "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 270
       }
     ],
     "default_base_color_channel": 1005,
@@ -1496,8 +1535,8 @@ window.allobjects = function() {
       {
         "frame": "blockOutline_05_001.png",
         "localDy": 0,
-        "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 180
       }
     ],
     "default_base_color_channel": 1004,
@@ -2083,8 +2122,7 @@ window.allobjects = function() {
   "148": {
     "can_color": true,
     "default_base_color_channel": 1006,
-    "frame": "d_ball_07_001.png",
-    "glow_frame": "d_ball_07_glow_001.png",
+    "frame": "none",
     "gridH": 0.9166666865348816,
     "gridW": 0.9166666865348816,
     "spritesheet": "GJ_GameSheet-uhd",
@@ -2092,13 +2130,19 @@ window.allobjects = function() {
     "z": 9,
     "default_detail_color_channel": -1,
     "default_z_layer": 3,
-    "default_z_order": 9
+    "default_z_order": 9,
+    "children": [
+      {
+        "frame": "d_ball_07_001.png",
+        "z": 1,
+        "audioScale": true
+      }
+    ]
   },
   "149": {
     "can_color": true,
     "default_base_color_channel": 1006,
-    "frame": "d_ball_08_001.png",
-    "glow_frame": "d_ball_08_glow_001.png",
+    "frame": "noen",
     "gridH": 1,
     "gridW": 1,
     "spritesheet": "GJ_GameSheet-uhd",
@@ -2106,7 +2150,14 @@ window.allobjects = function() {
     "z": 9,
     "default_detail_color_channel": -1,
     "default_z_layer": 3,
-    "default_z_order": 9
+    "default_z_order": 9,
+    "children": [
+      {
+        "frame": "d_ball_08_001.png",
+        "z": 1,
+        "audioScale": true
+      }
+    ]
   },
   "150": {
     "type": "deco",
@@ -2157,25 +2208,22 @@ window.allobjects = function() {
         "frame": "d_spikewheel_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
       },
       {
         "frame": "d_spikewheel_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 180
       },
       {
         "frame": "d_spikewheel_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
-      },
-      {
-        "frame": "d_spikewheel_01_001.png",
-        "localDy": 0,
-        "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 270
       }
     ],
     "default_base_color_channel": 1005,
@@ -2316,7 +2364,7 @@ window.allobjects = function() {
     "default_z_order": 2,
     "children": [
       {
-        "frame": "square_g_13_001.png",
+        "frame": "square_g_03_001.png",
         "localDy": 0,
         "tint": 65280,
         "z": -1
@@ -2390,7 +2438,8 @@ window.allobjects = function() {
         "frame": "blockOutline_05_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 180
       }
     ],
     "default_base_color_channel": 1004,
@@ -2624,25 +2673,22 @@ window.allobjects = function() {
         "frame": "d_cartwheel_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
       },
       {
         "frame": "d_cartwheel_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 180
       },
       {
         "frame": "d_cartwheel_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
-      },
-      {
-        "frame": "d_cartwheel_01_001.png",
-        "localDy": 0,
-        "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 270
       }
     ],
     "default_base_color_channel": 1006,
@@ -2708,25 +2754,22 @@ window.allobjects = function() {
         "frame": "blade_b_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
       },
       {
         "frame": "blade_b_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 180
       },
       {
         "frame": "blade_b_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
-      },
-      {
-        "frame": "blade_b_01_001.png",
-        "localDy": 0,
-        "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 270
       }
     ],
     "default_base_color_channel": 1004,
@@ -2795,25 +2838,22 @@ window.allobjects = function() {
         "frame": "blade_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
       },
       {
         "frame": "blade_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 180
       },
       {
         "frame": "blade_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
-      },
-      {
-        "frame": "blade_01_001.png",
-        "localDy": 0,
-        "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 270
       }
     ],
     "default_base_color_channel": 1004,
@@ -3394,25 +3434,22 @@ window.allobjects = function() {
         "frame": "d_roundCloud_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
       },
       {
         "frame": "d_roundCloud_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 180
       },
       {
         "frame": "d_roundCloud_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
-      },
-      {
-        "frame": "d_roundCloud_01_001.png",
-        "localDy": 0,
-        "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 270
       }
     ],
     "default_base_color_channel": 1005,
@@ -5250,13 +5287,13 @@ window.allobjects = function() {
         "frame": "pit_01_slope_01_001.png",
         "localDy": 0,
         "tint": 0,
-        "z": -1
+        "z": -1,
+        "rot": -45
       }
     ],
     "color_channel": "black",
     "default_base_color_channel": 1004,
-    "frame": "pit_01_slope_01_001.png",
-    "glow_frame": "pit_01_slope_01_glow_001.png",
+    "frame": "none",
     "gridH": 1,
     "gridW": 1,
     "spritesheet": "GJ_GameSheet-uhd",
@@ -5274,13 +5311,13 @@ window.allobjects = function() {
         "frame": "pit_01_slope_02_001.png",
         "localDy": 0,
         "tint": 0,
-        "z": -1
+        "z": -1,
+        "rot": -30
       }
     ],
     "color_channel": "black",
     "default_base_color_channel": 1004,
-    "frame": "pit_01_slope_02_001.png",
-    "glow_frame": "pit_01_slope_02_glow_001.png",
+    "frame": "none",
     "gridH": 1,
     "gridW": 2,
     "spritesheet": "GJ_GameSheet-uhd",
@@ -5314,13 +5351,13 @@ window.allobjects = function() {
         "frame": "pit_04_slope_01_001.png",
         "localDy": 0,
         "tint": 0,
-        "z": -1
+        "z": -1,
+        "rot": -45
       }
     ],
     "color_channel": "black",
     "default_base_color_channel": 1004,
-    "frame": "pit_04_slope_01_001.png",
-    "glow_frame": "pit_04_slope_01_glow_001.png",
+    "frame": "none",
     "gridH": 1,
     "gridW": 1,
     "spritesheet": "GJ_GameSheet-uhd",
@@ -5338,13 +5375,13 @@ window.allobjects = function() {
         "frame": "pit_04_slope_02_001.png",
         "localDy": 0,
         "tint": 0,
-        "z": -1
+        "z": -1,
+        "rot": -30
       }
     ],
     "color_channel": "black",
     "default_base_color_channel": 1004,
-    "frame": "pit_04_slope_02_001.png",
-    "glow_frame": "pit_04_slope_02_glow_001.png",
+    "frame": "none",
     "gridH": 1,
     "gridW": 2,
     "spritesheet": "GJ_GameSheet-uhd",
@@ -5729,25 +5766,22 @@ window.allobjects = function() {
         "frame": "darkblade_01_001.png",
         "localDy": 0,
         "tint": 0,
-        "z": -1
+        "z": -1,
+        "rot": 90
       },
       {
         "frame": "darkblade_01_001.png",
         "localDy": 0,
         "tint": 0,
-        "z": 1
+        "z": 1,
+        "rot": 180
       },
       {
         "frame": "darkblade_01_001.png",
         "localDy": 0,
         "tint": 0,
-        "z": 1
-      },
-      {
-        "frame": "darkblade_01_001.png",
-        "localDy": 0,
-        "tint": 0,
-        "z": 1
+        "z": 1,
+        "rot": 270
       }
     ],
     "color_channel": "black",
@@ -5830,8 +5864,7 @@ window.allobjects = function() {
   "405": {
     "can_color": true,
     "default_base_color_channel": 1006,
-    "frame": "d_ball_09_001.png",
-    "glow_frame": "d_ball_09_glow_001.png",
+    "frame": "none",
     "gridH": 0.8666666746139526,
     "gridW": 1,
     "spritesheet": "GJ_GameSheet-uhd",
@@ -5839,7 +5872,14 @@ window.allobjects = function() {
     "z": 9,
     "default_detail_color_channel": -1,
     "default_z_layer": 3,
-    "default_z_order": 9
+    "default_z_order": 9,
+    "children": [
+      {
+        "frame": "d_ball_09_001.png",
+        "z": 1,
+        "audioScale": true
+      }
+    ]
   },
   "406": {
     "can_color": true,
@@ -6437,7 +6477,8 @@ window.allobjects = function() {
         "frame": "blockOutline_05_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 180
       }
     ],
     "default_base_color_channel": 1004,
@@ -10797,13 +10838,15 @@ window.allobjects = function() {
         "frame": "block003_part02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 270
       },
       {
         "frame": "block003_part02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 180
       }
     ],
     "default_base_color_channel": 1004,
@@ -10831,7 +10874,8 @@ window.allobjects = function() {
         "frame": "block003_part02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 180
       }
     ],
     "default_base_color_channel": 1004,
@@ -10903,19 +10947,20 @@ window.allobjects = function() {
         "frame": "block003_part03_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
       },
       {
         "frame": "block003_part03_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 270
       }
     ],
     "default_base_color_channel": 1004,
     "default_detail_color_channel": 1,
-    "frame": "block003_part01_001.png",
-    "glow_frame": "block003_part01_glow_001.png",
+    "frame": "block003_color_06_001.png",
     "gridH": 1,
     "gridW": 1,
     "spritesheet": "GJ_GameSheet-uhd",
@@ -10928,22 +10973,26 @@ window.allobjects = function() {
     "can_color": true,
     "children": [
       {
-        "frame": "block003_color_05_001.png",
+        "frame": "block003_color_02_001.png",
         "localDy": 0,
         "tint": 52224,
-        "z": -100
+        "z": -100,
+        "rot": 90
       },
       {
         "frame": "block003_part03_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
+        
       },
       {
         "frame": "block003_part02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 270
       }
     ],
     "default_base_color_channel": 1004,
@@ -10971,19 +11020,22 @@ window.allobjects = function() {
         "frame": "block003_part02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -90
       },
       {
         "frame": "block003_part02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -180
       },
       {
         "frame": "block003_part02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -270
       }
     ],
     "default_base_color_channel": 1004,
@@ -11011,19 +11063,22 @@ window.allobjects = function() {
         "frame": "block003_part02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 180
       },
       {
         "frame": "block003_part02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 270
       },
       {
         "frame": "block003_part02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
       }
     ],
     "default_base_color_channel": 1004,
@@ -11051,19 +11106,22 @@ window.allobjects = function() {
         "frame": "block003_part01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
       },
       {
         "frame": "block003_part02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 180
       },
       {
         "frame": "block003_part02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 270
       }
     ],
     "default_base_color_channel": 1004,
@@ -11508,25 +11566,22 @@ window.allobjects = function() {
         "frame": "lightBlade_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
       },
       {
         "frame": "lightBlade_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 180
       },
       {
         "frame": "lightBlade_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
-      },
-      {
-        "frame": "lightBlade_01_001.png",
-        "localDy": 0,
-        "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 270
       }
     ],
     "default_base_color_channel": 1004,
@@ -12536,26 +12591,23 @@ window.allobjects = function() {
         "frame": "blade_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
       },
       {
         "frame": "blade_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 180
       },
       {
         "frame": "blade_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 270
       },
-      {
-        "frame": "blade_01_001.png",
-        "localDy": 0,
-        "tint": 65280,
-        "z": 1
-      }
     ],
     "default_base_color_channel": 1004,
     "frame": "blade_01_001.png",
@@ -14947,7 +14999,8 @@ window.allobjects = function() {
         "frame": "block009c_slope_01_color_001.png",
         "localDy": 0,
         "tint": 52224,
-        "z": 100
+        "z": 100,
+        "rot": -45
       }
     ],
     "default_base_color_channel": 1004,
@@ -14969,7 +15022,8 @@ window.allobjects = function() {
         "frame": "block009c_slope_02_color_001.png",
         "localDy": 0,
         "tint": 52224,
-        "z": 100
+        "z": 100,
+        "rot": -30
       }
     ],
     "default_base_color_channel": 1004,
@@ -15496,7 +15550,8 @@ window.allobjects = function() {
         "frame": "block010_piece_04_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 180
       }
     ],
     "default_base_color_channel": 1011,
@@ -15552,13 +15607,15 @@ window.allobjects = function() {
         "frame": "block010_piece_03_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 180
       },
       {
         "frame": "block010_piece_03_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 270
       }
     ],
     "default_base_color_channel": 1011,
@@ -16882,25 +16939,22 @@ window.allobjects = function() {
         "frame": "d_ringSeg_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
       },
       {
         "frame": "d_ringSeg_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 180
       },
       {
         "frame": "d_ringSeg_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
-      },
-      {
-        "frame": "d_ringSeg_01_001.png",
-        "localDy": 0,
-        "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 270
       }
     ],
     "default_base_color_channel": 1005,
@@ -16922,25 +16976,22 @@ window.allobjects = function() {
         "frame": "d_ringSeg_02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
       },
       {
         "frame": "d_ringSeg_02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 180
       },
       {
         "frame": "d_ringSeg_02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
-      },
-      {
-        "frame": "d_ringSeg_02_001.png",
-        "localDy": 0,
-        "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 270
       }
     ],
     "default_base_color_channel": 1005,
@@ -16962,25 +17013,22 @@ window.allobjects = function() {
         "frame": "d_ringSeg_03_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
       },
       {
         "frame": "d_ringSeg_03_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 180
       },
       {
         "frame": "d_ringSeg_03_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
-      },
-      {
-        "frame": "d_ringSeg_03_001.png",
-        "localDy": 0,
-        "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 270
       }
     ],
     "default_base_color_channel": 1005,
@@ -17322,49 +17370,50 @@ window.allobjects = function() {
         "frame": "d_flashRing_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -45
       },
       {
         "frame": "d_flashRing_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -90
       },
       {
         "frame": "d_flashRing_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -135
       },
       {
         "frame": "d_flashRing_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -180
       },
       {
         "frame": "d_flashRing_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -225
       },
       {
         "frame": "d_flashRing_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -270
       },
       {
         "frame": "d_flashRing_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
-      },
-      {
-        "frame": "d_flashRing_01_001.png",
-        "localDy": 0,
-        "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -315
       }
     ],
     "default_base_color_channel": 1005,
@@ -17386,49 +17435,50 @@ window.allobjects = function() {
         "frame": "d_flashRing_02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 45
       },
       {
         "frame": "d_flashRing_02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
       },
       {
         "frame": "d_flashRing_02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 135
       },
       {
         "frame": "d_flashRing_02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 180
       },
       {
         "frame": "d_flashRing_02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 225
       },
       {
         "frame": "d_flashRing_02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 270
       },
       {
         "frame": "d_flashRing_02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
-      },
-      {
-        "frame": "d_flashRing_02_001.png",
-        "localDy": 0,
-        "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 315
       }
     ],
     "default_base_color_channel": 1005,
@@ -17450,49 +17500,50 @@ window.allobjects = function() {
         "frame": "d_flashRing_03_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 45
       },
       {
         "frame": "d_flashRing_03_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
       },
       {
         "frame": "d_flashRing_03_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 135
       },
       {
         "frame": "d_flashRing_03_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 180
       },
       {
         "frame": "d_flashRing_03_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 225
       },
       {
         "frame": "d_flashRing_03_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 270
       },
       {
         "frame": "d_flashRing_03_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
-      },
-      {
-        "frame": "d_flashRing_03_001.png",
-        "localDy": 0,
-        "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 315
       }
     ],
     "default_base_color_channel": 1005,
@@ -18218,28 +18269,25 @@ window.allobjects = function() {
     "can_color": true,
     "children": [
       {
-        "frame": "d_pickupCircle_01_001.png",
+        "frame": "d_pickupCircle_02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -90
       },
       {
         "frame": "d_pickupCircle_02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -180
       },
       {
         "frame": "d_pickupCircle_02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
-      },
-      {
-        "frame": "d_pickupCircle_02_001.png",
-        "localDy": 0,
-        "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -270
       }
     ],
     "default_base_color_channel": 1007,
@@ -18258,28 +18306,25 @@ window.allobjects = function() {
     "can_color": true,
     "children": [
       {
-        "frame": "d_pickupCircle_01_001.png",
-        "localDy": 0,
-        "tint": 65280,
-        "z": -1
-      },
-      {
         "frame": "d_pickupCircle_02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -90
       },
       {
         "frame": "d_pickupCircle_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -180
       },
       {
         "frame": "d_pickupCircle_02_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -270
       }
     ],
     "default_base_color_channel": 1007,
@@ -18301,25 +18346,22 @@ window.allobjects = function() {
         "frame": "d_pickupCircle_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -90
       },
       {
         "frame": "d_pickupCircle_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -180
       },
       {
         "frame": "d_pickupCircle_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
-      },
-      {
-        "frame": "d_pickupCircle_01_001.png",
-        "localDy": 0,
-        "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": -270
       }
     ],
     "default_base_color_channel": 1007,
@@ -22330,7 +22372,8 @@ window.allobjects = function() {
         "frame": "block009c_color_06_001.png",
         "localDy": 0,
         "tint": 52224,
-        "z": 100
+        "z": 100,
+        "rot": -45
       }
     ],
     "default_base_color_channel": 1004,
@@ -27657,7 +27700,8 @@ window.allobjects = function() {
         "frame": "spinBlade01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 2
+        "z": 2,
+        "rot": 180
       }
     ],
     "default_base_color_channel": 1004,
@@ -29533,26 +29577,23 @@ window.allobjects = function() {
         "frame": "darkblade_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
       },
       {
         "frame": "darkblade_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 180
       },
       {
         "frame": "darkblade_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 270
       },
-      {
-        "frame": "darkblade_01_001.png",
-        "localDy": 0,
-        "tint": 65280,
-        "z": 1
-      }
     ],
     "default_base_color_channel": 1010,
     "default_detail_color_channel": 1,
@@ -29993,19 +30034,22 @@ window.allobjects = function() {
         "frame": "blackCogwheel_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": -1
+        "z": -1,
+        "rot": 90
       },
       {
         "frame": "blackCogwheel_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 180
       },
       {
         "frame": "blackCogwheel_01_001.png",
         "localDy": 0,
         "tint": 65280,
-        "z": 1
+        "z": 1,
+        "rot": 270
       },
       {
         "frame": "blackCogwheel_01_001.png",
