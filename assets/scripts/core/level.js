@@ -2062,25 +2062,27 @@ window.LevelObject = class LevelObject {
         const childSprite = addImageToScene(scene, spriteWorldX + childDx, baseY + childDy, childDef.frame);
 
         if (childSprite) {
-          let overrideRot = levelObj.rot || 0;
-          let isOverridden = false;
+          const flipX = !!levelObj.flipX;
+          const flipY = !!levelObj.flipY;
+          let childrotated = (levelObj.rot || 0) + (childDef.rot || 0);
+
+          if (flipX !== flipY) {
+            childrotated = (levelObj.rot || 0) - (childDef.rot || 0);
+          }
 
           if (childDef.frame === "portal_01_extra_2_001.png" || childDef.frame === "portal_02_extra_2_001.png") {
-            overrideRot = 0;
-            isOverridden = true;
+            childrotated = 0;
           } 
           else if (childDef.frame === "blockOutline_14new_001.png" || childDef.frame === "blockOutline_15new_001.png") {
             let childRotOffset = 0;
             if (childDef.frame === "blockOutline_14new_001.png") childRotOffset = -45;
             else if (childDef.frame === "blockOutline_15new_001.png") childRotOffset = -26.565;
-            if (levelObj.flipX) childRotOffset = -childRotOffset;
-            if (levelObj.flipY) childRotOffset = -childRotOffset;
-            overrideRot += childRotOffset;
-            isOverridden = true;
+            if (flipX) childRotOffset = -childRotOffset;
+            if (flipY) childRotOffset = -childRotOffset;
+            childrotated += childRotOffset;
           }
 
-          const childObjectData = isOverridden ? { ...levelObj, rot: overrideRot } : levelObj;
-          
+          const childObjectData = { ...levelObj, rot: childrotated };
           this._applyVisualProps(scene, childSprite, childDef.frame, childObjectData, childDef);
           
           const showguide = childDef.portalGuide ? (window.enablePortalGuide !== false) : true;
@@ -2127,7 +2129,7 @@ window.LevelObject = class LevelObject {
 
             const childMirror = addImageToScene(scene, spriteWorldX + childDx, baseY + childDy, childDef.frame);
             if (childMirror) {
-              this._applyVisualProps(scene, childMirror, childDef.frame, levelObj, childDef);
+              this._applyVisualProps(scene, childMirror, childDef.frame, childObjectData, childDef);
               childMirror.setTint(0x000000);
               childMirror.rotation = childSprite.rotation + Math.PI;
               childMirror._isSaw = true;

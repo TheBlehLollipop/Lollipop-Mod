@@ -4555,31 +4555,8 @@ _updateWaveJump(dt) {
               this.p.collideTop = top;
               continue;
             }
-            const ballHeadBonk = this.p.isBall && !this.p.gravityFlipped && this.p.yVelocity >= 0 && //"BONK!" - scout
-              (this.p.y + playerSize - gamemodeAddition <= top || this.p.lastY + playerSize - gamemodeAddition <= top);
-            if (ballHeadBonk) {
-              if (window.noClip) {
-                this.p.diedThisFrame = true;
-                continue;
-              }
-              if (gameObj.objid === 143) continue;
-              this.p.y = top - playerSize;
-              const maxBounceSpeed = 30 * 0.1;
-              const bounceSpeed = Math.min(Math.abs(this.p.yVelocity || 0), maxBounceSpeed);
-              this.p.yVelocity = -bounceSpeed;
-              this.p.onGround = false;
-              this.p.canJump = false;
-              this.p.isJumping = false;
-              this.p.collideTop = top;
-              continue;
-            }
             if (!this.p.gravityFlipped && (_0x3e7199 <= top || _0x135a9d <= top) && this.p.yVelocity >= 0) {
               if (iscolliding) {
-                if (window.noClip) {
-                  this.p.diedThisFrame = true;
-                  continue;
-                }
-                if (gameObj.objid === 143) continue;
                 this.killPlayer();
                 return;
               }
