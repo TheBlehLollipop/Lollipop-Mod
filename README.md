@@ -1,10 +1,11 @@
+
 > [!NOTE]
 > This project is still in development, and is not yet complete. Please be patient with us as we work on it, and please report any bugs you find to the Discord server (specifically on the #`bug-report` forum) or the Issues page on this repository. Thank you for your support!
 
 <div align="center">
   <img  
   alt="Web Dashers" 
-  src="./wd_assets/wordmark/wordmark_1080.png" 
+  src="./wd_branding/wordmark/wordmark_1080.png" 
   />
   <p>
   <strong>A modded Geometry Dash demo with extra features added!</strong>
@@ -54,7 +55,7 @@
 ### Come try out the WIP Web Dashers demo at:
 **[web-dashers.github.io](https://web-dashers.github.io/)**
 
-<span style="font-size: 0.435em;">*(Last updated 7/15/2026)*</span>
+<span style="font-size: 0.435em;">*(Last updated 7/28/2026)*</span>
 ---
 > - Special thanks to all of the people that help the project by contributing, and Please support us by starring the repo, as it helps us out a ton!!
 > - Also, please report bugs found to the Discord server or the Issues page on github, just please dont be annoying about it, and don't make bug reports about bugs already being worked on or ones that are already known about.
