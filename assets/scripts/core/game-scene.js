@@ -3813,8 +3813,8 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       const rRaw = (colorHex >> 16) & 0xff;
       const gRaw = (colorHex >> 8)  & 0xff;
       const bRaw =  colorHex        & 0xff;
-      const topMul = isEveryEnd ? 0.30 : 0.65;
-      const botMul = isEveryEnd ? 0.18 : 0.42;
+      const topMul = isEveryEnd ? 0.48 : 0.92;
+      const botMul = isEveryEnd ? 0.18 : 0.52;
       const steps = 60;
       for (let i = 0; i < steps; i++) {
         const t = i / (steps - 1);
@@ -3845,9 +3845,9 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
     const tileW = groundFrame ? groundFrame.width : 1012;
     const numTiles = Math.ceil(sw / tileW) + 2;
     const groundTintHex = (colorHex) => {
-      const r = Math.round(((colorHex >> 16) & 0xff) * 0.45);
-      const g = Math.round(((colorHex >> 8)  & 0xff) * 0.45);
-      const b = Math.round(( colorHex        & 0xff) * 0.45);
+      const r = Math.round(((colorHex >> 16) & 0xff) * 0.72);
+      const g = Math.round(((colorHex >> 8)  & 0xff) * 0.72);
+      const b = Math.round(( colorHex        & 0xff) * 0.72);
       return (r << 16) | (g << 8) | b;
     };
     const staticGroundTiles = [];
@@ -3946,8 +3946,8 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       const r = Math.round(((colorHex >> 16) & 0xff) * mul);
       const g = Math.round(((colorHex >> 8)  & 0xff) * mul);
       const b = Math.round(( colorHex        & 0xff) * mul);
-      cardBg.fillStyle((r << 16) | (g << 8) | b, 0.92);
-      cardBg.fillRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 14);
+      cardBg.fillStyle((r << 16) | (g << 8) | b, 0.75);
+      cardBg.fillRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 18);
     };
     drawCardBg(bgHex, isEveryEnd(window.currentlevel[2]), isComingSoonPage());
     cardBounceContainer.add(cardBg);
@@ -4157,7 +4157,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       }
       let iconDisplayW = (iconFrame ? iconFrame.width : 80) * finalIconScale;
       const iconDisplayH = (iconFrame ? iconFrame.height : 80) * finalIconScale;
-      const nameLabel = this.add.bitmapText(0, 0, "bigFont", lvl[1], 50)
+      const nameLabel = this.add.bitmapText(0, 0, "bigFont", lvl[1], 60)
         .setScrollFactor(0).setDepth(155).setOrigin(0, 0.5);
       const gap = 25;
       const naturalGroupW = iconDisplayW + gap + nameLabel.width;
@@ -4171,7 +4171,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       const scaledGap = gap * groupScale;
       const totalW = scaledIconW + scaledGap + scaledLabelW;
       const groupStartX = cardX - totalW / 2;
-      demonIcon.setScale(finalIconScale * groupScale);
+      demonIcon.setScale((finalIconScale * groupScale)+0.2);
       demonIcon.setPosition(groupStartX + scaledIconW / 2 - cardX, 0);
       nameLabel.setScale(groupScale);
       nameLabel.setPosition(groupStartX + scaledIconW + scaledGap - cardX, 0);
@@ -4193,7 +4193,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       barObjs.push(modeLabel);
       cardContainer.add(modeLabel);
       const barBg = this.add.graphics().setScrollFactor(0).setDepth(154);
-      barBg.fillStyle(0x000000, 0.6);
+      barBg.fillStyle(0x000000, 0.5);
       barBg.fillRoundedRect(barX0, barAreaY - barH2 / 2, barW2, barH2, barH2 / 2);
       barObjs.push(barBg);
       cardContainer.add(barBg);
@@ -4227,7 +4227,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       barObjs.push(practModeLabel);
       cardContainer.add(practModeLabel);
       const practBarBg = this.add.graphics().setScrollFactor(0).setDepth(154);
-      practBarBg.fillStyle(0x000000, 0.6);
+      practBarBg.fillStyle(0x000000, 0.5);
       practBarBg.fillRoundedRect(barX0, practBarAreaY - barH2 / 2, barW2, barH2, barH2 / 2);
       barObjs.push(practBarBg);
       cardContainer.add(practBarBg);
