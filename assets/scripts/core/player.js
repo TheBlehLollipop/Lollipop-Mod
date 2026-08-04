@@ -4944,13 +4944,17 @@ _updateWaveJump(dt) {
     const _0x12bfe9 = _0x3a2c8e || _0x37f14a;
     const _0x3793a4 = [this._shipSpriteLayer, this._shipGlowLayer, this._shipOverlayLayer, this._shipExtraLayer];
     const _0xbd676f = [this._playerSpriteLayer, this._playerGlowLayer, this._playerOverlayLayer, this._playerExtraLayer];
-    const _0x476284 = (_0x12bfe9 && Number.isFinite(this._lastScreenX)) ? this._lastScreenX : (_0x4a45d7 - _0x3729ef._cameraX);
+    const _toEndScreenX = worldX => {
+      const screenX = worldX - _0x3729ef._cameraX;
+      return this.p.mirrored ? screenWidth - screenX : screenX;
+    };
+    const _0x476284 = (_0x12bfe9 && Number.isFinite(this._lastScreenX)) ? this._lastScreenX : _toEndScreenX(_0x4a45d7);
     const _0x1ed1ce = (_0x12bfe9 && Number.isFinite(this._lastScreenY)) ? this._lastScreenY : (b(_0x501b73) + _0x3729ef._cameraY);
     const _0x4d5f0d = _0x476284;
     const _0x3e4581 = _0x1ed1ce;
-    const _0x6f5a9d = _0x1f2e19 - _0x3729ef._cameraX;
+    const _0x6f5a9d = _toEndScreenX(_0x1f2e19);
     const _0x31cb6d = b(_0x8bc9f4) + _0x3729ef._cameraY;
-    const _0x46e2df = _0x457676 - _0x3729ef._cameraX;
+    const _0x46e2df = _toEndScreenX(_0x457676);
     const _0x23fbf2 = b(_0x3ade39) + _0x3729ef._cameraY;
     const _0x3fc5a5 = _0x11b580.map(_0x5c0e81 => {
       let _0x5cbb0a = 0;
@@ -4987,7 +4991,7 @@ _updateWaveJump(dt) {
         const spriteWidth = _0x51c4a8.val;
         const _0x2478d6 = (1 - spriteWidth) ** 3 * _0x1295ea + (1 - spriteWidth) ** 2 * 3 * spriteWidth * _0x1295ea + (1 - spriteWidth) * 3 * spriteWidth ** 2 * _0x1f2e19 + spriteWidth ** 3 * _0x457676;
         const _0x148e69 = (1 - spriteWidth) ** 3 * _0x47ae60 + (1 - spriteWidth) ** 2 * 3 * spriteWidth * _0x47ae60 + (1 - spriteWidth) * 3 * spriteWidth ** 2 * _0x8bc9f4 + spriteWidth ** 3 * _0x3ade39;
-        let _0x3d0365 = _0x2478d6 - _0x3729ef._cameraX;
+        let _0x3d0365 = _toEndScreenX(_0x2478d6);
         let _0x3790a9 = b(_0x148e69) + _0x3729ef._cameraY;
         if (_0x12bfe9) {
           _0x3d0365 = (1 - spriteWidth) ** 3 * _0x4d5f0d + (1 - spriteWidth) ** 2 * 3 * spriteWidth * _0x4d5f0d + (1 - spriteWidth) * 3 * spriteWidth ** 2 * _0x6f5a9d + spriteWidth ** 3 * _0x46e2df;
