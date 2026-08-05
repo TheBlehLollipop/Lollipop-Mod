@@ -5492,6 +5492,7 @@ _buildSettingsPopup() {
       { text: "arbstro, and aloaf", scale: 0.7, font: "goldFont" },
       { text: "Contributors:", scale: 0.9, font: "bigFont" },
       { text: "t0nchi7, Itzar and CoraBitz", scale: 0.7, font: "goldFont" },
+      { text: "our deerest revooh", scale: 0.8, font: "goldFont" },
       { text: "© 2026 RobTop Games. All rights reserved.", scale: 0.4, font: "Arial", color: 0x000000 },
     ]; 
     let yPos = 0;
