@@ -4171,7 +4171,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       const scaledGap = gap * groupScale;
       const totalW = scaledIconW + scaledGap + scaledLabelW;
       const groupStartX = cardX - totalW / 2;
-      demonIcon.setScale((finalIconScale * groupScale)+0.2);
+      demonIcon.setScale((finalIconScale * groupScale)+0.1);
       demonIcon.setPosition(groupStartX + scaledIconW / 2 - cardX, 0);
       nameLabel.setScale(groupScale);
       nameLabel.setPosition(groupStartX + scaledIconW + scaledGap - cardX, 0);
@@ -5397,7 +5397,7 @@ _buildSettingsPopup() {
     bounceContainer.add(closeBtn);
     this._expandHitArea(closeBtn, 2);
     this._makeBouncyButton(closeBtn, 0.8, () => this._closeInfoPopup());
-    const title = this.add.bitmapText(0, -124, "bigFont", "Credits", 30).setOrigin(0.5, 0.5);
+    const title = this.add.bitmapText(0, -124, "bigFont", "Credits", 42).setOrigin(0.5, 0.6);
     bounceContainer.add(title);
     const scrollAreaW = 420;
     const scrollAreaH = 230;
@@ -5417,7 +5417,9 @@ _buildSettingsPopup() {
       { text: "bog, Lasokar, AntiMatter,", scale: 0.7, font: "goldFont" },
       { text: "arbstro, and aloaf", scale: 0.7, font: "goldFont" },
       { text: "Contributors:", scale: 0.9, font: "bigFont" },
-      { text: "t0nchi7, Itzar and CoraBitz", scale: 0.7, font: "goldFont" },
+      { text: "t0nchi7, Itzar,", scale: 0.7, font: "goldFont" },
+      { text: "Ameth7st, and CoraBitz", scale: 0.7, font: "goldFont" },
+      { text: "we love you cora <3", scale: 0.4, font: "bigFont" },
       { text: "© 2026 RobTop Games. All rights reserved.", scale: 0.4, font: "Arial", color: 0x000000 },
     ]; 
     let yPos = 0;
@@ -5815,7 +5817,7 @@ _buildSettingsPopup() {
     bounceContainer.add(closeBtn);
     this._expandHitArea(closeBtn, 2);
     this._makeBouncyButton(closeBtn, 0.8, () => this._closeUpdateLogPopup());
-    const title = this.add.bitmapText(0, -124, "bigFont", "BETA (EXPECT BUGS)", 30).setOrigin(0.5, 0.5).setTint(0xff6666);
+    const title = this.add.bitmapText(0, -124, "bigFont", "BETA (EXPECT BUGS)", 33).setOrigin(0.5, 0.55).setTint(0xff6666);
     bounceContainer.add(title);
     const scrollAreaW = 420;
     const scrollAreaH = 230;
@@ -5834,17 +5836,24 @@ _buildSettingsPopup() {
       0xFF008E - pink dev entries
     */
     const updateEntries = [
-      { text: "Update Log", scale: 0.85, font: "goldFont" },
-      { text: "slopes (very buggy)", scale: 0.7, color: 0xff9944 },
-      { text: "THEY WILL BE FIXED", scale: 0.7, },
-      { text: "OVER TIME", scale: 0.7, },
-      { text: "slopes work in imported", scale: 0.7, },
+      { text: "Update Log", scale: 1, font: "goldFont" },
+      { text: "Rotation for deco and saws", scale: 0.75, },
+      { text: "Particlesheet added <3", scale: 0.75, },
+      { text: "Better ball rotation ", scale: 0.75, },
+      { text: "Fixed ball noclip too.", scale: 0.75, },
+      { text: "Editor placing offsets", scale: 0.75, },
+      { text: "Pulsing rods reworked a lil", scale: 0.75, },
+      { text: "Breakable blocks break now.", scale: 0.75, },
+      { text: "I call it, the QOD update.", scale: 0.65, color: 0x708090},
+      { text: "quality of dash", scale: 0.5, color: 0x708090},
+      { text: "im like, 90% sure at least ONE feature broke", scale: 0.4, color: 0x708090},
+      { text: "Slopes (very buggy)", scale: 0.75, color: 0xff9944 },
+      { text: "THEY WILL BE FIXED-", scale: 0.75, },
+      { text: "OVER TIME.", scale: 0.75, },
+      { text: "Slopes work in imported-", scale: 0.75, },
       { text: "levels now (thanks lasokadadyy)", scale: 0.7, },
-      { text: "fixed SOME objects", scale: 0.7 },
-      { text: "-pinkdih", scale: 0.7, color: 0xFF008E },
-      { text: "fixed a lot more objects", scale: 0.55 },
-      { text: "reworked the ball's rolling physics", scale: 0.55 },
-      { text: "particles soon", scale: 0.55, color: 0x708090},
+      { text: "Fixed SOME objects", scale: 0.75 },
+      { text: "-pinkdih", scale: 0.65, color: 0xFF008E }
     ]; 
     let yPos = 0;
     const lineItems = [];
@@ -6786,6 +6795,36 @@ _buildSettingsPopup() {
       playerSpeed = SpeedPortal.FOUR_TIMES;
     }
     this._level.resetObjects();
+    this._level._setRodframe?.(this._levelAttempts);
+    try {
+      if (this._level && Array.isArray(this._level._sawSprites)) {
+        const groups = new Map();
+        for (const s of this._level._sawSprites) {
+          if (!s) continue;
+          const id = s._eeObjectId ?? null;
+          if (!groups.has(id)) groups.set(id, []);
+          groups.get(id).push(s);
+        }
+        for (const [id, arr] of groups.entries()) {
+          if (!arr || !arr.length) continue;
+          const sample = arr[0];
+          const base = Math.abs(sample._Sawrotationspeed) || 0.0034;
+          const sign = (Math.random() < 0.5) ? -1 : 1;
+          const newSpeed = sign * (base + (Math.random() * base * 0.2 - base * 0.1));
+          const newPhase = Math.random() * Math.PI * 2;
+          const newAmp = sample._SawRandom2 ?? (base * 0.12);
+          const baseAngle = Math.random() * Math.PI * 2;
+          for (const spr of arr) {
+            if (!spr) continue;
+            spr._Sawrotationspeed = newSpeed;
+            spr._SawRandom1 = newPhase;
+            spr._SawRandom2 = newAmp;
+            const offset = typeof spr._Sawoffset === "number" ? spr._Sawoffset : 0;
+            spr.rotation = baseAngle + offset;
+          }
+        }
+      }
+    } catch (e) { }
     this._level.shiftGroundTiles(this._cameraX - _0x2ba78a);
     this._level.resetGroundState();
     this._level.resetColorTriggers();
@@ -7646,9 +7685,23 @@ _buildSettingsPopup() {
       }
     }
     if (this._level && this._level._sawSprites) {
-      const sawRotation = deltaTime * 0.003;
+      const sawTimer = (window._animTimer || 0) / 1000;
       for (let _saw of this._level._sawSprites) {
-        if (_saw && _saw.active) _saw.rotation += sawRotation;
+        if (!_saw || !_saw.active || !_saw.visible) continue;
+        const baseSpeed = _saw._Sawrotationspeed ?? 0.0034;
+        let sawRotationSpeed = baseSpeed;
+        if (_saw._SawRandom1 !== undefined) {
+          sawRotationSpeed += Math.sin(sawTimer + _saw._SawRandom1) * (_saw._SawRandom2 || 0);
+        }
+        _saw.rotation += deltaTime * sawRotationSpeed;
+      }
+    }
+    if (this._level && this._level._orbSprites) {
+      const gravityGuideRotation = (this._state?.gravityFlipped ? Math.PI : 0);
+      for (let _oSpr of this._level._orbSprites) {
+        if (!_oSpr || !_oSpr.active || !_oSpr._eeOrbGuide || !_oSpr._OrbGuideGrav) continue;
+        const baseRotation = Number.isFinite(_oSpr._OrbGuideRotation) ? _oSpr._OrbGuideRotation : 0;
+        _oSpr.rotation = baseRotation + gravityGuideRotation;
       }
     }
     this._level.updateAudioScale(this._audio.getMeteringValue());
