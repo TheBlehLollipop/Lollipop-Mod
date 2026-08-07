@@ -956,6 +956,61 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
       this._fitBitmapText(songAuthorText, songBoxW - 100);
       this._playOverlayObjects.push(songAuthorText);
 
+      if (lvl.customSongID && lvl.customSongID !== "0") {
+        const downloadBtnX = centerX + songBoxW / 2 - 50;
+        const downloadBtnY = songBoxY + 40;
+        const downloadBtn = this.add.image(downloadBtnX, downloadBtnY, "GJ_GameSheet03", "GJ_downloadBtn_001.png").setScrollFactor(0).setDepth(504).setInteractive();
+        this._playOverlayObjects.push(downloadBtn);
+        let isDownloading = false;
+        let abortController = null;
+        let isDownloaded = false;
+        const updateBtnState = async () => {
+          if (!downloadBtn || !downloadBtn.scene) return;
+          if (isDownloading) {
+            downloadBtn.setTexture("GJ_GameSheet03", "GJ_cancelDownloadBtn_001.png");
+          } else {
+            isDownloaded = await window.SongDB.isDownloaded(lvl.customSongID);
+            if (downloadBtn && downloadBtn.scene) {
+              downloadBtn.setTexture("GJ_GameSheet03", isDownloaded ? "GJ_trashBtn_001.png" : "GJ_downloadBtn_001.png");
+            }
+          }
+        };
+        updateBtnState();
+        this._makeBouncyButton(downloadBtn, 1, async () => {
+          if (isDownloading) {
+            if (abortController) abortController.abort();
+            isDownloading = false;
+            updateBtnState();
+            return;
+          }
+          if (isDownloaded) {
+            await window.SongDB.delete(lvl.customSongID);
+            updateBtnState();
+            return;
+          }
+          isDownloading = true;
+          updateBtnState();
+          abortController = new AbortController();
+          try {
+            const workerUrl = `https://fetchsongid.lasokar.workers.dev/?id=${encodeURIComponent(lvl.customSongID)}`;
+            const audioRes = await fetch(workerUrl, { signal: abortController.signal });
+            if (!audioRes.ok) throw new Error("Failed to download audio from worker");
+            const arrayBuf = await audioRes.arrayBuffer();
+            await window.SongDB.save(lvl.customSongID, arrayBuf, this.sound.context);
+          } catch (err) {
+            if (err.name === 'AbortError') {
+              console.log('Download cancelled.');
+            } else {
+              console.warn("Failed to download song:", err);
+            }
+          } finally {
+            isDownloading = false;
+            abortController = null;
+            updateBtnState();
+          }
+        });
+      }
+
       if (lvl.customSongID) {
         const PROXY_BASE = (window._gdProxyUrl || "").replace(/\/$/, "");
         if (!PROXY_BASE) {
@@ -974,10 +1029,17 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
               for (let i = 0; i + 1 < ngParts.length; i += 2) ngMap[ngParts[i]] = ngParts[i + 1];
 
               const artistName = (ngMap["4"] || "Unknown").trim();
+              const songName = (ngMap["2"] || "Unknown").trim();
+
               if (artistName) {
                 songAuthor = artistName;
                 songAuthorText.setText("By: " + songAuthor);
                 this._fitBitmapText(songAuthorText, songBoxW - 100);
+              }
+
+              if (songName && typeof songNameText !== "undefined" && songNameText) {
+                songNameText.setText(songName);
+                this._fitBitmapText(songTitleText, songBoxW - 100);
               }
             })
             .catch(err => {
@@ -1033,7 +1095,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         const isCustomSong = !!customSongID && customSongID !== "0";
         const offset       = parseFloat(m["45"] || "0") || 0;
 
-        window._onlineLevelId     = "online_" + lvl.id;
+        window._onlineLevelId    = "online_" + lvl.id;
         window._onlineLevelString = levelString;
         window._onlineLevelName   = lvl.name || "Online Level";
         window._onlineSongOffset  = offset;
@@ -1047,31 +1109,43 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_WebSheet"
         if (isCustomSong) {
           songKey = `ng_song_${customSongID}`;
           try {
+            const audioCtx = this.game.sound.context;
+            if (audioCtx.state === "suspended") await audioCtx.resume();
             const ngRes = await fetch(`${PROXY_BASE}/getGJSongInfo.php`, {
               method: "POST",
               headers: { "Content-Type": "application/x-www-form-urlencoded" },
               body: `songID=${customSongID}&secret=Wmfd2893gb7`
             });
             const ngText = ngRes.ok ? await ngRes.text() : "-1";
+            let ngMap = {};
             if (ngText && ngText !== "-1") {
               const ngParts = ngText.split("~|~");
-              const ngMap = {};
               for (let i = 0; i + 1 < ngParts.length; i += 2) ngMap[ngParts[i]] = ngParts[i + 1];
-              const songUrl = decodeURIComponent((ngMap["10"] || "").trim());
               songArtist = (ngMap["4"] || "Unknown").replace(/:$/, "").trim();
               songTitle  = (ngMap["2"] || "").trim() || null;
-              if (songUrl) {
-                const audioCtx = this.game.sound.context;
-                if (audioCtx.state === "suspended") await audioCtx.resume();
-                const proxiedUrl = songUrl.includes("geometrydashfiles.b-cdn.net")
-                  ? songUrl
-                  : `${PROXY_BASE}/audio-proxy?url=${encodeURIComponent(songUrl)}`;
-                const audioRes = await fetch(proxiedUrl);
-                const arrayBuf = await audioRes.arrayBuffer();
-                const decoded = await audioCtx.decodeAudioData(arrayBuf);
-                window._onlineSongBuffer = decoded;
-                window._onlineSongKey = songKey;
+            }
+            let arrayBuf = await window.SongDB.load(customSongID);
+            if (!arrayBuf) {
+              const workerUrl = `https://fetchsongid.lasokar.workers.dev/?id=${encodeURIComponent(customSongID)}`;
+              let audioRes = await fetch(workerUrl);
+              if (!audioRes.ok) {
+                const songUrl = decodeURIComponent((ngMap["10"] || "").trim());
+                if (songUrl) {
+                  const proxiedUrl = songUrl.includes("geometrydashfiles.b-cdn.net")
+                    ? songUrl
+                    : `${PROXY_BASE}/audio-proxy?url=${encodeURIComponent(songUrl)}`;
+                  audioRes = await fetch(proxiedUrl);
+                }
               }
+              if (audioRes && audioRes.ok) {
+                arrayBuf = await audioRes.arrayBuffer();
+                await window.SongDB.save(customSongID, arrayBuf);
+              }
+            }
+            if (arrayBuf) {
+              const decoded = await audioCtx.decodeAudioData(arrayBuf);
+              window._onlineSongBuffer = decoded;
+              window._onlineSongKey = songKey;
             }
           } catch (err) {
             console.warn("Failed to load custom song for online level", err);
@@ -5418,7 +5492,7 @@ _buildSettingsPopup() {
       { text: "arbstro, and aloaf", scale: 0.7, font: "goldFont" },
       { text: "Contributors:", scale: 0.9, font: "bigFont" },
       { text: "t0nchi7, Itzar,", scale: 0.7, font: "goldFont" },
-      { text: "Ameth7st, and CoraBitz", scale: 0.7, font: "goldFont" },
+      { text: "Ameth7st, zainojdaf, and CoraBitz", scale: 0.7, font: "goldFont" },
       { text: "we love you cora <3", scale: 0.4, font: "bigFont" },
       { text: "© 2026 RobTop Games. All rights reserved.", scale: 0.4, font: "Arial", color: 0x000000 },
     ]; 
