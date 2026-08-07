@@ -56,6 +56,7 @@
 ### Come try out the WIP Web Dashers demo at:
 **[web-dashers.github.io](https://web-dashers.github.io/)**
 
+<sub> Last updated: 8/7/2026
 
 ---
 > - <sub>Special thanks to all of the people that help the project by contributing, and Please support us by starring the repo, as it helps us out a ton!!<sub>
