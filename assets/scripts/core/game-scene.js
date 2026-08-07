@@ -5491,8 +5491,8 @@ _buildSettingsPopup() {
       { text: "bog, Lasokar, AntiMatter,", scale: 0.7, font: "goldFont" },
       { text: "arbstro, and aloaf", scale: 0.7, font: "goldFont" },
       { text: "Contributors:", scale: 0.9, font: "bigFont" },
-      { text: "t0nchi7, Itzar,", scale: 0.7, font: "goldFont" },
-      { text: "Ameth7st, zainojdaf, and CoraBitz", scale: 0.7, font: "goldFont" },
+      { text: "t0nchi7, Itzar, zainojdaf,", scale: 0.7, font: "goldFont" },
+      { text: "Ameth7st, and CoraBitz", scale: 0.7, font: "goldFont" },
       { text: "we love you cora <3", scale: 0.4, font: "bigFont" },
       { text: "© 2026 RobTop Games. All rights reserved.", scale: 0.4, font: "Arial", color: 0x000000 },
     ]; 
