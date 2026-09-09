@@ -295,7 +295,8 @@ const atlasList = [
   "GJ_ParticleSheet-uhd",
   "GJ_ParticleSheet",
   "PixelSheet_01-hd",
-  "FireSheet_01-hd"
+  "FireSheet_01-hd",
+  "Wavesheet",
 ];
 function getAtlasFrame(scene, frameName) {
   if (frameName.startsWith("player_")) {

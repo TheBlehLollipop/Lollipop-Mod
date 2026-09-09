@@ -12,7 +12,7 @@ class PracticeMode {
     return this.practiceMode;
   }
   saveCheckpoint(playerState, playerWorldX, cameraX, scene) {
-    if (!this.practiceMode) return false;
+    if (!this.practiceMode || playerState.isDead) return false;
     const checkpoint = {
       x: playerWorldX,
       y: playerState.y,
@@ -36,6 +36,7 @@ class PracticeMode {
       canJump: playerState.canJump,
       wasBoosted: playerState.wasBoosted,
       rotation: playerState.rotation,
+      rotateActionActive: !!scene?._player?.rotateActionActive,
       gravity: playerState.gravity,
       jumpPower: playerState.jumpPower,
       mirrored: playerState.mirrored,
@@ -129,23 +130,118 @@ class MacroBot {
   resetAll() {
     this.recording = false;
     this.playing = false;
-
     this.cursor = 0;
-    this.isDown = false;
-
-    this.inputs = [];
-
+    this.frames = [];
+    this.currentFrameState = null;
     this.meta = {
       author: "Web Dashers",
-      level: "", // ill fix ts later
-      version: 1
+      level: "",
+      version: 2,
     };
+  }
+
+  _cloneState(state) {
+    if (!state) return null;
+    const out = {};
+    for (const key of Object.keys(state)) {
+      const value = state[key];
+      if (value === null || typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+        out[key] = value;
+      } else if (Array.isArray(value) && value.every(v => v === null || typeof v === "string" || typeof v === "number" || typeof v === "boolean")) {
+        out[key] = value.slice();
+      }
+    }
+    return out;
+  }
+
+  _snapshotPlayer(player, state) {
+    return {
+      state: this._cloneState(state),
+      rotation: Number.isFinite(player?._rotation) ? player._rotation : (Number.isFinite(state?.rotation) ? state.rotation : 0),
+      mode: this.scene._getDualModeId ? this.scene._getDualModeId(state) : "cube"
+    };
+  }
+
+  _captureFrame(currentFrame) {
+    const scene = this.scene;
+    return {
+      frame: currentFrame,
+      playerWorldX: scene._playerWorldX,
+      cameraX: scene._cameraX,
+      cameraY: scene._cameraY,
+      speed: playerSpeed,
+      dual: !!scene._isDual,
+      player: this._snapshotPlayer(scene._player, scene._state),
+      dualPlayer: scene._isDual ? this._snapshotPlayer(scene._player2, scene._state2) : null
+    };
+  }
+
+  _applyPlayerSnapshot(snapshot, player, state) {
+    if (!snapshot || !player || !state) return;
+
+    const mode = snapshot.mode || "cube";
+    const currentMode = this.scene._getDualModeId ? this.scene._getDualModeId(state) : "cube";
+    if (currentMode !== mode && this.scene._setPlayerGamemode) {
+      this.scene._setPlayerGamemode(player, state, mode, true);
+    }
+
+    const savedState = snapshot.state || {};
+    for (const key of Object.keys(savedState)) {
+      const value = savedState[key];
+      if (value === null || typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+        state[key] = value;
+      } else if (Array.isArray(value)) {
+        state[key] = value.slice();
+      }
+    }
+
+    if (Number.isFinite(snapshot.rotation)) {
+      state.rotation = snapshot.rotation;
+      player._rotation = snapshot.rotation;
+    }
+
+    if (player.setRotation && Number.isFinite(snapshot.rotation)) {
+      try { player.setRotation(snapshot.rotation); } catch (_) {}
+    }
+  }
+
+  _applyFrame(frameState) {
+    if (!frameState) return;
+    const scene = this.scene;
+
+    if (Number.isFinite(frameState.playerWorldX)) scene._playerWorldX = frameState.playerWorldX;
+    if (Number.isFinite(frameState.cameraX)) scene._cameraX = frameState.cameraX;
+    if (Number.isFinite(frameState.cameraY)) scene._cameraY = frameState.cameraY;
+    if (Number.isFinite(frameState.speed)) playerSpeed = frameState.speed;
+
+    if (frameState.player) {
+      this._applyPlayerSnapshot(frameState.player, scene._player, scene._state);
+    }
+
+    scene._isDual = !!frameState.dual;
+    if (scene._isDual && frameState.dualPlayer) {
+      this._applyPlayerSnapshot(frameState.dualPlayer, scene._player2, scene._state2);
+    }
+
+    if (!scene._isDual) {
+      scene._player2.setCubeVisible(false);
+      scene._player2.setShipVisible(false);
+      scene._player2.setBallVisible(false);
+      scene._player2.setWaveVisible(false);
+      scene._player2.setBirdVisible?.(false);
+      scene._player2.setSpiderVisible(false);
+      scene._player2.setRobotVisible(false);
+    }
   }
 
   startRecording(meta = {}) {
     this.resetAll();
     this.recording = true;
-    this.meta = { ...meta };
+    this.meta = {
+      ...this.meta,
+      ...meta,
+      version: 2
+    };
   }
 
   stopRecording() {
@@ -154,44 +250,45 @@ class MacroBot {
   }
 
   clearRecording() {
-    this.inputs = [];
+    this.frames = [];
     this.cursor = 0;
-    this.isDown = false;
+    this.currentFrameState = null;
+  }
+
+  recordFrame(currentFrame) {
+    if (!this.recording) return;
+    const frameState = this._captureFrame(currentFrame);
+    const last = this.frames[this.frames.length - 1];
+    if (last && last.frame === currentFrame) {
+      this.frames[this.frames.length - 1] = frameState;
+    } else {
+      this.frames.push(frameState);
+    }
   }
 
   rollbackRecording(currentFrame) {
-    this.inputs = this.inputs.filter(ev => (ev.frame ?? 0) <= currentFrame);
+    this.frames = this.frames.filter(frame => (frame.frame ?? 0) <= currentFrame);
     this.cursor = 0;
-    this.isDown = false;
+    this.currentFrameState = null;
   }
 
   clearPlayback() {
     this.cursor = 0;
-    this.isDown = false;
+    this.currentFrameState = null;
   }
 
   rollbackPlayback(currentFrame) {
-    if (!this.inputs.length) return;
-
+    if (!this.frames.length) return;
     this.cursor = 0;
-    this.isDown = false;
+    this.currentFrameState = null;
 
-    this.scene._releaseButton(true);
-
-    while (
-      this.cursor < this.inputs.length &&
-      (this.inputs[this.cursor].frame ?? 0) <= currentFrame
-    ) {
-      const ev = this.inputs[this.cursor++];
-
-      if (ev.down) {
-        this.scene._pushButton(true);
-        this.isDown = true;
-      } else {
-        this.scene._releaseButton(true);
-        this.isDown = false;
-      }
+    while (this.cursor < this.frames.length && (this.frames[this.cursor].frame ?? 0) <= currentFrame) {
+      this.cursor++;
     }
+
+    const index = Math.max(0, this.cursor - 1);
+    const frameState = this.frames[index];
+    if (frameState) this._applyFrame(frameState);
   }
 
   startPlayback(macroData) {
@@ -205,62 +302,52 @@ class MacroBot {
       ...(macro || {})
     };
 
-    this.inputs = Array.isArray(macro?.inputs) ? macro.inputs.slice() : [];
-    this.inputs.sort((a, b) => (a.frame ?? 0) - (b.frame ?? 0));
+    this.frames = Array.isArray(macro?.frames) ? macro.frames.slice() : [];
+    this.frames.sort((a, b) => (a.frame ?? 0) - (b.frame ?? 0));
 
     this.cursor = 0;
-    this.isDown = false;
+    this.currentFrameState = null;
+
+    if (Array.isArray(macro?.inputs) && !this.frames.length) {
+      console.warn("Outdated macro file");
+    }
   }
 
   stopPlayback() {
     this.playing = false;
     this.cursor = 0;
-    this.isDown = false;
-  }
-
-  recordEdge(down, currentFrame) {
-    if (!this.recording) return;
-
-    const last = this.inputs[this.inputs.length - 1];
-    if (last && last.down === !!down && last.frame === currentFrame) {
-      return;
-    }
-
-    this.inputs.push({
-      frame: currentFrame,
-      down: !!down
-    });
-
-    this.isDown = !!down;
+    this.currentFrameState = null;
   }
 
   step(currentFrame) {
-    if (!this.playing) return;
+    if (!this.playing || !this.frames.length) return;
 
     while (
-      this.cursor < this.inputs.length &&
-      (this.inputs[this.cursor].frame ?? 0) <= currentFrame
+      this.cursor < this.frames.length &&
+      (this.frames[this.cursor].frame ?? 0) <= currentFrame
     ) {
-      const ev = this.inputs[this.cursor++];
-
-      if (ev.down) {
-        if (!this.isDown) {
-          this.scene._pushButton(true);
-          this.isDown = true;
-        }
-      } else {
-        if (this.isDown) {
-          this.scene._releaseButton(true);
-          this.isDown = false;
-        }
-      }
+      this.currentFrameState = this.frames[this.cursor++];
     }
+
+    if (this.cursor >= this.frames.length) {
+      this.stopPlayback();
+      return; 
+    }
+
+    if (this.currentFrameState) {
+      this._applyFrame(this.currentFrameState);
+    }
+  }
+
+  applyCurrentFrame() {
+    if (!this.playing || !this.currentFrameState) return;
+    this._applyFrame(this.currentFrameState);
   }
 
   exportObject() {
     return {
       meta: this.meta,
-      inputs: this.inputs.slice()
+      frames: this.frames.slice()
     };
   }
 
@@ -268,7 +355,7 @@ class MacroBot {
     return JSON.stringify(this.exportObject(), null, pretty ? 2 : 0);
   }
 
-  download(filename = "macro.wbgdr") {
+  download(filename = "macro.wbgdr2") {
     const blob = new Blob([this.exportString(true)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -297,6 +384,7 @@ class MacroBot {
     });
   }
 }
+
 
 class GameScene extends Phaser.Scene {
   constructor() {
@@ -437,6 +525,10 @@ class GameScene extends Phaser.Scene {
     this._resetGameplayState();
     this._totalJumps = parseInt(localStorage.getItem("gd_totalJumps") || "0", 10);
     this._totalDeaths = parseInt(localStorage.getItem("gd_totalDeaths") || "0", 10);
+    this._totalsecretcoins = parseInt(localStorage.getItem("gd_totalsecretcoins") || "0", 10);
+    window._totalsecretcoins = this._totalsecretcoins;
+    this._totalusercoins = parseInt(localStorage.getItem("gd_totalusercoins") || "0", 10);
+    window._totalusercoins = this._totalusercoins;
     window._completedLevels = parseInt(localStorage.getItem("gd_completedLevels") || "0", 10);
     this._playTime = 0;
     this._menuActive = true;
@@ -530,6 +622,11 @@ class GameScene extends Phaser.Scene {
     return icon;
   });
 
+    this._copyrightText = this.add.text(0, 630, "© 2026 RobTop Games · geometrydash.com", {
+      fontSize: "14px",
+      color: "#ffffff",
+      fontFamily: "Arial"
+    }).setOrigin(1, 1).setScrollFactor(0).setDepth(30).setAlpha(0.3);
     this._tryMeImg = this.add.image(0, 150, "GJ_MenuBeta").setScrollFactor(0).setDepth(30).setScale(0.75);
     this._menuMoreGamesBtn = this.add.image(screenWidth - 90, 550, "GJ_GameSheet04", "GJ_moreGamesBtn_001.png").setScrollFactor(0).setDepth(30).setScale(1.0).setInteractive();
     this._expandHitArea(this._menuMoreGamesBtn, 1);
@@ -628,14 +725,18 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_GameSheet
       const cornerTL = this.add.image(0,  0,  "GJ_GameSheet03", "GJ_sideArt_001.png")
         .setScrollFactor(0).setDepth(100).setOrigin(0, 0).setFlipY(true)
       const cornerBL = this.add.image(0,  sh, "GJ_GameSheet03", "GJ_sideArt_001.png")
-        .setScrollFactor(0).setDepth(152).setOrigin(0, 1).setFlipX(false)
+        .setScrollFactor(0).setDepth(152).setOrigin(0, 1)
+      const treasureroom = this.add.image(1095, 40, "GJ_GameSheet03", "GJ_lock_001.png")
+        .setScrollFactor(0).setDepth(104).setTint(0x666666);
+      const vaultsecret = this.add.image(1095, 601, "GJ_GameSheet03", "secretDoorBtn_closed_001.png")
+        .setScrollFactor(0).setDepth(104).setScale(1).setTint(0x666666);
 
       const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_03_001.png")
-        .setScrollFactor(0).setDepth(104).setFlipX(true).setFlipY(true)
+        .setScrollFactor(0).setDepth(104).setFlipY(true).setFlipX(true)
         .setRotation(Math.PI).setInteractive();
       this._makeBouncyButton(backBtn, 1, () => this._closeCreatorMenu());
 
-      this._creatorOverlayObjects = [overlay, blocker, cornerTL, cornerBL, backBtn];
+      this._creatorOverlayObjects = [overlay, blocker, cornerTL, cornerBL, backBtn, treasureroom, vaultsecret];
 
       const menuButtons = [
         "GJ_createBtn_001.png",
@@ -2789,11 +2890,60 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_GameSheet
       this._iconOverlay = overlay;
 
       const blocker = this.add.zone(sw / 2, sh / 2, sw, sh)
-        .setScrollFactor(0).setDepth(101).setInteractive();
+        .setScrollFactor(0).setDepth(100).setInteractive();
 
-      const titleTxt = this.add.bitmapText(sw / 2, 60, "goldFont", "Icon Selector", 32)
-        .setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(105);
+      const titleMaxLength = 20;
+      const titleAllowedChars = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
+      let titleText = String(localStorage.getItem("playerName") || "Player").replace(/\r|\n/g, "").slice(0, titleMaxLength);
+      if (!titleText || titleText.trim() === "") titleText = "Player";
 
+      const titleTxt = this.add.bitmapText(sw / 2, 80, "bigFont", titleText, 50)
+        .setOrigin(0.5, 0.5).setScrollFactor(0).setDepth(105).setInteractive();
+      let titleFocused = false;
+
+      const _updateTitleText = () => {
+        const safeTitle = titleText.slice(0, titleMaxLength);
+        titleText = safeTitle;
+        titleTxt.setText(safeTitle || "");
+        localStorage.setItem("playerName", safeTitle || "Player");
+      };
+
+      const _focusTitle = () => {
+        titleFocused = true;
+      };
+
+      const _blurTitle = () => {
+        titleFocused = false;
+        if (!titleText.trim()) {
+          titleText = "Player";
+          titleTxt.setText("Player");
+          localStorage.setItem("playerName", "Player");
+        }
+      };
+
+      titleTxt.on("pointerdown", () => _focusTitle());
+      blocker.on("pointerdown", () => _blurTitle());
+
+      const _onTitleKeyDown = (event) => {
+        if (!titleFocused || !this._iconOverlay) return;
+        event.stopPropagation();
+        if (event.key === "Backspace") {
+          if (titleText.length > 0) {
+            titleText = titleText.slice(0, -1);
+            _updateTitleText();
+          }
+        } else if (event.key === "Enter") {
+          _blurTitle();
+        } else if (event.key.length === 1 && titleAllowedChars.includes(event.key) && !event.ctrlKey && !event.metaKey) {
+          if (titleText.length < titleMaxLength) {
+            titleText += event.key;
+            _updateTitleText();
+          }
+        }
+      };
+
+      window.addEventListener("keydown", _onTitleKeyDown);
+      this._iconTitleKeyHandler = _onTitleKeyDown;
       this._iconOverlayObjects = [overlay, blocker, titleTxt];
 
       const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_03_001.png")
@@ -2802,6 +2952,16 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_GameSheet
         .setRotation(Math.PI).setInteractive();
       this._iconOverlayObjects.push(backBtn);
       this._makeBouncyButton(backBtn, 1, () => this._closeIconSelector());
+
+      const Pathicon = this.add.image(60, 165, "GJ_GameSheet03", "GJ_shardsBtn_001.png")
+        .setScrollFactor(0).setDepth(104).setTint(0x666666)
+        .setInteractive();
+      this._iconOverlayObjects.push(Pathicon);
+      this._makeBouncyButton(Pathicon, 1, () => this.openshardmenu());
+
+      const yourname = this.add.image(670, 15,  "GJ_GameSheet03", "GJ_nameTxt_001.png")
+        .setScrollFactor(0).setDepth(100).setOrigin(0, 0);
+      this._iconOverlayObjects.push(yourname);
 
       const topBarHeight = 100;
       const lineY = topBarHeight + 100;
@@ -3407,6 +3567,10 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_GameSheet
           }
           this._iconOverlayObjects = null;
         }
+        if (this._iconTitleKeyHandler) {
+          window.removeEventListener("keydown", this._iconTitleKeyHandler);
+          this._iconTitleKeyHandler = null;
+        }
         this._iconOverlay = null;
       };
       if (silent) { destroy(); return; }
@@ -3904,6 +4068,12 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_GameSheet
       }
     };
     const isEveryEnd = (levelId) => levelId === "level_99";
+    const levelCoinRequirements = {
+      "level_14": 10,
+      "level_18": 20,
+      "level_20": 30
+    };
+    const getLevelCoinRequirement = (levelId) => levelCoinRequirements[levelId] || 0;
     const fadeIn = this.add.graphics().setScrollFactor(0).setDepth(200);
     fadeIn.fillStyle(0x000000, 1);
     fadeIn.fillRect(0, 0, sw, sh);
@@ -3951,6 +4121,10 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_GameSheet
     const backBtn = this.add.image(50, 48, "GJ_GameSheet03", "GJ_arrow_01_001.png").setScrollFactor(0).setDepth(154).setFlipX(true).setScale(1, -1).setRotation(Math.PI).setInteractive();
     this._makeBouncyButton(backBtn, 1, () => this._closeLevelSelect());
     const infoBtn = this.add.image(sw - 40, 40, "GJ_GameSheet03", "GJ_infoIcon_001.png").setScrollFactor(0).setDepth(154).setInteractive();
+    this._makeBouncyButton(infoBtn, 1, () => this.levelstats());
+    const downloadsoundtrack = this.add.bitmapText(cx, 585, "bigFont", "Download the soundtracks", 56).setScrollFactor(0).setDepth(155).setOrigin(0.5, 0.5).setScale(0.52).setInteractive();
+    this._makeBouncyButton(downloadsoundtrack, 0.52, () => { this._buildsongspopup(1); });
+
     const arrowL = this.add.image(55, cy - 25, "GJ_GameSheet03", "navArrowBtn_001.png").setScrollFactor(0).setDepth(154).setScale(1.1).setFlipX(true).setInteractive();
     const arrowR = this.add.image(sw - 55, cy - 25, "GJ_GameSheet03", "navArrowBtn_001.png").setScrollFactor(0).setDepth(154).setScale(1.1).setFlipX(false).setInteractive();
     const allLevels = window.allLevels || [];
@@ -3969,9 +4143,10 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_GameSheet
       }
     };
     applyCurrentPage();
-    const dotY = sh - 36;
+    const dotY = sh - 20;
+    
     const maxDots = Math.min(pageCount, 28);
-    const dotSpacing = 27;
+    const dotSpacing = 29;
     const dotStartX = cx - (maxDots - 1) * dotSpacing / 2;
     const dotObjs = [];
     const refreshDots = () => {
@@ -3987,7 +4162,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_GameSheet
     };
     refreshDots();
     const cardW = Math.min(700, sw - 180);
-    const cardH = 180;
+    const cardH = 185;
     const cardX = cx;
     const cardY = cy - 100;
     const cardSlideContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(152);
@@ -4041,6 +4216,8 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_GameSheet
     cardHit.on("pointerdown", (ptr) => {
       onDragStart(ptr);
       if (isComingSoonPage()) return;
+      const levelId = window.currentlevel?.[2];
+      if (getLevelCoinRequirement(levelId) > (Number(window._totalsecretcoins) || 0)) return;
       this.tweens.killTweensOf(cardBounceContainer, "scale");
       this.tweens.add({ targets: cardBounceContainer, scale: 1.26, duration: 300, ease: "Bounce.Out" });
     });
@@ -4108,6 +4285,12 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_GameSheet
             if (isComingSoonPage()) {
               return;
             }
+
+            const requiredCoins = getLevelCoinRequirement(window.currentlevel?.[2]);
+            const collectedCoins = Number(window._totalsecretcoins) || 0;
+            if (requiredCoins > collectedCoins) {
+              return;
+            }
             
             this.input.enabled = false;
             this.tweens.killTweensOf(cardBounceContainer, "scale");
@@ -4166,6 +4349,9 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_GameSheet
       }
       const lvl = window.currentlevel;
       const levelId = lvl[2] || "level_1";
+      const requiredCoins = getLevelCoinRequirement(levelId);
+      const collectedCoins = Number(window._totalsecretcoins) || 0;
+      const levellocked = requiredCoins > collectedCoins;
       const levelDifficultyMap = {
         "level_1":         "diffIcon_01_btn_001",
         "level_2":         "diffIcon_01_btn_001",
@@ -4202,44 +4388,85 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_GameSheet
       const diffIconKey = levelDifficultyMap[levelId] || "diffIcon_05_btn_001";
       const diffFrame = diffIconKey + ".png";
       const iconX = cardX - cardW / 2 + 52;
-      const isHardDemon = diffIconKey === "diffIcon_06_btn_001";
-      const iconRotation = isHardDemon ? Math.PI / 2 : 0;
-      const demonIcon = this.add.image(iconX - cardX, 0, "GJ_GameSheet03", diffFrame)
-        .setScrollFactor(0).setDepth(155).setScale(1).setOrigin(0.5, 0.5);
-      cardContentObjs.push(demonIcon);
-      cardBounceContainer.add(demonIcon);
-      const maxIconH = cardH - 16;
-      const maxIconW = 80;
-      const iconFrame = this.textures.getFrame("GJ_GameSheet03", diffFrame);
-      let finalIconScale = 1;
-      if (iconFrame) {
-        const scaleForH = maxIconH / iconFrame.height;
-        let scaleForW = maxIconW / iconFrame.width;
-        finalIconScale = Math.min(1, scaleForH, scaleForW);
-        demonIcon.setScale(finalIconScale);
+      if (levellocked) {
+        const lock = this.add.image(0, -8, "GJ_GameSheet03", "GJLargeLock_001.png")
+          .setScrollFactor(0).setDepth(155).setOrigin(0.5, 0.5);
+        const lockFrame = this.textures.getFrame("GJ_GameSheet03", "GJLargeLock_001.png");
+        if (lockFrame) lock.setScale(Math.min(1, (cardH - 20) / lockFrame.height));
+        cardContentObjs.push(lock);
+        cardBounceContainer.add(lock);
+      } else {
+        const isHardDemon = diffIconKey === "diffIcon_06_btn_001";
+        const demonIcon = this.add.image(iconX - cardX, 0, "GJ_GameSheet03", diffFrame)
+          .setScrollFactor(0).setDepth(155).setScale(1).setOrigin(0.5, 0.5);
+        cardContentObjs.push(demonIcon);
+        cardBounceContainer.add(demonIcon);
+        const maxIconH = cardH - 16;
+        const maxIconW = 80;
+        const iconFrame = this.textures.getFrame("GJ_GameSheet03", diffFrame);
+        let finalIconScale = 1.115;
+        if (iconFrame) {
+          const scaleForH = maxIconH / iconFrame.height;
+          const scaleForW = maxIconW / iconFrame.width;
+          finalIconScale = Math.min(1.115, scaleForH, scaleForW);
+          demonIcon.setScale(finalIconScale);
+        }
+        const iconDisplayW = (iconFrame ? iconFrame.width : 80) * finalIconScale;
+        const iconDisplayH = (iconFrame ? iconFrame.height : 80) * finalIconScale;
+        const nameLabel = this.add.bitmapText(0, 0, "bigFont", lvl[1], 60)
+          .setScrollFactor(0).setDepth(155).setOrigin(0, 0.5);
+        const gap = 25;
+        const naturalGroupW = iconDisplayW + gap + nameLabel.width;
+        const naturalGroupH = Math.max(iconDisplayH, nameLabel.height);
+        const cardPad = 16;
+        const maxGroupW = cardW - cardPad * 2 - 100;
+        const maxGroupH = cardH - cardPad * 2;
+        const groupScale = Math.min(1, maxGroupW / naturalGroupW, maxGroupH / naturalGroupH);
+        const scaledIconW = iconDisplayW * groupScale;
+        const scaledGap = gap * groupScale;
+        const totalW = scaledIconW + scaledGap + nameLabel.width * groupScale;
+        const groupStartX = cardX - totalW / 2;
+        demonIcon.setScale(finalIconScale * groupScale);
+        demonIcon.setPosition(groupStartX + scaledIconW / 2 - cardX, 0);
+        nameLabel.setScale(groupScale);
+        nameLabel.setPosition(groupStartX + scaledIconW + scaledGap - cardX, 0);
+        cardContentObjs.push(nameLabel);
+        cardBounceContainer.add(nameLabel);
       }
-      let iconDisplayW = (iconFrame ? iconFrame.width : 80) * finalIconScale;
-      const iconDisplayH = (iconFrame ? iconFrame.height : 80) * finalIconScale;
-      const nameLabel = this.add.bitmapText(0, 0, "bigFont", lvl[1], 60)
-        .setScrollFactor(0).setDepth(155).setOrigin(0, 0.5);
-      const gap = 25;
-      const naturalGroupW = iconDisplayW + gap + nameLabel.width;
-      const naturalGroupH = Math.max(iconDisplayH, nameLabel.height);
-      const cardPad = 16;
-      const maxGroupW = cardW - cardPad * 2;
-      const maxGroupH = cardH - cardPad * 2;
-      const groupScale = Math.min(1, maxGroupW / naturalGroupW, maxGroupH / naturalGroupH);
-      const scaledIconW  = iconDisplayW  * groupScale;
-      const scaledLabelW = nameLabel.width * groupScale;
-      const scaledGap = gap * groupScale;
-      const totalW = scaledIconW + scaledGap + scaledLabelW;
-      const groupStartX = cardX - totalW / 2;
-      demonIcon.setScale((finalIconScale * groupScale)+0.1);
-      demonIcon.setPosition(groupStartX + scaledIconW / 2 - cardX, 0);
-      nameLabel.setScale(groupScale);
-      nameLabel.setPosition(groupStartX + scaledIconW + scaledGap - cardX, 0);
-      cardContentObjs.push(nameLabel);
-      cardBounceContainer.add(nameLabel);
+
+      let collectedSecretCoins = [];
+      try {
+        const savedCoins = JSON.parse(localStorage.getItem("gd_secretCoins_" + levelId) || "[]");
+        const savedSlotsKey = "gd_secretCoins_" + levelId + "_slots";
+        const savedSlots = JSON.parse(localStorage.getItem(savedSlotsKey) || "null");
+        if (Array.isArray(savedSlots)) {
+          collectedSecretCoins = savedSlots.filter(slot => Number.isInteger(slot) && slot >= 0 && slot < 3);
+        } else if (levelId === window.currentlevel?.[2] && Array.isArray(this._level?._coinSprites)) {
+          const savedIds = new Set(Array.isArray(savedCoins) ? savedCoins.map(String) : []);
+          collectedSecretCoins = this._level._coinSprites
+            .filter(sprite => sprite?._secretCoinId !== undefined && savedIds.has(String(sprite._secretCoinId)))
+            .map(sprite => sprite._secretCoinSlot)
+            .filter(slot => Number.isInteger(slot));
+        }
+      } catch (_error) {}
+      if (levellocked) {
+        const coinCount = this.add.bitmapText(cardW / 2 - 117, 63, "bigFont", `${collectedCoins}/${requiredCoins}`, 42)
+          .setScrollFactor(0).setDepth(155).setOrigin(0.5, 0.5);
+        const coinIcon = this.add.image(cardW / 2 - 31, 63, "GJ_GameSheet03", "GJ_coinsIcon_001.png")
+          .setScrollFactor(0).setDepth(155).setOrigin(0.5);
+        cardContentObjs.push(coinCount, coinIcon);
+        cardBounceContainer.add([coinCount, coinIcon]);
+      }
+      for (let coinIndex = 0; !levellocked && coinIndex < 3; coinIndex++) {
+        const coinIcon = this.add.image(
+          cardW / 2 - 131 + coinIndex * 50,
+          63,
+          "GJ_GameSheet03",
+          collectedSecretCoins.includes(coinIndex) ? "GJ_coinsIcon_001.png" : "GJ_coinsIcon_gray_001.png"
+        ).setScrollFactor(0).setDepth(155).setOrigin(0.5);
+        cardContentObjs.push(coinIcon);
+        cardBounceContainer.add(coinIcon);
+      }
     };
     const barAreaY = cardY + cardH / 2 + 100;
     const barW2 = Math.min(600, sw - 200);
@@ -4384,7 +4611,7 @@ this._menuUpdateLogBtn = this.add.image(screenWidth - 30 - 50, 33, "GJ_GameSheet
     const inputBlocker = this.add.zone(cx, cy, sw, sh)
       .setScrollFactor(0).setDepth(151).setInteractive();
     inputBlocker.on("pointerdown", onDragStart);
-    this._levelSelectStaticObjs = [overlay, inputBlocker, tableBottom, ...staticGroundTiles, ...staticGround2Tiles, staticFloorLine, cornerBL, cornerBR, backBtn, infoBtn, arrowL, arrowR, cardSlideContainer, cardHit];
+    this._levelSelectStaticObjs = [overlay, inputBlocker, tableBottom, ...staticGroundTiles, ...staticGround2Tiles, staticFloorLine, cornerBL, cornerBR, backBtn, infoBtn, arrowL, arrowR, cardSlideContainer, cardHit, downloadsoundtrack];
     this._levelSelectSwitchLevel = switchLevel;
     this._levelSelectDotObjs = dotObjs;
     this._levelSelectCardContent = cardContentObjs;
@@ -4820,7 +5047,7 @@ _closeSettingsPopup() {
         this._closeSettingsPopup();
     });
 
-    const pages = ["Gameplay", "Visual", "Advanced"];
+    const pages = ["Gameplay", "Visual", "Advanced", "Performance"];
     let currentPage = 0;
     const pageTitle = this.add.bitmapText(0, -(panelHeight / 2) + 45, "bigFont", pages[currentPage], 40).setOrigin(0.5);
     innerContainer.add(pageTitle);
@@ -4875,13 +5102,27 @@ _closeSettingsPopup() {
         return String(key);
     }
 
-    var infotextstuffsiwannabedonewiththis = {
+    var infotextstrings = {
         "Enable Portal Guide": "Enables extra indicators on portals.",
         "Enable Orb Guide": "Enables extra indicators on orbs.",
         "Practice Music Bypass": "Plays normal mode music in practice mode.",
         "Show Percentage": "Shows the percentage you are at in a level.",
         "Percentage Decimals": "Shows decimals in level progress.",
+        "Startpos Switcher": "Switches between start positions in a level.",
+        "Noclip": "Allows you to phase throught mostly anything that would kill you normally.",
+        "Noclip Accuracy": "Flashes your screen red when you would've died with noclip.",
+        "Macro Bot": "Lets you record and replay your inputs for a level.",
+        "Show Hitboxes": "Shows you the hitboxes for objects and your player.",
+        "Hitbox Trail": "Shows the hitbox of exactly where your hitbox has been.",
         "Hitboxes on Death": "Shows hitboxes upon death in both normal and practice mode.",
+        "Show FPS": "Shows the frames per second your game is running at.",
+        "Solid Wave Trail": "Removes the extra details of the wave trail.",
+        "Show CPS": "Shows when you click in a level in the top left of your screen.",
+        "Show Glow": "Shows glow for basic object sets.",
+        "Use Proxy (for schools)": "Enables a proxy for a better chance to see online levels when blocked.",
+        "Cull Distance": "Changes how many objects are shown. [DOES NOT SAVE!!]",
+        "Default Mini Icon": "Sets player icon in min mode to default.",
+        "Safe Mode": "Enables when Noclip or Speedhack are on. Disables level Completion when enabled."
     };
 
     const createInfoButton = (container, x, y, infoTextOrKey, scale) => {
@@ -4890,8 +5131,8 @@ _closeSettingsPopup() {
         var Infotext = null;
         if (window.settingInfoText && window.settingInfoText[words]) {
             Infotext = window.settingInfoText[words];
-        } else if (infotextstuffsiwannabedonewiththis[words]) {
-            Infotext = infotextstuffsiwannabedonewiththis[words];
+        } else if (infotextstrings[words]) {
+            Infotext = infotextstrings[words];
         }
         var infoText = Infotext ? Infotext : key;
         if (!infoText) {
@@ -4906,6 +5147,138 @@ _closeSettingsPopup() {
         this._makeBouncyButton(infoButton, scale, () => {
             this.InfoBoxDoAThing(infoText);
         });
+    };
+    const createNumberInput = (container, x, y, label, getVal, setVal, minVal = 0, maxVal = 20, integer = true, hasInfoBox = false, infoText = null) => {
+        const txt = this.add.bitmapText(x + textOffset, y, "bigFont", label, 25).setOrigin(0, 0.5);
+        container.add(txt);
+
+        if (hasInfoBox) {
+            if (infoText) {
+                createInfoButton(container, x + checkOffset - 38, y - 32, infoText, 0.45);
+            }
+        }
+
+        const boxX = x + checkOffset;
+        const boxY = y;
+        const boxW = 64;
+        const boxH = 48;
+
+        const bgBoxGraphics = this.add.graphics();
+        bgBoxGraphics.fillStyle(0x222222, 0.5);
+        bgBoxGraphics.fillRoundedRect(boxX - boxW / 2, boxY - boxH / 2, boxW, boxH, 8);
+        container.add(bgBoxGraphics);
+
+        const hitArea = this.add.rectangle(boxX, boxY, boxW, boxH, 0x000000, 0)
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true });
+        container.add(hitArea);
+
+        let initialVal = getVal();
+        if (initialVal === undefined || initialVal === null) initialVal = minVal;
+        const valueTxt = this.add.bitmapText(boxX, boxY, "bigFont", initialVal.toString(), 28)
+            .setOrigin(0.5);
+        container.add(valueTxt);
+
+        let isFocused = false;
+        let internalString = initialVal.toString();
+
+        const updateDisplay = () => {
+            if (isFocused) {
+                valueTxt.setText(internalString + "|");
+            } else {
+                valueTxt.setText(internalString || " ");
+            }
+        };
+
+        const commitValue = () => {
+            isFocused = false;
+
+            let val;
+            if (integer) {
+                val = parseInt(internalString, 10);
+            } else {
+                val = parseFloat(internalString);
+            }
+            if (isNaN(val)) val = minVal;
+
+            if (val < minVal) val = minVal;
+            if (val > maxVal) val = maxVal;
+
+            internalString = integer ? String(Math.round(val)) : String(val);
+            valueTxt.setText(internalString);
+            
+            setVal(val);
+            if (this._saveSettings) this._saveSettings();
+        };
+
+        hitArea.on('pointerdown', (pointer, localX, localY, event) => {
+            if (event) event.stopPropagation();
+            
+            if (window._activeCustomInput && window._activeCustomInput !== commitValue) {
+                window._activeCustomInput();
+            }
+
+            isFocused = true;
+            window._activeCustomInput = commitValue;
+            
+            internalString = ""; 
+            updateDisplay();
+        });
+
+        const outsideClickListener = () => {
+            if (isFocused) commitValue();
+        };
+        dim.on('pointerdown', outsideClickListener);
+
+        const keydownListener = (event) => {
+            if (!isFocused) return;
+
+            const key = event.key;
+
+            if (key === "Enter") {
+                event.preventDefault();
+                commitValue();
+                return;
+            }
+
+            if (key === "Backspace") {
+                event.preventDefault();
+                internalString = internalString.slice(0, -1);
+                updateDisplay();
+                return;
+            }
+
+            if (/^[0-9.]$/.test(key)) {
+                event.preventDefault();
+
+                if (integer) {
+                    if (key === ".") return;
+                    internalString += key;
+                } else {
+                    if (key === ".") {
+                        if (internalString.includes(".")) return;
+                        if (internalString.length === 0) return;
+                        internalString += key;
+                    } else {
+                        internalString += key;
+                    }
+                }
+
+                updateDisplay();
+            }
+        };
+
+        window.addEventListener('keydown', keydownListener);
+
+        const originalDestroy = container.destroy;
+        container.destroy = (...args) => {
+            window.removeEventListener('keydown', keydownListener);
+            if (dim) dim.off('pointerdown', outsideClickListener);
+            if (window._activeCustomInput === commitValue) {
+                window._activeCustomInput = null;
+            }
+            originalDestroy.apply(container, args);
+        };
     };
 
     const buildGameplayPage = (container) => {
@@ -4927,7 +5300,71 @@ _closeSettingsPopup() {
             "Percentage Decimals"
         );
 
-        createToggle(container, column2X, startY, "Practice Music Bypass",
+        createToggle(container, column1X, startY + (spacingY * 2), "StartPos Switcher",
+            () => window.startPosSwitcher,
+            (v) => window.startPosSwitcher = v,
+            (v) => {
+                if (!v) this._startPosIndex = -1;
+                if (this._startPosGui) this._startPosGui.setVisible(v);
+                const total = this._level.getStartPositions().length;
+                if (this._startPosText) this._startPosText.setText(`0/${total}`);
+            },
+            undefined,
+            25,
+            "Startpos Switcher"
+        );
+
+        createToggle(container, column1X, startY + (spacingY * 3), "Noclip",
+            () => window.noClip,
+            (v) => window.noClip = v,
+            (v) => { if (this._noclipIndicator) this._noclipIndicator.setVisible(v); },
+            undefined,
+            25,
+            "Noclip"
+        );
+
+        createToggle(container, column1X, startY + (spacingY * 4), "Noclip Accuracy",
+            () => window.noClipAccuracy,
+            (v) => window.noClipAccuracy = v,
+            null,
+            25,
+            true,
+            "Noclip Accuracy"
+        );
+
+        createToggle(container, column1X, startY + (spacingY * 5), "Macro Bot",
+            () => window.macroBot,
+            (v) => window.macroBot = v,
+            null,
+            25,
+            true,
+            "Macro Bot"
+        );
+
+        createNumberInput(container, column2X, startY, "Speedhack",
+          () => window.speedHack,
+          (v) => window.speedHack = v,
+          0.1,
+          10,
+          false
+        );
+
+        createToggle(container, column2X, startY + spacingY, "Practice Music Sync",
+            () => window.practiceMusicSync,
+            (v) => {
+                const changed = !!window.practiceMusicSync !== !!v;
+                window.practiceMusicSync = v;
+                if (changed && !this._menuActive && this._practicedMode?.practiceMode) {
+                    this._practiceBypassPending = true;
+                }
+            },
+            null,
+            20,
+            true,
+            "Practice Music Sync"
+        );
+
+        createToggle(container, column2X, startY + (spacingY * 2), "Practice Music Bypass",
             () => window.practiceMusicBypass,
             (v) => {
                 const changed = !!window.practiceMusicBypass !== !!v;
@@ -4944,19 +5381,94 @@ _closeSettingsPopup() {
     };
 
     const buildVisualPage = (container) => {
-        createToggle(container, column1X, startY, "Solid Wave Trail",
-            () => window.solidWave,
-            (v) => window.solidWave = v
+        createToggle(container, column1X, startY, "Show Hitboxes",
+            () => window.showHitboxes, 
+            (v) => window.showHitboxes = v,
+            (v) => { 
+                if (!v) {
+                    this._player._hitboxGraphics.clear(); 
+                } else {
+                    this._player.drawHitboxes(this._player._hitboxGraphics, this._cameraX, this._cameraY);
+                }
+            },
+            undefined,
+            25,
+            "Show Hitboxes"
         );
 
-        createToggle(container, column2X, startY, "Enable Portal Guide",
+        createToggle(container, column1X, startY + (spacingY), "Hitbox Trail", 
+            () => window.showHitboxTrail, 
+            (v) => window.showHitboxTrail = v,
+            (v) => { if (window.showHitboxes) this._player.drawHitboxes(this._player._hitboxGraphics, this._cameraX, this._cameraY); },
+            undefined,
+            25,
+            "Hitbox Trail"
+        );
+        
+        createToggle(container, column1X, startY + (spacingY * 2), "Hitboxes on Death", 
+            () => window.hitboxesOnDeath, 
+            (v) => window.hitboxesOnDeath = v,
+            undefined,
+            undefined,
+            true,
+            "Hitboxes on Death"
+        );
+
+        createToggle(container, column1X, startY + (spacingY * 3), "Show FPS", 
+            () => this._fpsText.visible, 
+            (v) => this._fpsText.visible = v,
+            (v) => { if (this._fpsText) this._fpsText.setVisible(v); },
+            undefined,
+            25,
+            "Show FPS"
+        );
+
+        createToggle(container, column1X, startY + (spacingY * 4), "Solid Wave Trail", 
+            () => window.solidWave, 
+            (v) => window.solidWave = v,
+            null,
+            25,
+            true,
+            "Solid Wave Trail"
+        );
+        
+        createToggle(container, column1X, startY + (spacingY * 5), "Show CPS",
+            () => window.showCPS,
+            (v) => window.showCPS = v,
+            null,
+            25,
+            true,
+            "Show CPS"
+        );
+
+        createToggle(container, column2X, startY, "Show Glow", 
+            () => window.showGlow, 
+            (v) => window.showGlow = v,
+            () => { if (this._level && this._level._updateGlowVisibility) this._level._updateGlowVisibility(); },
+            undefined,
+            25,
+            "Show Glow"
+        );
+
+        createToggle(container, column2X, startY + spacingY, "Create Object ID labels", 
+            () => window.createObjectIds, 
+            (v) => window.createObjectIds = v,
+            null, 17
+        );
+
+        createToggle(container, column2X, startY + (spacingY * 2), "Show Object ID labels", 
+            () => window.showObjectIds, 
+            (v) => window.showObjectIds = v,
+            null, 17
+        );
+        createToggle(container, column2X, startY + (spacingY * 3), "Enable Portal Guide",
             () => window.enablePortalGuide,
             (v) => window.enablePortalGuide = v,
             null, 22,
             true,
             "Enable Portal Guide"
         );
-        createToggle(container, column2X, startY + spacingY, "Enable Orb Guide",
+        createToggle(container, column2X, startY + (spacingY * 4), "Enable Orb Guide",
             () => window.enableOrbGuide,
             (v) => window.enableOrbGuide = v,
             null,
@@ -4964,13 +5476,46 @@ _closeSettingsPopup() {
             true,
             "Enable Orb Guide"
         );
+          createToggle(container, column2X, startY + (spacingY * 5), "Default Mini Icon",
+            () => window.enableMiniIcon, 
+            (v) => window.enableMiniIcon = v,
+            null, //broken script refrence???? null??? 
+            25,
+            true,
+            "Default Mini Icon"
+        );
     };
 
     const buildAdvancedPage = (container) => {
         createToggle(container, column1X, startY, "Use Proxy (for schools)",
             () => !window.useDirectInternet,
             (v) => { window.useDirectInternet = !v; },
-            null, 22
+            null,
+            22,
+            true,
+            "Use Proxy (for schools)"
+        );/*
+          createToggle(container, column1X, startY + (spacingY * 1), "Safe Mode",
+            () => !window.enablesafemode,
+            (v) => { window.enablesafemode = !v; },
+            null,
+            22,
+            true,
+            "Safe Mode"
+            
+        );
+        */
+    };
+
+        const buildPerformancePage = (container) => {
+        createNumberInput(container, column1X, startY, "Cull Distance",
+          () => (typeof window.cullDistance !== 'undefined' ? window.cullDistance : 3),
+          (v) => window.cullDistance = v,
+          0,
+          3,
+          true,
+          true,
+          "Cull Distance"
         );
     };
 
@@ -4983,6 +5528,7 @@ _closeSettingsPopup() {
         if (idx === 0) buildGameplayPage(pageContainer);
         else if (idx === 1) buildVisualPage(pageContainer);
         else if (idx === 2) buildAdvancedPage(pageContainer);
+        else if (idx === 3) buildPerformancePage(pageContainer);
     };
 
     buildPage(0);
@@ -5969,6 +6515,8 @@ _closeSettingsPopup() {
         showCPS: window.showCPS,
         speedHack: window.speedHack,
         practiceMusicBypass: window.practiceMusicBypass,
+        macroBot: window.macroBot,
+        practiceMusicSync: window.practiceMusicSync,
         showGlow: window.showGlow,
         showEditorGlow: window.showEditorGlow,
         useDirectInternet: !!window.useDirectInternet,
@@ -5976,7 +6524,10 @@ _closeSettingsPopup() {
         enableOrbGuide: window.enableOrbGuide,
         settingInfoText: window.settingInfoText || {},
         mhFlags: window._mhFlags || {},
-        mhFont: window._mhFont || 'Default'
+        mhFont: window._mhFont || 'Default',
+        enableMiniIcon: window.enableMiniIcon,
+        cullDistance: window.cullDistance,
+        enableLDM: window.enableLDM,
     };
     localStorage.setItem("gd_settings", JSON.stringify(settings));
     localStorage.setItem("gd_useDirectInternet", String(!!window.useDirectInternet));
@@ -5999,12 +6550,15 @@ _closeSettingsPopup() {
         showCPS: false,
         speedHack: 1.0,
         macroBot: false,
-        practiceMusicBypass: false,
+        practiceMusicSync: false,
         showGlow: true,
         showEditorGlow: false,
         useDirectInternet: true,
         enablePortalGuide: true,
-        enableOrbGuide: false
+        enableOrbGuide: false,
+        enableMiniIcon: false,
+        enableLDM: false,
+        cullDistance: 3
     };
 
     const data = { ...defaults, ...(saved ? JSON.parse(saved) : {}) };
@@ -6022,17 +6576,184 @@ _closeSettingsPopup() {
     window.showCPS = data.showCPS;
     window.speedHack = data.speedHack;
     window.practiceMusicBypass = !!data.practiceMusicBypass;
+    window.macroBot = data.macroBot;
+    window.practiceMusicSync = !!data.practiceMusicSync;
     window.showGlow = data.showGlow;
     window.showEditorGlow = data.showEditorGlow;
     window.createObjectIds = data.createObjectIds;
     window.showObjectIds = data.showObjectIds;
     window.enablePortalGuide = data.enablePortalGuide;
     window.enableOrbGuide = data.enableOrbGuide;
+    window.enableMiniIcon = data.enableMiniIcon;
+    window.cullDistance = typeof data.cullDistance !== 'undefined' ? data.cullDistance : 3;
     window.settingInfoText = data.settingInfoText || {};
     window.useDirectInternet = !!data.useDirectInternet;
     window._mhFlags = data.mhFlags || {};
     window._mhFont = data.mhFont || 'Default';
     localStorage.setItem("gd_useDirectInternet", String(!!window.useDirectInternet));
+    window.enableLDM = !!data.enableLDM;
+  }
+  _buildMacroPopup() {
+      if (this._macroPopup) return;
+      const centerX = screenWidth / 2;
+      const centerY = 320;
+      const panelWidth = 800;
+      const panelHeight = 400;
+      this._macroPopup = this.add.container(0, 0).setScrollFactor(0).setDepth(250);
+      const dim = this.add.rectangle(centerX, centerY, screenWidth, screenHeight, 0x000000, 150 / 255).setInteractive();
+      this._macroPopup.add(dim);
+
+      const corner = 0.325 * this.textures.get("GJ_square02").source[0].width;
+      const panel = this._drawScale9(centerX, centerY, panelWidth, panelHeight, "GJ_square02", corner, 0xffffff, 1);
+      this._macroPopup.add(panel);
+
+      this._macroPopup.add(this.add.bitmapText(centerX, centerY - (panelHeight / 2) + 45, "bigFont", "Web Bot v2.1", 40).setOrigin(0.5));
+
+      if (this._macroName === undefined) {  
+          this._macroName = this._macroBot?.meta?.name || null;
+      }
+      if (this._macroLoaded === undefined) {
+          this._macroLoaded = !!this._macroName || (this._macroBot && this._macroBot.frames && this._macroBot.frames.length > 0);
+      }
+
+      const loadedNameText = this.add.bitmapText(centerX, centerY - (panelHeight / 2) + 95, "goldFont", this._macroLoaded ? `Currently loaded "${this._macroName || 'macro'}"` : "No macro loaded", 24).setOrigin(0.5);
+      this._macroPopup.add(loadedNameText);
+
+      const optionsBtn = this.add.image(centerX, centerY - (panelHeight / 2) + 95, "GJ_GameSheet03", "GJ_optionsBtn02_001.png").setInteractive().setScale(0.45);
+      this._macroPopup.add(optionsBtn);
+
+      const closeBtn = this.add.image(centerX - (panelWidth / 2) + 20, centerY - (panelHeight / 2) + 20, "GJ_WebSheet", "GJ_closeBtn_001.png").setInteractive().setScale(0.8);
+      this._macroPopup.add(closeBtn);
+
+      this._makeBouncyButton(closeBtn, 0.8, () => {
+          this.events.off("update", this._refreshMacroButtons);
+          this._macroPopup.destroy();
+          this._macroPopup = null;
+      });
+
+      const importBtn = this.add.image(centerX - 300, centerY + 20,"importMacro").setInteractive();
+      const exportBtn = this.add.image(centerX - 150, centerY + 20, "GJ_GameSheet03", "GJ_shareBtn_001.png").setInteractive().setScale(0.53);
+      const createBtn = this.add.image(centerX, centerY + 20, "GJ_GameSheet03", "GJ_plusBtn_001.png").setInteractive().setScale(1.2);
+      const playbackBtn = this.add.image(centerX + 150, centerY + 20, this._macroBot?.playing ? "stopPlayback" : "playbackMacro").setInteractive().setScale(0.25);
+      const recordBtn = this.add.image(centerX + 300, centerY + 20, this._macroBot?.recording ? "stopRecord" : "recordMacro").setInteractive().setScale(0.25);
+
+      this._macroPopup.add([createBtn, importBtn, exportBtn, playbackBtn, recordBtn]);
+
+      this._refreshMacroButtons = () => {
+          const playing = !!this._macroBot?.playing;
+          const recording = !!this._macroBot?.recording;
+
+          let currentMetaName = this._macroBot?.meta?.name;
+          if (currentMetaName && currentMetaName !== this._macroName) {
+              this._macroName = currentMetaName;
+              this._macroLoaded = true;
+          }
+
+          if (this._macroLoaded) {
+              loadedNameText.setText(`Currently loaded "${this._macroName || 'macro'}"`);
+              optionsBtn.setAlpha(1).setActive(true);
+              optionsBtn.x = centerX + (loadedNameText.width / 2) + 25;
+          } else {
+              loadedNameText.setText("No macro loaded");
+              optionsBtn.setAlpha(0).setActive(false);
+          }
+
+          playbackBtn.setTexture(
+              playing
+                  ? "stopPlayback"
+                  : "playbackMacro"
+          );
+
+          recordBtn.setTexture(
+              recording
+                  ? "stopRecord"
+                  : "recordMacro"
+          );
+
+          createBtn.setAlpha((playing || recording || this._macroLoaded) ? 0.5 : 1);
+          importBtn.setAlpha((playing || recording) ? 0.5 : 1);
+          exportBtn.setAlpha((playing || recording || !this._macroLoaded) ? 0.5 : 1);
+          playbackBtn.setAlpha((recording || !this._macroLoaded) ? 0.5 : 1);
+          recordBtn.setAlpha((playing || !this._macroLoaded) ? 0.5 : 1);
+      };
+
+      this._refreshMacroButtons();
+
+      this._makeBouncyButton(optionsBtn, 0.45, () => {
+          if (!this._macroLoaded) return;
+          const renamePrompt = prompt("New name", this._macroName);
+          if (renamePrompt && renamePrompt.trim() !== "") {
+              const cleanName = renamePrompt.trim();
+              if (!this._macroBot) this._initMacroBot();
+              
+              if (!this._macroBot.meta) {
+                  this._macroBot.meta = {};
+              }
+              this._macroBot.meta.name = cleanName;
+              this._macroName = cleanName;
+              this._refreshMacroButtons();
+          }
+      });
+
+      this._makeBouncyButton(importBtn, 1, () => {
+          if (this._macroBot?.playing) return;
+          if (this._macroBot?.recording) return;
+          this._importMacroFile();
+      });
+
+      this._makeBouncyButton(exportBtn, 0.53, () => {
+          if (this._macroBot?.playing) return;
+          if (this._macroBot?.recording) return;
+          if (!this._macroLoaded) return;
+          this._exportMacroFile(this._macroName ? `${this._macroName}.wbgdr2` : null);
+      });
+
+      this._makeBouncyButton(createBtn, 1.2, () => {
+          if (this._macroBot?.playing || this._macroBot?.recording || this._macroLoaded) return;
+          const name = prompt("Enter macro name");
+          if (name) {
+              if (!this._macroBot) this._initMacroBot();
+              this._macroBot.resetAll();
+              this._macroBot.meta.name = name;
+              this._macroName = name;
+              this._macroLoaded = true;
+              this._refreshMacroButtons();
+          }
+      });
+
+      this._makeBouncyButton(playbackBtn, 0.25, () => {
+          if (this._macroBot?.recording) return;
+          if (!this._macroLoaded) return;
+
+          if (this._macroBot?.playing) {
+              this._stopMacroPlayback();
+          } else {
+              if (!this._macroBot) {
+                  return;
+              }
+              const macro = this._macroBot.exportObject();
+              this._startMacroPlayback(macro);
+          }
+          this._refreshMacroButtons();
+      });
+
+      this._makeBouncyButton(recordBtn, 0.25, () => {
+          if (this._macroBot?.playing) return;
+          if (!this._macroLoaded) return;
+
+          if (this._macroBot?.recording) {
+              this._stopMacroRecording();
+          } else {
+              this._startMacroRecording({
+                  level: window.currentlevel?.[2] || "",
+                  name: this._macroName
+              });
+          }
+
+          this._refreshMacroButtons();
+      });
+
+      this.events.on("update", this._refreshMacroButtons);
   }
   _buildInfoPopup() {
     if (this._infoPopup) {
@@ -6103,14 +6824,25 @@ _closeSettingsPopup() {
     const totalContentH = yPos;
     const maxScrollDown = Math.max(0, totalContentH - scrollAreaH + 16);
     const maskGraphics = this.add.graphics();
-    const maskShape = this.add.graphics().fillStyle(0xffffff).fillRect(
-      RES_SCALE * (xPos + scrollAreaX - scrollAreaW / 2),
-      RES_SCALE * (popupHeight + scrollAreaY - scrollAreaH / 2),
-      RES_SCALE * scrollAreaW,
-      RES_SCALE * scrollAreaH
-    ).setVisible(false);
-    const geomMask = maskShape.createGeometryMask();
+    const maskShape = this.add.graphics();
+    maskShape.fillStyle(0xffffff, 1);
+    const updateMask = () => {
+      if (!bounceContainer || !bounceContainer.active) return;
+      const wx = xPos + bounceContainer.x - xPos;
+      const s = bounceContainer.scaleX;
+      const bwx = xPos;
+      const bwy = popupHeight;
+      maskShape.clear();
+      maskShape.fillRect(
+        bwx + (scrollAreaX - scrollAreaW / 2) * s,
+        bwy + (scrollAreaY - scrollAreaH / 2) * s,
+        scrollAreaW * s,
+        scrollAreaH * s
+      );
+    };
+const geomMask = maskShape.createGeometryMask();
     contentContainer.setMask(geomMask);
+    this.events.on('postupdate', updateMask);
     let scrollY = 0;
     const baseContentY = scrollAreaY - scrollAreaH / 2 + 8;
     const applyScroll = () => {
@@ -6194,6 +6926,243 @@ _closeSettingsPopup() {
       this._infoPopup = null;
     }
   } //im so tired of this
+  _showReqpopup() {
+    if (this._reqpopup) {
+      return;
+    }
+
+    const xPos = screenWidth / 2;
+    const centerY = screenHeight / 2;
+    const popupWidth = 475;
+    const popupContentHeight = 230;
+    this._reqpopup = this.add.container(0, 0).setScrollFactor(0).setDepth(1000);
+
+    const background = this.add.rectangle(xPos, centerY, screenWidth, screenHeight, 0, 100 / 255).setInteractive();
+    this._reqpopup.add(background);
+
+    const bounceContainer = this.add.container(xPos, centerY).setScale(0);
+    this._reqpopup.add(bounceContainer);
+
+    const cornerRadius = this.textures.get("GJ_square02").source[0].width * 0.325;
+    const popupBg = this._drawScale9(0, 0, popupWidth, popupContentHeight, "GJ_square02", cornerRadius, 16777215, 1);
+    bounceContainer.add(popupBg);
+
+    const closeBtn = this.add.image(-(popupWidth / 2) + 20, -(popupContentHeight / 2) + 20, "GJ_WebSheet", "GJ_closeBtn_001.png").setScale(0.95).setInteractive();
+    bounceContainer.add(closeBtn);
+    this._makeBouncyButton(closeBtn, 0.95, () => this._closeReqPopup());
+
+    const fakeloading = this.add.image(0, -10, "loadingCircle").setOrigin(0.5).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.5);
+    bounceContainer.add(fakeloading);
+
+    const statusText = this.add.text(0, popupContentHeight / 2 - 40, " Loading...", {
+      fontFamily: "Arial",
+      fontSize: "26px",
+      color: "#ffffff",
+      align: "center"
+    }).setOrigin(0.5, 0.5);
+    bounceContainer.add(statusText);
+
+    const spinTimer = this.time.addEvent({
+      delay: 16,
+      loop: true,
+      callback: () => {
+        if (!fakeloading.scene) {
+          spinTimer.remove();
+          return;
+        }
+        fakeloading.rotation += 0.1;
+      }
+    });
+
+    const failTimer = this.time.delayedCall(5000, () => {
+      if (!fakeloading.scene || !statusText.scene) return;
+      spinTimer.remove();
+      fakeloading.clearTint();
+      fakeloading.setBlendMode(Phaser.BlendModes.NORMAL);
+      fakeloading.setAlpha(1);
+      fakeloading.setTexture("GJ_GameSheet03", "exMark_001.png");
+      fakeloading.setRotation(0);
+      fakeloading.setScale(1.25);
+      fakeloading.y = -25;
+      statusText.setText("Failed. Please try again never. ");
+    });
+
+    this._reqpopupexit = () => {
+      spinTimer.remove();
+      failTimer.remove();
+    };
+
+    this.tweens.add({
+      targets: bounceContainer,
+      scale: { from: 0, to: 1 },
+      duration: 660,
+      ease: "Elastic.Out",
+      easeParams: [1, 0.6]
+    });
+  }
+  _closeReqPopup() {
+    if (this._reqpopup) {
+      if (this._reqpopupexit) {
+        this._reqpopupexit();
+        this._reqpopupexit = null;
+      }
+      this._reqpopup.destroy();
+      this._reqpopup = null;
+    }
+    }
+  _showcontactpopup() {
+    if (this._reqpopup) {
+      return;
+    }
+
+    const xPos = screenWidth / 2;
+    const centerY = screenHeight / 2;
+    const popupWidth = 500;
+    const popupContentHeight = 250;
+    this._reqpopup = this.add.container(0, 0).setScrollFactor(0).setDepth(1000);
+
+    const background = this.add.rectangle(xPos, centerY, screenWidth, screenHeight, 0, 100 / 255).setInteractive();
+    this._reqpopup.add(background);
+
+    const bounceContainer = this.add.container(xPos, centerY).setScale(0);
+    this._reqpopup.add(bounceContainer);
+
+    const cornerRadius = this.textures.get("GJ_square02").source[0].width * 0.325;
+    const popupBg = this._drawScale9(0, 0, popupWidth, popupContentHeight, "GJ_square02", cornerRadius, 16777215, 1);
+    bounceContainer.add(popupBg);
+
+    const closeBtn = this.add.image(-(popupWidth / 2) + 20, -(popupContentHeight / 2) + 20, "GJ_WebSheet", "GJ_closeBtn_001.png").setScale(1).setInteractive();
+    bounceContainer.add(closeBtn);
+    this._makeBouncyButton(closeBtn, 1, () => this._closeReqPopup());
+
+    const lock = this.add.image(0, 110, "GJ_GameSheet03", "GJ_lockGray_001.png").setOrigin(0.5).setSize(1.5);
+    bounceContainer.add(lock);
+
+
+    const statusText = this.add.text(0, popupContentHeight / 2 - 90, "Or, call 480-957-8838 for more info.", {
+      fontFamily: "Arial",
+      fontSize: "26px",
+      color: "#ffffff",
+      align: "center"
+    }).setOrigin(0.5, 0.5);
+    bounceContainer.add(statusText);
+
+    
+    const statusText2 = this.add.text(0, popupContentHeight / 2 - 130, "Message pinkdevyt on Discord,", {
+      fontFamily: "Arial",
+      fontSize: "26px",
+      color: "#ffffff",
+      align: "center"
+    }).setOrigin(0.5, 0.5);
+    bounceContainer.add(statusText2);
+
+    const statusText3 = this.add.text(0, popupContentHeight / 2 - 170, "Message ameth7st_nya on Discord,", {
+      fontFamily: "Arial",
+      fontSize: "26px",
+      color: "#ffffff",
+      align: "center"
+    }).setOrigin(0.5, 0.5);
+    bounceContainer.add(statusText3);
+
+    const statusText4 = this.add.text(0, popupContentHeight / 2 - 210, "Message lasokar on Discord,", {
+      fontFamily: "Arial",
+      fontSize: "26px",
+      color: "#ffffff",
+      align: "center"
+    }).setOrigin(0.5, 0.5);
+    bounceContainer.add(statusText4);
+
+    const statusText5 = this.add.text(0, popupContentHeight / 2 - 50, "(Pinkdev's real phone number btw)", {
+      fontFamily: "Arial",
+      fontSize: "17px",
+      color: "#92a7c0",
+      align: "center"
+    }).setOrigin(0.5, 0.5);
+    bounceContainer.add(statusText5);
+
+
+    this.tweens.add({
+      targets: bounceContainer,
+      scale: { from: 0, to: 1 },
+      duration: 660,
+      ease: "Elastic.Out",
+      easeParams: [1, 0.6]
+    });
+  }
+
+_showwippopup() {
+    if (this._reqpopup) {
+      return;
+    }
+
+    const xPos = screenWidth / 2;
+    const centerY = screenHeight / 2;
+    const popupWidth = 500;
+    const popupContentHeight = 200;
+    this._reqpopup = this.add.container(0, 0).setScrollFactor(0).setDepth(1000);
+
+    const background = this.add.rectangle(xPos, centerY, screenWidth, screenHeight, 0, 100 / 255).setInteractive();
+    this._reqpopup.add(background);
+
+    const bounceContainer = this.add.container(xPos, centerY).setScale(0);
+    this._reqpopup.add(bounceContainer);
+
+    const cornerRadius = this.textures.get("GJ_square02").source[0].width * 0.325;
+    const popupBg = this._drawScale9(0, 0, popupWidth, popupContentHeight, "GJ_square02", cornerRadius, 16777215, 1);
+    bounceContainer.add(popupBg);
+
+    const closeBtn = this.add.image(-(popupWidth / 2) + 20, -(popupContentHeight / 2) + 20, "GJ_WebSheet", "GJ_closeBtn_001.png").setScale(1).setInteractive();
+    bounceContainer.add(closeBtn);
+    this._makeBouncyButton(closeBtn, 1, () => this._closeReqPopup());
+
+    const allroadsleadtoparticles = this.add.image(0, 100, "GJ_GameSheet03", "GJ_timeIcon_001.png").setOrigin(0.5).setSize(1.5);
+    bounceContainer.add(allroadsleadtoparticles);
+
+
+    const text = this.add.text(0, popupContentHeight / 2 - 150, "Coming in another pr later!-", {
+      fontFamily: "Arial",
+      fontSize: "22px",
+      color: "#92a7c0",
+      align: "center"
+    }).setOrigin(0.5, 0.5);
+    bounceContainer.add(text);
+
+    const text1 = this.add.text(0, popupContentHeight / 2 - 100, "This is still being worked on.", {
+      fontFamily: "Arial",
+      fontSize: "26px",
+      color: "#ffffff",
+      align: "center"
+    }).setOrigin(0.5, 0.5);
+    bounceContainer.add(text1);
+
+    const text2 = this.add.text(0, popupContentHeight / 2 - 50, "Expect this to be finished with particles.", {
+      fontFamily: "Arial",
+      fontSize: "17px",
+      color: "#92a7c0",
+      align: "center"
+    }).setOrigin(0.5, 0.5);
+    bounceContainer.add(text2);
+
+
+    this.tweens.add({
+      targets: bounceContainer,
+      scale: { from: 0, to: 1 },
+      duration: 660,
+      ease: "Elastic.Out",
+      easeParams: [1, 0.6]
+    });
+  }
+
+  _closeReqPopup() {
+    if (this._reqpopup) {
+      if (this._reqpopupexit) {
+        this._reqpopupexit();
+        this._reqpopupexit = null;
+      }
+      this._reqpopup.destroy();
+      this._reqpopup = null;
+    }
+  }
   InfoBoxDoAThing(displayText) {
     if (this.EditInfoText) {
       this.InfoBoxStopAThing();
@@ -6213,7 +7182,7 @@ _closeSettingsPopup() {
     const boxWidth = 720;
     const boxHeight = 280;
     box.add(this._drawScale9(0, 0, boxWidth, boxHeight, "square01_001", cornerRadius, 0xffffff, 1));
-    box.add(this.add.bitmapText(0, -90, "goldFont", "Info", 45).setOrigin(0.5));
+    box.add(this.add.bitmapText(-4, -90, "goldFont", "Info", 45).setOrigin(0.5));
 
     const textAreaW = boxWidth - 60;
     const textAreaH = boxHeight - 140;
@@ -6267,7 +7236,6 @@ _closeSettingsPopup() {
       ease: "Back.Out"
     });
   }
-
   InfoBoxStopAThing() {
     if (!this.EditInfoText) return;
 
@@ -6483,35 +7451,21 @@ _closeSettingsPopup() {
     */
     const updateEntries = [
       { text: "Update Log", scale: 1, font: "goldFont" },
-      { text: "Rotation for deco and saws", scale: 0.75, },
-      { text: "Particlesheet added <3", scale: 0.75, },
-      { text: "Better ball rotation ", scale: 0.75, },
-      { text: "Fixed ball noclip too.", scale: 0.75, },
-      { text: "Editor placing offsets", scale: 0.75, },
-      { text: "Pulsing rods reworked a lil", scale: 0.75, },
-      { text: "Breakable blocks break now.", scale: 0.75, },
-      { text: "Fixed objects not showing in editor", scale: 0.65, },
-      { text: "I call it, the QOD update.", scale: 0.6, color: 0x708090},
-      { text: "quality of dash", scale: 0.5, color: 0x708090},
-      { text: "im like, 90% sure at least ONE feature broke", scale: 0.4, color: 0x708090},
-      { text: "Slopes (very buggy)", scale: 0.75, color: 0xff9944 },
-      { text: "THEY WILL BE FIXED-", scale: 0.75, },
-      { text: "OVER TIME.", scale: 0.75, },
-      { text: "Slopes work in imported-", scale: 0.75, },
-      { text: "levels now (thanks lasokadadyy)", scale: 0.7, },
-      { text: "Fixed SOME objects", scale: 0.75 },
-      { text: "-pinkdih", scale: 0.65, color: 0xFF008E }
+      { text: "Sorry for the 10 hour downtime\ni forgot to change the proxy\nurl because i changed the\nsubdomain - rohanis0000", scale: 0.7, color: 0xaaddff },
+      { text: "To anyone who is wondering\nwhy online features don't work,\nthe worker is constantly being\nused and its request limit\nis hit daily in a short time\ndue to many users using\nthe online levels feature.\nThis has hopefully been\nfixed now with this update.\n- rohanis0000", scale: 0.7, color: 0xaaddff },
+      { text: "Added 2 new proxies to fall back\nto when ones request limit is\n hit to allow you to still\nbe able to use online features.", scale: 0.65 }
     ]; 
     let yPos = 0;
     const lineItems = [];
     updateEntries.forEach(entry => {
       const txt = this.add.bitmapText(0, yPos, entry.font || "bigFont", entry.text, 32)
         .setOrigin(0.5, 0)
+        .setCenterAlign()
         .setScale(entry.scale || 0.65);
       if (entry.color != null) txt.setTint(entry.color);
       contentContainer.add(txt);
       lineItems.push(txt);
-      yPos += Math.round(32 * (entry.scale || 0.65)) + 10;
+      yPos += txt.displayHeight + 10;
     });
     const totalContentH = yPos;
     const maxScrollDown = Math.max(0, totalContentH - scrollAreaH + 16);
@@ -7187,11 +8141,6 @@ _closeSettingsPopup() {
       return;
     }
 
-    if (!cancelInput) {
-      if (!this._clickHistory) this._clickHistory = [];
-      this._clickHistory.push(this.time.now);
-    }
-
     if (!this._slideIn && !this._state.isDead && !cancelInput) {
       this._state.upKeyDown = true;
       this._state.upKeyPressed = true;
@@ -7251,9 +8200,6 @@ _closeSettingsPopup() {
       }
     }
 
-    if (!ignoreMacro && this._macroBot) {
-      this._macroBot.recordEdge(true, this._physicsFrame);
-    }
   }
   _releaseButton(ignoreMacro = false) {
     this._state.upKeyDown = false;
@@ -7264,9 +8210,6 @@ _closeSettingsPopup() {
     this._state2.upKeyPressed = false;
     this._state2.queuedHold = false;
     this._state2._orbActivationConsumedForPress = false;
-    if (!ignoreMacro && this._macroBot) {
-      this._macroBot.recordEdge(false, this._physicsFrame);
-    }
   }
   _initMacroBot() {
     this._macroBot = new MacroBot(this);
@@ -7330,7 +8273,7 @@ _closeSettingsPopup() {
   _importMacroFile() {
     const fileInput = document.createElement("input");
     fileInput.type = "file";
-    fileInput.accept = ".wbgdr";
+    fileInput.accept = ".wbgdr2";
 
     fileInput.onchange = async (e) => {
       const file = e.target.files?.[0];
@@ -7340,7 +8283,7 @@ _closeSettingsPopup() {
         if (!this._macroBot) this._initMacroBot();
         
         const macroData = await this._macroBot.importFile(file);
-        this._macroBot.inputs = Array.isArray(macroData.inputs) ? macroData.inputs.slice() : [];
+        this._macroBot.frames = Array.isArray(macroData.frames) ? macroData.frames.slice() : [];
         const fallback = file.name.replace(/\.[^/.]+$/, "");
         const macroName = macroData.meta?.name || fallback;
 
@@ -7423,6 +8366,9 @@ _closeSettingsPopup() {
     }
     if (this._menuInfoBtn) {
       this._menuInfoBtn.x = screenWidth - 30 - 3;
+    }
+    if (this._copyrightText) {
+      this._copyrightText.x = screenWidth - 850;
     }
     if (this._tryMeImg) {
       this._tryMeImg.x = _0x1e5db8 + 260;
@@ -7758,6 +8704,10 @@ _closeSettingsPopup() {
     this._state.ballHitPad = checkpoint.ballHitPad || false;
     this._state._robotHold = !!checkpoint.robotHold;
     this._state._robotHoldTimer = checkpoint.robotHoldTimer || 0;
+
+    const checkpointRotation = Number.isFinite(Number(checkpoint.rotation)) ? Number(checkpoint.rotation) : 0;
+    const checkpointRotateActionActive = checkpoint.rotateActionActive !== undefined ? !!checkpoint.rotateActionActive: undefined;
+
     this._player.reset();
     this._state.isFlying = false;
     this._state.isBall = false;
@@ -7798,6 +8748,16 @@ _closeSettingsPopup() {
     this._state.isBird = checkpoint.isBird;
     this._state._robotHold = !!checkpoint.robotHold;
     this._state._robotHoldTimer = checkpoint.robotHoldTimer || 0;
+    
+    this._state.rotation = checkpointRotation;
+    this._player._rotation = checkpointRotation;
+    if (typeof this._player.setRotation === "function") {
+      try { this._player.setRotation(checkpointRotation); } catch (_) {}
+    }
+    if (checkpointRotateActionActive !== undefined) {
+      this._player.rotateActionActive = checkpointRotateActionActive;
+    }
+
     this._state.ignorePortals = true;
     this._state2.ignorePortals = true;
     this._level.resetGroundTiles(this._cameraX);
@@ -7897,7 +8857,7 @@ _closeSettingsPopup() {
     this._updateBackground();
     this._applyMirrorEffect();
     this._practiceBypassPending = false;
-    if (window.practiceMusicBypass) {
+    if (window.practiceMusicSync) {
       this._audio.startMusic(this._getSongOffsetForWorldX(checkpoint.x));
     } else if (!this._audio.musicPlaying) {
       this._audio.startMusic();
@@ -7915,12 +8875,7 @@ _closeSettingsPopup() {
     this._deltaBuffer = 0;
     this._physicsFrame = checkpoint.physicsFrame;
     if (this._macroBot?.recording == true){
-      this._macroBot?.rollbackRecording(this._physicsFrame);
-      if (this._spaceKey.isDown || this._upKey.isDown || this._wKey.isDown || this._lKey.isDown){
-        this._macroBot.recordEdge(true, this._physicsFrame);
-      } else {
-        this._macroBot.recordEdge(false, this._physicsFrame);
-      }
+      this._macroBot.rollbackRecording(this._physicsFrame);
     }
     if (this._macroBot?.playing == true){
       this._macroBot?.rollbackPlayback(this._physicsFrame);
@@ -8205,8 +9160,12 @@ _closeSettingsPopup() {
     } else {
       this._cpsIndicator.setText("0 CPS");
     }
-    if (this._state.upKeyDown){
-      this._cpsIndicator.setTint(0x00ff00);
+    if (this._state.upKeyDown && !this._levelWon && !this._state.isDead){
+      if (this._cpsIndicator.tint !== 0x00ff00) {
+        this._cpsIndicator.setTint(0x00ff00);
+        if (!this._clickHistory) this._clickHistory = [];
+        this._clickHistory.push(this.time.now);
+      }
     } else{
       this._cpsIndicator.setTint(0xffffff);
     }
@@ -8501,20 +9460,25 @@ _closeSettingsPopup() {
     this._playTime += deltaTime / 1000;
     this._audio.update(deltaTime / 1000);
     
-    window._animTimer += deltaTime;
-    for (let _as of window._animatedSprites) {
-      if (window._animTimer - (_as._lastAnimSwap || 0) >= _as._animInterval) {
-        _as._lastAnimSwap = window._animTimer;
-        _as._animIdx = (_as._animIdx + 1) % _as._animFrames.length;
-        let _fr = getAtlasFrame(_as._animScene, _as._animFrames[_as._animIdx]);
-        if (_fr) {
-          try {
-            _as.setTexture(_fr.atlas, _fr.frame);
-          } catch(e){}
+    if (!window.enableLDM) {
+      window._animTimer += deltaTime;
+      for (let _as of window._animatedSprites) {
+        if (!_as || !_as.active || !_as.visible) continue;
+        if (window._animTimer - (_as._lastAnimSwap || 0) >= _as._animInterval) {
+          _as._lastAnimSwap = window._animTimer;
+          _as._animIdx = (_as._animIdx + 1) % _as._animFrames.length;
+          let _fr = getAtlasFrame(_as._animScene, _as._animFrames[_as._animIdx]);
+          if (_fr) {
+            try {
+              _as.setTexture(_fr.atlas, _fr.frame);
+            } catch(e){}
+          }
         }
       }
+    } else {
+      window._animTimer += deltaTime;
     }
-    if (this._level && this._level._sawSprites) {
+    if (this._level && this._level._sawSprites && !window.enableLDM) {
       const sawTimer = (window._animTimer || 0) / 1000;
       for (let _saw of this._level._sawSprites) {
         if (!_saw || !_saw.active || !_saw.visible) continue;
@@ -8690,6 +9654,12 @@ _closeSettingsPopup() {
           this._player2._hitboxTrail.push({ x: this._playerWorldX, y: this._player2.p.y, rotation: this._player2._rotation, size: _trailSize2, isWave: this._player2.p.isWave });
           if (this._player2._hitboxTrail.length > 180) this._player2._hitboxTrail.shift();
         }
+      }
+
+      if (this._macroBot?.playing) {
+        this._macroBot.applyCurrentFrame();
+      } else if (this._macroBot?.recording) {
+        this._macroBot.recordFrame(this._physicsFrame);
       }
     }
     this._state.lastY = initialY;
@@ -9249,8 +10219,7 @@ _applyMirrorEffect() {
       }
     });
   }
-
-    _triggerEndPortal() {
+  _triggerEndPortal() {
     if (this._isDual && this._player2 && this._state2 && !this._state2.isDead) {
       this._player2.playEndAnimation(this._level.endXPos, () => {}, this._endPortalGameY);
     }
@@ -9258,6 +10227,13 @@ _applyMirrorEffect() {
   }
   _levelComplete() {
     if (!this._practicedMode.practiceMode) {
+      const isNonPersistentCoinLevel = window.isEditor || this._level?._isStoredUserLevel?.();
+      if (isNonPersistentCoinLevel) {
+        this._level.resetCoinsForEditorCompletion?.();
+      } else {
+        this._level.commitSecretCoins?.();
+        this._level.commitUserCoins?.();
+      }
       this._bestPercent = 100;
       localStorage.setItem("bestPercent_" + (window.currentlevel[2] || "level_1"), 100);
       const completedKey = "gd_completedSet";
@@ -9285,7 +10261,6 @@ _applyMirrorEffect() {
     this._showCompleteEffect();
   }
   _showCompleteEffect() {
-    this._audio.fadeOutMusic(1500);
     this.sound.play("endStart_02", {
       volume: 0.8 * this._sfxVolume
     });
@@ -9442,6 +10417,10 @@ _applyMirrorEffect() {
     }
     this.time.delayedCall(1500, () => this._showEndLayer());
   }
+  _isMainLevelForCoinDisplay() {
+    const levelId = window.currentlevel?.[2];
+    return !!levelId && Array.isArray(window.allLevels) && window.allLevels.some(level => level?.[2] === levelId);
+  }
   _showEndLayer() {
     if (this._pauseBtn) {
       this.tweens.add({
@@ -9470,7 +10449,14 @@ _applyMirrorEffect() {
       onUpdate: () => {
         this._endLayerInternal.y = _0x59b9ab.p * 650 - 640;
       },
-      onComplete: () => this._playStarAward()
+      onComplete: () => {
+        if (this._isMainLevelForCoinDisplay()) {
+          this._playsecretcoinanimation();
+        } else {
+          this._playusercoinanimation();
+        }
+        this.time.delayedCall(250, () => this._playStarAward());
+      }
     });
     const _0x595215 = 712;
     const _0x950c8d = 460;
@@ -9492,10 +10478,10 @@ _applyMirrorEffect() {
     this._endLayerInternal.add(_completeBanner);
     const _0x45b6e4 = 0.8;
     let _0xe44f6d = 250;
-    const _0x2de55e = this.add.bitmapText(containerX, _0xe44f6d, "goldFont", "Attempts: " + this._levelAttempts, 40).setOrigin(0.5, 0.5).setScale(_0x45b6e4);
+    const _0x2de55e = this.add.bitmapText(containerX, _0xe44f6d, "goldFont", "Attempts: " + this._levelAttempts, 46).setOrigin(0.5, 0.5).setScale(_0x45b6e4);
     this._endLayerInternal.add(_0x2de55e);
     _0xe44f6d += 48;
-    this._endLayerInternal.add(this.add.bitmapText(containerX, _0xe44f6d, "goldFont", "Jumps: " + this._levelJumps, 40).setOrigin(0.5, 0.5).setScale(_0x45b6e4));
+    this._endLayerInternal.add(this.add.bitmapText(containerX, _0xe44f6d, "goldFont", "Jumps: " + this._levelJumps, 46).setOrigin(0.5, 0.5).setScale(_0x45b6e4));
     _0xe44f6d += 48;
     const _0x596450 = Math.floor(this._playTime);
     const _0x30687e = Math.floor(_0x596450 / 3600);
@@ -9504,28 +10490,87 @@ _applyMirrorEffect() {
     let _0x2be782;
     _0x2be782 = _0x30687e > 0 ? String(_0x30687e).padStart(2, "0") + ":" + String(_0x52f8ee).padStart(2, "0") + ":" + String(_0x2591d0).padStart(2, "0") : String(_0x52f8ee).padStart(2, "0") + ":" + String(_0x2591d0).padStart(2, "0");
     const _0x241209 = _0xe44f6d;
-    this._endLayerInternal.add(this.add.bitmapText(containerX, _0xe44f6d, "goldFont", "Time: " + _0x2be782, 40).setOrigin(0.5, 0.5).setScale(_0x45b6e4));
-    const _0x452429 = ["Awesome!", "Good\nJob!", "Well\nDone!", "Impressive!", "Amazing!", "Incredible!", "Skillful!", "Brilliant!", "Not\nbad!", "Warp\nSpeed!", "Challenge\nBreaker!", "Reflex\nMaster!", "I am\nspeechless...", "You are...\nThe One!", "How is this\npossible!?", "You beat\nme..."];
-    const _0x165c06 = _0x452429[Math.floor(Math.random() * _0x452429.length)];
-    const _0x45540f = 225;
-    const _0x8e2b = ["\x5f\x6d\x61\x63\x72\x6f\x42\x6f\x74", "\x70\x6c\x61\x79\x69\x6e\x67"];let _0x3bc14 = 0xffffff; try {if (this[_0x8e2b[0]] && this[_0x8e2b[0]][_0x8e2b[1]]) {_0x3bc14 = (_0x3bc14 & 0xffff00) | 0xfa;}} catch (_0xe31) {}const _0x17fa2b = this.add.bitmapText(containerX + _0x45540f, _0x241209, "bigFont", _0x165c06, 40).setOrigin(0.5, 0.5).setScale(0.8).setCenterAlign();if (_0x3bc14 !== 0xffffff) _0x17fa2b.setTint(_0x3bc14);
-    this._endLayerInternal.add(_0x17fa2b);
-    this._endLayerInternal.add(this.add.image(containerX - _0x45540f, 352.5, "GJ_WebSheet", "getIt_001.png").setScale(1 / 1.5));
-    const _0x34b1bd = [{
-      key: "downloadApple_001",
-      url: "https://discord.gg/TfEzAVWPSJ"
-    }, {
-      key: "downloadSteam_001",
-      url: "https://github.com/web-dashers/web-dashers.github.io"
-    }];
-    for (let _0x10f8cc = 0; _0x10f8cc < _0x34b1bd.length; _0x10f8cc++) {
-      const _0xd7310b = _0x34b1bd[_0x10f8cc];
-      const _0x1e3f82 = (_0x10f8cc - 1) * _0x45540f;
-      const _0x55a82e = 1 / 1.5;
-      const _0x4c7fb8 = this.add.image(containerX + _0x1e3f82, 437.5, "GJ_WebSheet", _0xd7310b.key + ".png").setScale(_0x55a82e).setInteractive();
-      this._endLayerInternal.add(_0x4c7fb8);
-      this._makeBouncyButton(_0x4c7fb8, _0x55a82e, () => window.open(_0xd7310b.url, "_blank"));
+    this._endLayerInternal.add(this.add.bitmapText(containerX, _0xe44f6d, "goldFont", "Time: " + _0x2be782, 46).setOrigin(0.5, 0.5).setScale(_0x45b6e4));
+    const isMainLevel = this._isMainLevelForCoinDisplay();
+    const coinSprites = (this._level?._coinSprites || []).filter(sprite => isMainLevel
+      ? sprite?._secretCoinSlot !== undefined
+      : sprite?._userCoinSlot !== undefined);
+    const coinCount = Math.min(3, coinSprites.length);
+    const coinOffsets = coinCount === 1
+      ? [0]
+      : coinCount === 2
+        ? [-60, 60]
+        : [-120, 0, 120];
+    const completionMessageY = coinCount > 0 ? _0x241209 : _0x241209 + 96;
+    this._endsecretcoinPositions = isMainLevel
+      ? coinOffsets.map(offset => ({ x: containerX + offset, y: 445 }))
+      : null;
+    let savedSecretCoinSlots = new Set();
+    try {
+      const savedSlots = JSON.parse(localStorage.getItem(`gd_secretCoins_${window.currentlevel?.[2] || "level_1"}_slots`) || "[]");
+      if (Array.isArray(savedSlots)) {
+        savedSecretCoinSlots = new Set(savedSlots.filter(slot => Number.isInteger(slot) && slot >= 0 && slot < 3));
+      }
+    } catch (_error) {}
+    const runSecretCoinSlots = this._level?._editorEndSecretCoinSlots
+      ? new Set(this._level._editorEndSecretCoinSlots)
+      : new Set(
+        (this._level?._coinSprites || [])
+          .filter(sprite => this._level?._secretCoinRunCollected?.has(String(sprite?._secretCoinId)))
+          .map(sprite => sprite?._secretCoinSlot)
+          .filter(slot => Number.isInteger(slot))
+      );
+    this._endsecretcoinPositions?.forEach(({ x, y }, slot) => {
+      if (savedSecretCoinSlots.has(slot) && !runSecretCoinSlots.has(slot)) return;
+      this._endLayerInternal.add(
+        this.add.image(x, y, "GJ_GameSheet02", "secretCoin_b_01_001.png")
+          .setOrigin(0.5)
+          .setScale(1.1)
+      );
+    });
+    for (const slot of savedSecretCoinSlots) {
+      if (!this._endsecretcoinPositions) break;
+      if (runSecretCoinSlots.has(slot)) continue;
+      const position = this._endsecretcoinPositions[slot];
+      this._endLayerInternal.add(
+        this.add.image(position.x, position.y, "GJ_GameSheet03", "secretCoinUI_001.png")
+          .setOrigin(0.5)
+          .setScale(1.1)
+      );
     }
+    this._endusercoinPosition = null;
+    if (!isMainLevel && coinCount > 0) {
+      this._endusercoinPosition = coinOffsets.map(offset => ({ x: containerX + offset, y: 445 }));
+      let savedUserCoinSlots = new Set();
+      try {
+        const savedSlots = JSON.parse(localStorage.getItem(`gd_userCoins_${window.currentlevel?.[2] || "level_1"}_slots`) || "[]");
+        if (Array.isArray(savedSlots)) {
+          savedUserCoinSlots = new Set(savedSlots.filter(slot => Number.isInteger(slot) && slot >= 0 && slot < 3));
+        }
+      } catch (_error) {}
+      const runUserCoinSlots = this._level?._editorEndUserCoinSlots
+        ? new Set(this._level._editorEndUserCoinSlots)
+        : new Set(
+          (this._level?._coinSprites || [])
+            .filter(sprite => this._level?._userCoinRunCollected?.has(String(sprite?._userCoinId)))
+            .map(sprite => sprite?._userCoinSlot)
+            .filter(slot => Number.isInteger(slot))
+        );
+      this._endusercoinPosition.forEach(({ x, y }, slot) => {
+        if (savedUserCoinSlots.has(slot) && !runUserCoinSlots.has(slot)) return;
+        this._endLayerInternal.add(this.add.image(x, y, "GJ_GameSheet02", "secretCoin_2_b_01_001.png").setOrigin(0.5));
+      });
+      for (const slot of savedUserCoinSlots) {
+        if (runUserCoinSlots.has(slot)) continue;
+        const position = this._endusercoinPosition[slot];
+        this._endLayerInternal.add(this.add.image(position.x, position.y, "GJ_GameSheet0", "secretCoinUI2_001.png").setOrigin(0.5));
+      }
+    }
+    const _0x452429 = ["Awesome!", "Good\nJob!", "Well\nDone!", "Impressive!", "Amazing!", "Incredible!", "Skillful!", "Brilliant!", "Not\nbad!", "Warp\nSpeed!", "Challenge\nBreaker!", "Reflex\nMaster!", "I am\nspeechless...", "You are...\nThe One!", "How is this\npossible!?", "You beat\nme...", /* "You cannot beat a level with Noclip enabled.", "You cannot beat a level with Speedhack enabled.", "Safe Mode enabled."*/];
+    const _0x165c06 = _0x452429[Math.floor(Math.random() * _0x452429.length)];
+    const _0x45540f = 235;
+    const _0x8e2b = ["\x5f\x6d\x61\x63\x72\x6f\x42\x6f\x74", "\x70\x6c\x61\x79\x69\x6e\x67"];let _0x3bc14 = 0xffffff; try {if (this[_0x8e2b[0]] && this[_0x8e2b[0]][_0x8e2b[1]]) {_0x3bc14 = (_0x3bc14 & 0xffff00) | 0xfa;}} catch (_0xe31) {}const _0x17fa2b = this.add.bitmapText(coinCount > 0 ? containerX + _0x45540f : containerX, completionMessageY, "bigFont", coinCount > 0 ? _0x165c06 : _0x165c06.replace(/\n/g, " "), coinCount > 0 ? 40 : 46).setOrigin(0.5, 0.5).setScale(coinCount > 0 ? 0.8 : 0.9).setCenterAlign();if (_0x3bc14 !== 0xffffff) _0x17fa2b.setTint(_0x3bc14);
+    this._endLayerInternal.add(_0x17fa2b);
     _0x2de55e.width;
     this._endStarX = containerX + _0x45540f;
     this._endStarY = _0x241209 - 77.5;
@@ -9553,6 +10598,235 @@ _applyMirrorEffect() {
       this._makeBouncyButton(_0xdde774, 1, _0x2d4335.action);
     }
   }
+
+      _buildhelppopup() {
+    this._Helpclosed = false;
+    if (this._pauseBtn) {
+      this.tweens.add({
+        targets: this._pauseBtn,
+        alpha: 0,
+        duration: 300
+      });
+    }
+
+    const containerX = screenWidth / 2;
+    const _0x1aa656 = 320;
+    this._helpoverlay = this.add.rectangle(containerX, _0x1aa656, screenWidth, screenHeight, 0, 0).setScrollFactor(0).setDepth(200).setInteractive();
+    this._helplayer = this.add.container(0, -640).setScrollFactor(0).setDepth(201);
+    this._helplayer.add(this.add.bitmapText(containerX, 65, "bigFont", "Support", 55).setOrigin(0.5, 0.5));
+    this._helpclose = false;
+    this.tweens.add({
+      targets: this._helpoverlay,
+      alpha: 180 / 255,
+      duration: 250,
+      ease: "Linear"
+    });
+
+    const _0x59b9ab = {
+      p: 0
+    };
+    this.tweens.add({
+      targets: _0x59b9ab,
+      p: 1,
+      duration: 450,
+      ease: "Quad.Out",
+      onUpdate: () => {
+        this._helplayer.y = _0x59b9ab.p * 650 - 640;
+      },
+      onComplete: () => {}
+    });
+        this._playusercoinanimation();
+
+    const _0x595215 = 712;
+    const _0x950c8d = 460;
+    const _0x2a115c = (screenWidth - _0x595215) / 2;
+    this._helplayer.add(this.add.rectangle(_0x2a115c + 356, 310, _0x595215, _0x950c8d, 0, 180 / 255));
+    const _0x43f2e3 = this.textures.getFrame("GJ_WebSheet", "GJ_table_side_001.png");
+    const _0x3feccc = _0x43f2e3 ? _0x950c8d / _0x43f2e3.height : 1;
+    this._helplayer.add(this.add.image(_0x2a115c - 40, 80, "GJ_WebSheet", "GJ_table_side_001.png").setOrigin(0, 0).setScale(1, _0x3feccc));
+    this._helplayer.add(this.add.image(_0x2a115c + _0x595215 + 40, 80, "GJ_WebSheet", "GJ_table_side_001.png").setOrigin(1, 0).setFlipX(true).setScale(1, _0x3feccc));
+    const _0x33b564 = this.add.image(_0x2a115c + 356, 70, "GJ_WebSheet", "GJ_table_top_001.png");
+    this._helplayer.add(_0x33b564);
+    this._helplayer.add(this.add.image(_0x2a115c + 356, 560, "GJ_WebSheet", "GJ_table_bottom_001.png"));
+    const _0x3e9c79 = _0x33b564.y - 35;
+    this._helplayer.add(this.add.bitmapText(containerX, 65, "bigFont", "Support", 55).setOrigin(0.5, 0.5));
+    this._helplayer.add(this.add.image(containerX - 312, _0x3e9c79, "GJ_WebSheet", "chain_01_001.png").setOrigin(0.5, 1));
+    this._helplayer.add(this.add.image(containerX + 312, _0x3e9c79, "GJ_WebSheet", "chain_01_001.png").setOrigin(0.5, 1));
+    this._helplayer.add(this.add.image(_0x2a115c + 258, 285, "GJ_GameSheet03", "developedBy_001.png"));
+    const robtopSupportLogo = this.add.image(_0x2a115c + 440, 285, "GJ_GameSheet03", "robtoplogo_small.png").setScale(0.95).setInteractive();
+    this._makeBouncyButton(robtopSupportLogo, 0.95, () => {
+      window.open("https://geometrydash.com", "_blank");
+    }, () => !this._helpclose);
+    this._helplayer.add(robtopSupportLogo);
+    this._helplayer.add(this.add.image(_0x2a115c + 250, 375, "GJ_GameSheet03", "poweredBy_001.png"));
+    const phaserlogo = this.add.image(_0x2a115c + 432, 380, "Phaserlogo").setScale(0.1).setInteractive();
+    this._makeBouncyButton(phaserlogo, 0.1, () => {
+      window.open("https://docs.phaser.io/", "_blank");
+    }, () => !this._helpclose);
+    this._helplayer.add(phaserlogo);
+    this._helplayer.add(this.add.bitmapText(containerX, 440, "goldFont", "Web Dashers not associated with RobTop Games", 22).setOrigin(0.5, 0.5));
+
+    const _helpbuttonborder = this.textures.get("GJ_button01").source[0].width * 0.3;
+    const _helpbtnh = 70;
+    const _helpbtnw = 195;
+    const _helpBtnGap = 52.5;
+    const _helpBtnY = 180;
+    const _makesupportButton = (cx, label, action) => {
+      const grp = this.add.container(cx, _helpBtnY);
+      const btn9 = this.add.nineslice(0, 0, "GJ_button01", null, _helpbtnw, _helpbtnh, _helpbuttonborder, _helpbuttonborder, _helpbuttonborder, _helpbuttonborder).setOrigin(0.5).setTint(0xffffff);
+      grp.add(btn9);
+      const lbl = this.add.bitmapText(0, -5, "bigFont", label, 40).setOrigin(0.5, 0.5);
+      grp.add(lbl);
+      const hitZone = this.add.zone(0, 0, _helpbtnw, _helpbtnh).setInteractive();
+      grp.add(hitZone);
+      const baseScale = 1;
+      const pressedScale = baseScale * 1.26;
+      hitZone.on("pointerdown", () => {
+        hitZone._pressed = true;
+        this.tweens.killTweensOf(grp, "scale");
+        this.tweens.add({ targets: grp, scale: pressedScale, duration: 300, ease: "Bounce.Out" });
+      });
+      hitZone.on("pointerout", () => {
+        if (hitZone._pressed) {
+          hitZone._pressed = false;
+          this.tweens.killTweensOf(grp, "scale");
+          this.tweens.add({ targets: grp, scale: baseScale, duration: 400, ease: "Bounce.Out" });
+        }
+      });
+      hitZone.on("pointerup", () => {
+        if (hitZone._pressed) {
+          hitZone._pressed = false;
+          this.tweens.killTweensOf(grp, "scale");
+          grp.setScale(baseScale);
+          action?.();
+        }
+      });
+      this._helplayer.add(grp);
+      return grp;
+    };
+
+    _makesupportButton(containerX - _helpbtnw - _helpBtnGap / 2, "Links", () => {
+      this._showwippopup();
+    });
+    _makesupportButton(containerX, "Contact", () => {
+      this._showcontactpopup();
+    });
+    _makesupportButton(containerX + _helpbtnw + _helpBtnGap / 2, "Notes", () => {
+      this._showwippopup();
+    });
+
+    const ldmX = _0x2a115c + 160;
+    const ldmY = 495;
+    const ldmCheckOffset = -120;
+    const ldmTextOffset = -80;
+    
+    var ldmIsOn = window.enableLDM;
+    var ldmCheckTexture = ldmIsOn ? "GJ_checkOn_001.png" : "GJ_checkOff_001.png";
+    var ldmCheck = this.add.image(ldmX + ldmCheckOffset, ldmY, "GJ_GameSheet03", ldmCheckTexture).setScale(0.8).setInteractive();
+    var ldmTxt = this.add.bitmapText(ldmX + ldmTextOffset, ldmY, "bigFont", "Low Detail Mode", 25).setOrigin(0, 0.5);
+    this._helplayer.add([ldmCheck, ldmTxt]);
+
+    this._makeBouncyButton(ldmCheck, 0.8, () => {
+        var current = window.enableLDM;
+        window.enableLDM = !current;
+        var newTexture = window.enableLDM ? "GJ_checkOn_001.png" : "GJ_checkOff_001.png";
+        ldmCheck.setTexture("GJ_GameSheet03", newTexture);
+        if (this._saveSettings) {
+            this._saveSettings();
+        }
+    });
+
+    const reqbtnX = _0x2a115c + 655;
+    const reqbtnY = 495;
+    const reqbtnW = 80;
+    const reqbtnH = 55;
+    const reqbtnborder = (this.textures.get("GJ_button04")?.source[0].width || 40) * 0.3;
+    const reqbtn = this.add.nineslice(reqbtnX, reqbtnY, "GJ_button04", null, reqbtnW, reqbtnH, reqbtnborder, reqbtnborder, reqbtnborder, reqbtnborder).setInteractive().setOrigin(0.5).setTint(0xffffff);
+    const reqLbl = this.add.bitmapText(reqbtnX, reqbtnY - 2, "bigFont", "Req", 28).setOrigin(0.5, 0.5);
+    this._helplayer.add([reqbtn, reqLbl]);
+    this._makeCompositeBouncyButton(reqbtn, [reqbtn, reqLbl], 0.8, () => this._showReqpopup());
+
+    const closeBtn = this.add.image(containerX - 535, 30, "GJ_GameSheet03", "GJ_arrow_03_001.png").setInteractive();
+    this._helplayer.add(closeBtn);
+    this._makeBouncyButton(closeBtn, 1, () => this._hideHelpPopup());
+  }
+    _buildsongspopup() {
+    this._songpopupclose = false;
+    if (this._pauseBtn) {
+      this.tweens.add({
+        targets: this._pauseBtn,
+        alpha: 0,
+        duration: 300
+      });
+    }
+
+    const containerX = screenWidth / 2;
+    const _0x1aa656 = 320;
+    this._songsoverlay = this.add.rectangle(containerX, _0x1aa656, screenWidth, screenHeight, 0, 0).setScrollFactor(0).setDepth(200).setInteractive();
+    this._songslayer = this.add.container(0, -640).setScrollFactor(0).setDepth(201);
+    this._songpopupclose = false;
+    this.tweens.add({
+      targets: this._songsoverlay,
+      alpha: 100 / 255,
+      duration: 1000
+    });
+
+    const _0x59b9ab = {
+      p: 0
+    };
+    this.tweens.add({
+      targets: _0x59b9ab,
+      p: 1,
+      duration: 500,
+      ease: "Quad.Out",
+      onUpdate: () => {
+        this._songslayer.y = _0x59b9ab.p * 650 - 640;
+      }
+    });
+    const _0x595215 = 712;
+    const _0x950c8d = 460;
+    const _0x2a115c = (screenWidth - _0x595215) / 2;
+
+    const panelBase = this.add.rectangle(_0x2a115c + 356, 310, _0x595215, _0x950c8d, 0xac531e).setDepth(150);
+    this._songslayer.add(panelBase);
+    const _0x43f2e3 = this.textures.getFrame("GJ_WebSheet", "GJ_table_side_001.png");
+    const _0x3feccc = _0x43f2e3 ? _0x950c8d / _0x43f2e3.height : 1;
+    this._songslayer.add(this.add.image(_0x2a115c - 40, 80, "GJ_WebSheet", "GJ_table_side_001.png").setOrigin(0, 0).setScale(1, _0x3feccc).setDepth(200));
+    this._songslayer.add(this.add.image(_0x2a115c + _0x595215 + 40, 80, "GJ_WebSheet", "GJ_table_side_001.png").setOrigin(1, 0).setFlipX(true).setScale(1, _0x3feccc).setDepth(200));
+    const _0x33b564 = this.add.image(_0x2a115c + 356, 70, "GJ_WebSheet", "GJ_table_top_001.png").setDepth(200);
+    this._songslayer.add(_0x33b564);
+    this._songslayer.add(this.add.image(_0x2a115c + 356, 560, "GJ_WebSheet", "GJ_table_bottom_001.png").setDepth(200));
+    const _0x3e9c79 = _0x33b564.y - 35;
+    
+    this._songslayer.add(this.add.bitmapText(containerX, 65, "bigFont", "Soundtrack", 55).setOrigin(0.5, 0.5).setDepth(210));
+    this._songslayer.add(this.add.bitmapText(containerX, 300, "bigFont", "Nothing here yet... Sorry :(", 42).setOrigin(0.5, 0.5).setDepth(210));
+    
+    this._songslayer.add(this.add.image(containerX - 312, _0x3e9c79, "GJ_WebSheet", "chain_01_001.png").setOrigin(0.5, 1).setDepth(210));
+    this._songslayer.add(this.add.image(containerX + 312, _0x3e9c79, "GJ_WebSheet", "chain_01_001.png").setOrigin(0.5, 1).setDepth(210));
+    
+    const closeBtn = this.add.image(containerX - 535, 30, "GJ_GameSheet03", "GJ_arrow_03_001.png").setInteractive().setDepth(210);
+    this._songslayer.add(closeBtn);
+    this._makeBouncyButton(closeBtn, 1, () => this._hideSongsPopup());
+  }
+
+  _hideSongsPopup() {
+    if (this._songsoverlay) {
+      this._songsoverlay.destroy();
+      this._songsoverlay = null;
+    }
+    if (this._songslayer) {
+      this._songslayer.destroy();
+      this._songslayer = null;
+    }
+    this._songpopupclose = false;
+    if (this._pauseBtn) {
+      this.tweens.add({ targets: this._pauseBtn, alpha: 1, duration: 300 });
+    }
+  }
+
+        _redirectRate() {
+window.open("https://github.com/web-dashers/web-dashers.github.io", "_blank"); }
+
   _showSettingsScreen() {
     this._settingsScreenClosing = false;
     if (this._pauseBtn) {
@@ -9658,17 +10932,17 @@ _applyMirrorEffect() {
     _makeSettingsBtn(_sColR, _sRow1Y, "How To Play", _sBtnW2, true, () => { this._buildHowToPlayPopup(); });
     _makeSettingsBtn(_sColL, _sRow2Y, "Options",    _sBtnW2, true,  () => { this._buildSettingsPopup(); });
     _makeSettingsBtn(_sColR, _sRow2Y, "Graphics",   _sBtnW2, false, null);
-    _makeSettingsBtn(_sCol3L, _sRow3Y, "Rate",      _sBtnW3, false, null);
-    _makeSettingsBtn(_sCol3M, _sRow3Y, "Songs",     _sBtnW3, false, null);
-    _makeSettingsBtn(_sCol3R, _sRow3Y, "Help",      _sBtnW3, false, null);
+    _makeSettingsBtn(_sCol3L, _sRow3Y, "Rate",      _sBtnW3, true, () => { this._redirectRate(); });
+    _makeSettingsBtn(_sCol3M, _sRow3Y, "Songs",     _sBtnW3, true, () => { this._hideSettingsScreen(() => this.time.delayedCall(150, () => this._buildsongspopup())); });
+    _makeSettingsBtn(_sCol3R, _sRow3Y, "Help",      _sBtnW3, true, () => { this._hideSettingsScreen(() => this.time.delayedCall(150, () => this._buildhelppopup())); });
 
-    const lockIcon = this.add.image(containerX + 535, 30, "GJ_GameSheet03", "GJ_lock_open_001.png").setFlipX(false).setFlipY(false);
+    const lockIcon = this.add.image(containerX + 535, 30, "GJ_GameSheet03", "GJ_lockGray_001.png").setFlipX(false).setFlipY(false);
     lockIcon.setScale(0.9);
     lockIcon.setInteractive();
     this._expandHitArea(lockIcon, 1.5);
     this._makeBouncyButton(lockIcon, 0.9, () => { this._openVaultMenu(); });
     this._settingsLayerInternal.add(lockIcon);
-    
+
     const _0x45b6e4 = 0.8;
     let _0xe44f6d = 250;
     const sliderStartY = 430;
@@ -9694,7 +10968,7 @@ _applyMirrorEffect() {
             setter(pct < 0.03 ? 0 : pct);
         });
     };
-
+    
     createSlider(sliderStartY - 15, "Music", this._audio.getUserMusicVolume(), v => this._audio.setUserMusicVolume(v));
     createSlider(sliderStartY + 60, "SFX", this._sfxVolume, v => {
         this._sfxVolume = v;
@@ -9756,7 +11030,7 @@ _applyMirrorEffect() {
       ease: "Bounce.Out"
     });
   }
-  _hideSettingsScreen() {
+  _hideSettingsScreen(closeCallback) {
     if (!this._settingsLayerInternal || this._settingsScreenClosing) {
       return;
     }
@@ -9779,11 +11053,15 @@ _applyMirrorEffect() {
           duration: 300
         });
       }
+
+      if (typeof closeCallback === "function") {
+        closeCallback();
+      }
     };
     this.tweens.add({
       targets: this._settingsLayerOverlay,
       alpha: 0,
-      duration: 500,
+      duration: 250,
       ease: "Linear"
     });
 
@@ -9793,7 +11071,7 @@ _applyMirrorEffect() {
     this.tweens.add({
       targets: _0x59b9ab,
       p: 0,
-      duration: 500,
+      duration: 450,
       ease: "Quad.In",
       onUpdate: () => {
         this._settingsLayerInternal.y = _0x59b9ab.p * 650 - 640;
@@ -9909,6 +11187,51 @@ _applyMirrorEffect() {
       onComplete: _0x272eb1
     });
   }
+  _hideHelpPopup() {
+    if (!this._helplayer || this._helpclose) {
+      return;
+    }
+    this._helpclose = true;
+    const _0x272eb1 = () => {
+      this._helpclose = false;
+      if (this._helpoverlay) {
+        this._helpoverlay.destroy();
+        this._helpoverlay = null;
+      }
+      if (this._helplayer) {
+        this._helplayer.destroy();
+        this._helplayer = null;
+      }
+
+      if (this._pauseBtn) {
+        this.tweens.add({
+          targets: this._pauseBtn,
+          alpha: 1,
+          duration: 300
+        });
+      }
+    };
+    this.tweens.add({
+      targets: this._helpoverlay,
+      alpha: 0,
+      duration: 250,
+      ease: "Linear"
+    });
+
+    const _0x59b9ab = {
+      p: 1
+    };
+    this.tweens.add({
+      targets: _0x59b9ab,
+      p: 0,
+      duration: 450,
+      ease: "Quad.In",
+      onUpdate: () => {
+        this._helplayer.y = _0x59b9ab.p * 650 - 640;
+      },
+      onComplete: _0x272eb1
+    });
+  }
   _showDailyRewardScreen() {
     if (this._dailyRewardLayerInternal) {
       return;
@@ -9999,6 +11322,56 @@ _applyMirrorEffect() {
       });
     }
   }
+
+  _hideSongsPopup() {
+    if (!this._songslayer || this._songpopupclose) {
+      return;
+    }
+    this._songpopupclose = true;
+    const _0x272eb1 = () => {
+      this._songpopupclose = false;
+      if (this._songScrollCleanup) {
+        this._songScrollCleanup();
+        this._songScrollCleanup = null;
+      }
+      if (this._songsoverlay) {
+        this._songsoverlay.destroy();
+        this._songsoverlay = null;
+      }
+      if (this._songslayer) {
+        this._songslayer.destroy();
+        this._songslayer = null;
+      }
+
+      if (this._pauseBtn) {
+        this.tweens.add({
+          targets: this._pauseBtn,
+          alpha: 1,
+          duration: 300
+        });
+      }
+    };
+    this.tweens.add({
+      targets: this._songsoverlay,
+      alpha: 0,
+      duration: 250,
+      ease: "Linear"
+    });
+
+    const _0x59b9ab = {
+      p: 1
+    };
+    this.tweens.add({
+      targets: _0x59b9ab,
+      p: 0,
+      duration: 450,
+      ease: "Quad.In",
+      onUpdate: () => {
+        this._songslayer.y = _0x59b9ab.p * 650 - 640;
+      },
+      onComplete: _0x272eb1
+    });
+  }
   _showStatsScreen() {
     if (this._pauseBtn) {
       this.tweens.add({
@@ -10048,7 +11421,7 @@ _applyMirrorEffect() {
     const _rowLeft = _0x2a115c + 7.8;
     const _rowRight = _0x2a115c + _0x595215 - 7.8;
     const _rowWidth = _rowRight - _rowLeft;
-    const _rowCount = 6;
+    const _rowCount = 7;
     const _rowH = (_rowPanelBottom - _rowPanelTop) / _rowCount;
 
     const rows = [
@@ -10056,7 +11429,8 @@ _applyMirrorEffect() {
       { label: "Total Attempts:",       value: String(this._attempts || 1) },
       { label: "Completed Levels:",     value: String(window._completedLevels || 0) },
       { label: "Total Deaths:",      value: String(this._totalDeaths || 0) },
-      { label: "???:",   value: String(window._totalDiamonds || '?') },
+      { label: "Total Secret Coins:",   value: String(window._totalsecretcoins || 0) },
+      { label: "Total User Coins:",   value: String(window._totalusercoins || 0) },
       { label: "???:", value: String(window._totalOrbs || '?') },
       
     ];
@@ -10382,8 +11756,8 @@ _applyMirrorEffect() {
       delay: 0,
       ease: "Bounce.Out"
     });
-    this.time.delayedCall(100, () => {
-      this._audio.playEffect("highscoreGet02");
+    this.time.delayedCall(125, () => {
+      this._audio.playEffect("gold02");
       const _0x1204d3 = _0x4edc03;
       const _0x96e3b2 = _0x5a0e9 + this._endLayerInternal.y;
       this.add.particles(_0x1204d3, _0x96e3b2, "GJ_WebSheet", {
@@ -10428,6 +11802,133 @@ _applyMirrorEffect() {
           _0x43203f.fillCircle(_0x1204d3, _0x96e3b2, 20 + _0x403316.t * 200);
         },
         onComplete: () => _0x43203f.destroy()
+      });
+    });
+  }
+  _playsecretcoinanimation() {
+    if (!this._endLayerInternal || !this._endsecretcoinPositions || this._practicedMode.practiceMode) return;
+    this._endcoinAwardTimer = [];
+    const collectedSlot = new Set();
+    if (this._level?._editorEndSecretCoinSlots) {
+      for (const slot of this._level._editorEndSecretCoinSlots) collectedSlot.add(slot);
+    }
+    for (const sprite of this._level?._coinSprites || []) {
+      if (!sprite || sprite._secretCoinSlot === undefined) continue;
+      if (this._level._secretCoinRunCollected?.has(String(sprite._secretCoinId))) {
+        collectedSlot.add(sprite._secretCoinSlot);
+      }
+    }
+
+    [...collectedSlot].sort((a, b) => a - b).forEach((slot, index) => {
+      const position = this._endsecretcoinPositions[slot];
+      if (!position) return;
+      const cointimer = this.time.delayedCall(index * 375, () => {
+        if (!this._endLayerInternal || !this._endLayerInternal.active) return;
+        const coin = this.add.image(position.x, position.y, "GJ_GameSheet03", "secretCoinUI_001.png")
+          .setOrigin(0.5)
+          .setScale(3)
+          .setAlpha(0);
+        this._endLayerInternal.add(coin);
+        this._audio.playEffect("highscoreGet02");
+        this.tweens.add({
+          targets: coin,
+          scale: 1.1,
+          alpha: 1,
+          duration: 300,
+          ease: "Bounce.Out"
+        });
+        const effecttimer = this.time.delayedCall(100, () => {
+          if (!this._endLayerInternal || !this._endLayerInternal.active) return;
+          const effectY = position.y + this._endLayerInternal.y;
+          this.add.particles(position.x, effectY, "GJ_WebSheet", {
+            frame: "square.png",
+            speed: { min: 200, max: 600 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 0.35, end: 0 },
+            alpha: { start: 1, end: 0 },
+            lifespan: { min: 200, max: 600 },
+            quantity: 30,
+            stopAfter: 30,
+            blendMode: S,
+            tint: 0xd0d0d0
+          }).setScrollFactor(0).setDepth(202);
+
+          const glow = this.add.graphics().setScrollFactor(0).setDepth(202).setBlendMode(S);
+          const glowState = { progress: 0 };
+          this.tweens.add({
+            targets: glowState,
+            progress: 1,
+            duration: 400,
+            ease: "Quad.Out",
+            onUpdate: () => {
+              glow.clear();
+              glow.fillStyle(0xd0d0d0, 1 - glowState.progress);
+              glow.fillCircle(position.x, effectY, 12 + glowState.progress * 130);
+            },
+            onComplete: () => glow.destroy()
+          });
+        });
+        this._endcoinAwardTimer.push(effecttimer);
+      });
+      this._endcoinAwardTimer.push(cointimer);
+    });
+  }
+  _playusercoinanimation() {
+    if (!this._endLayerInternal || !this._endusercoinPosition) return;
+    this._endcoinAwardTimer = [];
+    const collectedSlot = new Set();
+    if (this._level?._editorEndUserCoinSlots) {
+      for (const slot of this._level._editorEndUserCoinSlots) collectedSlot.add(slot);
+    }
+    for (const sprite of this._level?._coinSprites || []) {
+      if (sprite?._userCoinSlot === undefined) continue;
+      if (this._level._userCoinRunCollected?.has(String(sprite._userCoinId))) {
+        collectedSlot.add(sprite._userCoinSlot);
+      }
+    }
+
+    [...collectedSlot].sort((a, b) => a - b).forEach((slot, index) => {
+      const position = this._endusercoinPosition[slot];
+      if (!position) return;
+      const cointimer = this.time.delayedCall(index * 375, () => {
+        if (!this._endLayerInternal || !this._endLayerInternal.active) return;
+        const coin = this.add.image(position.x, position.y, "GJ_GameSheet03", "secretCoinUI2_001.png")
+          .setOrigin(0.5).setScale(3).setAlpha(0);
+        this._endLayerInternal.add(coin);
+        this._audio.playEffect("highscoreGet02");
+        this.tweens.add({ targets: coin, scale: 1.1, alpha: 1, duration: 300, ease: "Bounce.Out" });
+        const effecttimer = this.time.delayedCall(100, () => {
+          if (!this._endLayerInternal || !this._endLayerInternal.active) return;
+          const effectY = position.y + this._endLayerInternal.y;
+          this.add.particles(position.x, effectY, "GJ_WebSheet", {
+            frame: "square.png",
+            speed: { min: 200, max: 600 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 0.35, end: 0 },
+            alpha: { start: 1, end: 0 },
+            lifespan: { min: 200, max: 600 },
+            quantity: 30,
+            stopAfter: 30,
+            blendMode: S,
+            tint: 0xd0d0d0
+          }).setScrollFactor(0).setDepth(202);
+          const glow = this.add.graphics().setScrollFactor(0).setDepth(202).setBlendMode(S);
+          const glowState = { progress: 0 };
+          this.tweens.add({
+            targets: glowState,
+            progress: 1,
+            duration: 400,
+            ease: "Quad.Out",
+            onUpdate: () => {
+              glow.clear();
+              glow.fillStyle(0xd0d0d0, 1 - glowState.progress);
+              glow.fillCircle(position.x, effectY, 12 + glowState.progress * 130);
+            },
+            onComplete: () => glow.destroy()
+          });
+          this._endcoinAwardTimer.push(effecttimer);
+        });
+        this._endcoinAwardTimer.push(cointimer);
       });
     });
   }
@@ -12246,6 +13747,12 @@ _applyMirrorEffect() {
   }
 
   _hideEndLayer(_0x272eb1) {
+    if (this._endcoinAwardTimer) {
+      for (const timer of this._endcoinAwardTimer) {
+        timer?.remove?.(false);
+      }
+      this._endcoinAwardTimer = null;
+    }
     if (!this._endLayerInternal) {
       if (_0x272eb1) {
         _0x272eb1();

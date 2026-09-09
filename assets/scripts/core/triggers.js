@@ -134,9 +134,11 @@ class ColorManager {
     for (let chId in this._initialColors) {
       this._colors[chId] = { ...this._initialColors[chId] };
     }
+    this._coloredChannels = new Set();
     this._actions = {};
   }
   triggerColor(index, newColor, duration) {
+    this._coloredChannels.add(String(index));
     let oldColor = {
       ...this.getColor(index)
     };
@@ -165,6 +167,9 @@ class ColorManager {
       g: 255,
       b: 255
     };
+  }
+  hasColor(index) {
+    return this._coloredChannels.has(String(index));
   }
   getHex(index) {
     let color = this.getColor(index);
@@ -199,6 +204,7 @@ function circleEffect(gameScene, xPos, yPos, radius, radius2, duration, filled =
   });
 }
 function particleEffect(gameScene, color1 = 16777215, color2 = 16777215) {
+  if (window.enableLDM) return;
   const basePos = 200;
   const xPos = basePos + (screenWidth - 400) * Math.random();
   const yPos = basePos + Math.random() * 240;
